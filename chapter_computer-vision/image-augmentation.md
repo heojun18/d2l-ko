@@ -1,27 +1,13 @@
-# Image Augmentation
+# 이미지 증강
 :label:`sec_image_augmentation`
 
-In :numref:`sec_alexnet`, 
-we mentioned that large datasets 
-are a prerequisite
-for the success of
-deep neural networks
-in various applications.
-*Image augmentation* 
-generates similar but distinct training examples
-after a series of random changes to the training images, thereby expanding the size of the training set.
-Alternatively,
-image augmentation can be motivated
-by the fact that 
-random tweaks of training examples 
-allow models to rely less on
-certain attributes, thereby improving their generalization ability.
-For example, we can crop an image in different ways to make the object of interest appear in different positions, thereby reducing the dependence of a model on the position of the object. 
-We can also adjust factors such as brightness and color to reduce a model's sensitivity to color.
-It is probably true
-that image augmentation was indispensable
-for the success of AlexNet at that time.
-In this section we will discuss this widely used technique in computer vision.
+:numref:`sec_alexnet`에서 저희는 대규모 데이터셋이 다양한 응용에서 심층 신경망의 성공을 위한 전제 조건임을 언급했습니다.
+*이미지 증강*은 훈련 이미지에 일련의 랜덤한 변경을 가한 후, 비슷하지만 구별되는 훈련 예제를 생성하여 훈련 셋의 크기를 확장합니다.
+또는, 이미지 증강은 훈련 예제에 대한 랜덤한 변형이 모델이 특정 속성에 덜 의존하도록 함으로써 일반화 능력을 향상시킨다는 사실로 동기를 부여받을 수 있습니다.
+예를 들어, 이미지를 다양한 방식으로 자르면 관심 객체가 다양한 위치에 나타나도록 만들 수 있어, 객체의 위치에 대한 모델의 의존성을 줄일 수 있습니다.
+또한, 밝기와 색상 같은 요소를 조정해 색상에 대한 모델의 민감도를 줄일 수도 있습니다.
+당시 AlexNet의 성공에 이미지 증강이 없어서는 안 될 요소였다는 것은 아마 사실일 것입니다.
+이 절에서는 컴퓨터 비전에서 폭넓게 사용되는 이 기법에 대해 논의하겠습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -42,9 +28,9 @@ import torchvision
 from torch import nn
 ```
 
-## Common Image Augmentation Methods
+## 일반적인 이미지 증강 방법들
 
-In our investigation of common image augmentation methods, we will use the following $400\times 500$ image an example.
+일반적인 이미지 증강 방법들을 살펴볼 때, 다음의 $400\times 500$ 이미지를 예제로 사용하겠습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -60,7 +46,7 @@ img = d2l.Image.open('../img/cat1.jpg')
 d2l.plt.imshow(img);
 ```
 
-Most image augmentation methods have a certain degree of randomness. To make it easier for us to observe the effect of image augmentation, next we define an auxiliary function `apply`. This function runs the image augmentation method `aug` multiple times on the input image `img` and shows all the results.
+대부분의 이미지 증강 방법은 어느 정도 무작위성을 가집니다. 이미지 증강의 효과를 관찰하기 쉽도록, 다음으로 보조 함수 `apply`를 정의합니다. 이 함수는 입력 이미지 `img`에 대해 이미지 증강 방법 `aug`를 여러 번 실행하고 모든 결과를 보여줍니다.
 
 ```{.python .input}
 #@tab all
@@ -69,20 +55,18 @@ def apply(img, aug, num_rows=2, num_cols=4, scale=1.5):
     d2l.show_images(Y, num_rows, num_cols, scale=scale)
 ```
 
-### Flipping and Cropping
+### 뒤집기와 자르기
 
 :begin_tab:`mxnet`
-[**Flipping the image left and right**] usually does not change the category of the object. 
-This is one of the earliest and most widely used methods of image augmentation.
-Next, we use the `transforms` module to create the `RandomFlipLeftRight` instance, which flips
-an image left and right with a 50% chance.
+[**이미지를 좌우로 뒤집는 것**]은 보통 객체의 카테고리를 바꾸지 않습니다.
+이는 가장 초기에 도입되고 가장 폭넓게 사용되는 이미지 증강 방법 중 하나입니다.
+다음으로 저희는 `transforms` 모듈을 사용해 50% 확률로 이미지를 좌우로 뒤집는 `RandomFlipLeftRight` 인스턴스를 만듭니다.
 :end_tab:
 
 :begin_tab:`pytorch`
-[**Flipping the image left and right**] usually does not change the category of the object. 
-This is one of the earliest and most widely used methods of image augmentation.
-Next, we use the `transforms` module to create the `RandomHorizontalFlip` instance, which flips
-an image left and right with a 50% chance.
+[**이미지를 좌우로 뒤집는 것**]은 보통 객체의 카테고리를 바꾸지 않습니다.
+이는 가장 초기에 도입되고 가장 폭넓게 사용되는 이미지 증강 방법 중 하나입니다.
+다음으로 저희는 `transforms` 모듈을 사용해 50% 확률로 이미지를 좌우로 뒤집는 `RandomHorizontalFlip` 인스턴스를 만듭니다.
 :end_tab:
 
 ```{.python .input}
@@ -96,15 +80,13 @@ apply(img, torchvision.transforms.RandomHorizontalFlip())
 ```
 
 :begin_tab:`mxnet`
-[**Flipping up and down**] is not as common as flipping left and right. But at least for this example image, flipping up and down does not hinder recognition.
-Next, we create a `RandomFlipTopBottom` instance to flip
-an image up and down with a 50% chance.
+[**상하 뒤집기**]는 좌우 뒤집기만큼 일반적이지 않습니다. 그러나 적어도 이 예제 이미지에서는 상하 뒤집기가 인식을 방해하지 않습니다.
+다음으로 저희는 50% 확률로 이미지를 상하로 뒤집는 `RandomFlipTopBottom` 인스턴스를 만듭니다.
 :end_tab:
 
 :begin_tab:`pytorch`
-[**Flipping up and down**] is not as common as flipping left and right. But at least for this example image, flipping up and down does not hinder recognition.
-Next, we create a `RandomVerticalFlip` instance to flip
-an image up and down with a 50% chance.
+[**상하 뒤집기**]는 좌우 뒤집기만큼 일반적이지 않습니다. 그러나 적어도 이 예제 이미지에서는 상하 뒤집기가 인식을 방해하지 않습니다.
+다음으로 저희는 50% 확률로 이미지를 상하로 뒤집는 `RandomVerticalFlip` 인스턴스를 만듭니다.
 :end_tab:
 
 ```{.python .input}
@@ -117,12 +99,12 @@ apply(img, gluon.data.vision.transforms.RandomFlipTopBottom())
 apply(img, torchvision.transforms.RandomVerticalFlip())
 ```
 
-In the example image we used, the cat is in the middle of the image, but this may not be the case in general. 
-In :numref:`sec_pooling`, we explained that the pooling layer can reduce the sensitivity of a convolutional layer to the target position.
-In addition, we can also randomly crop the image to make objects appear in different positions in the image at different scales, which can also reduce the sensitivity of a model to the target position.
+저희가 사용한 예제 이미지에서는 고양이가 이미지 중앙에 있지만, 일반적으로 항상 그런 것은 아닙니다.
+:numref:`sec_pooling`에서 저희는 풀링 계층이 대상 위치에 대한 합성곱 계층의 민감도를 줄여줄 수 있다고 설명했습니다.
+또한 이미지를 랜덤하게 잘라서 다양한 크기와 위치에 객체가 나타나도록 할 수도 있는데, 이 또한 대상 위치에 대한 모델의 민감도를 줄여줄 수 있습니다.
 
-In the code below, we [**randomly crop**] an area with an area of $10\% \sim 100\%$ of the original area each time, and the ratio of width to height of this area is randomly selected from $0.5 \sim 2$. Then, the width and height of the region are both scaled to 200 pixels. 
-Unless otherwise specified, the random number between $a$ and $b$ in this section refers to a continuous value obtained by random and uniform sampling from the interval $[a, b]$.
+아래 코드에서 저희는 매번 원래 면적의 $10\% \sim 100\%$ 면적을 가진 영역을 [**랜덤하게 자르고**], 이 영역의 너비와 높이의 비율은 $0.5 \sim 2$ 사이에서 랜덤하게 선택됩니다. 그런 다음, 이 영역의 너비와 높이는 모두 200픽셀로 스케일링됩니다.
+별도로 명시하지 않는 한, 이 절에서 $a$와 $b$ 사이의 랜덤 숫자는 구간 $[a, b]$에서 랜덤하고 균등한 샘플링을 통해 얻은 연속 값을 의미합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -138,9 +120,9 @@ shape_aug = torchvision.transforms.RandomResizedCrop(
 apply(img, shape_aug)
 ```
 
-### Changing Colors
+### 색상 변경
 
-Another augmentation method is changing colors. We can change four aspects of the image color: brightness, contrast, saturation, and hue. In the example below, we [**randomly change the brightness**] of the image to a value between 50% ($1-0.5$) and 150% ($1+0.5$) of the original image.
+또 다른 증강 방법은 색상 변경입니다. 저희는 이미지 색상의 네 가지 측면을 변경할 수 있습니다. 밝기, 대비, 채도, 색조입니다. 아래 예제에서, 저희는 이미지의 [**밝기를 랜덤하게 변경**]하여 원본 이미지의 50%($1-0.5$)와 150%($1+0.5$) 사이의 값으로 만듭니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -153,7 +135,7 @@ apply(img, torchvision.transforms.ColorJitter(
     brightness=0.5, contrast=0, saturation=0, hue=0))
 ```
 
-Similarly, we can [**randomly change the hue**] of the image.
+비슷하게, 이미지의 [**색조를 랜덤하게 변경**]할 수 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -166,7 +148,7 @@ apply(img, torchvision.transforms.ColorJitter(
     brightness=0, contrast=0, saturation=0, hue=0.5))
 ```
 
-We can also create a `RandomColorJitter` instance and set how to [**randomly change the `brightness`, `contrast`, `saturation`, and `hue` of the image at the same time**].
+또한 `RandomColorJitter` 인스턴스를 만들고 [**이미지의 `brightness`, `contrast`, `saturation`, `hue`를 동시에 랜덤하게 변경하는 방법을 설정**]할 수도 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -182,11 +164,10 @@ color_aug = torchvision.transforms.ColorJitter(
 apply(img, color_aug)
 ```
 
-### Combining Multiple Image Augmentation Methods
+### 여러 이미지 증강 방법 결합
 
-In practice, we will [**combine multiple image augmentation methods**]. 
-For example,
-we can combine the different image augmentation methods defined above and apply them to each image via a `Compose` instance.
+실제로는 저희는 [**여러 이미지 증강 방법을 결합**]합니다.
+예를 들어, 위에서 정의한 다양한 이미지 증강 방법들을 결합하여 `Compose` 인스턴스를 통해 각 이미지에 적용할 수 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -202,12 +183,12 @@ augs = torchvision.transforms.Compose([
 apply(img, augs)
 ```
 
-## [**Training with Image Augmentation**]
+## [**이미지 증강을 사용한 훈련**]
 
-Let's train a model with image augmentation.
-Here we use the CIFAR-10 dataset instead of the Fashion-MNIST dataset that we used before. 
-This is because the position and size of the objects in the Fashion-MNIST dataset have been normalized, while the color and size of the objects in the CIFAR-10 dataset have more significant differences. 
-The first 32 training images in the CIFAR-10 dataset are shown below.
+이미지 증강을 사용하여 모델을 훈련해 봅시다.
+여기서는 이전에 사용한 Fashion-MNIST 데이터셋 대신 CIFAR-10 데이터셋을 사용합니다.
+이는 Fashion-MNIST 데이터셋의 객체의 위치와 크기는 정규화되어 있는 반면, CIFAR-10 데이터셋의 객체는 색상과 크기에서 더 큰 차이가 있기 때문입니다.
+CIFAR-10 데이터셋의 첫 32개 훈련 이미지가 아래에 나와 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -222,9 +203,8 @@ all_images = torchvision.datasets.CIFAR10(train=True, root="../data",
 d2l.show_images([all_images[i][0] for i in range(32)], 4, 8, scale=0.8);
 ```
 
-In order to obtain definitive results during prediction, we usually only apply image augmentation to training examples, and do not use image augmentation with random operations during prediction. 
-[**Here we only use the simplest random left-right flipping method**]. In addition, we use a `ToTensor` instance to convert a minibatch of images into the format required by the deep learning framework, i.e., 
-32-bit floating point numbers between 0 and 1 with the shape of (batch size, number of channels, height, width).
+예측 시에 결정적인 결과를 얻기 위해, 저희는 보통 훈련 예제에만 이미지 증강을 적용하고, 예측 중에는 랜덤한 연산이 포함된 이미지 증강을 사용하지 않습니다.
+[**여기서는 가장 간단한 랜덤 좌우 뒤집기 방법만 사용합니다**]. 또한, `ToTensor` 인스턴스를 사용해 이미지의 미니배치를 딥러닝 프레임워크에서 요구하는 형식, 즉 (배치 크기, 채널 수, 높이, 너비) 형태의 0과 1 사이의 32비트 부동 소수점 수로 변환합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -247,22 +227,15 @@ test_augs = torchvision.transforms.Compose([
 ```
 
 :begin_tab:`mxnet`
-Next, we define an auxiliary function to facilitate reading the image and
-applying image augmentation. 
-The `transform_first` function provided by Gluon's
-datasets applies image augmentation to the first element of each training
-example (image and label), i.e., the image. 
-For
-a detailed introduction to `DataLoader`, please refer to :numref:`sec_fashion_mnist`.
+다음으로, 이미지를 읽고 이미지 증강을 적용하는 것을 용이하게 하기 위해 보조 함수를 정의합니다.
+Gluon의 데이터셋에서 제공하는 `transform_first` 함수는 각 훈련 예제(이미지와 라벨)의 첫 번째 요소, 즉 이미지에 이미지 증강을 적용합니다.
+`DataLoader`에 대한 자세한 소개는 :numref:`sec_fashion_mnist`를 참조하세요.
 :end_tab:
 
 :begin_tab:`pytorch`
-Next, we [**define an auxiliary function to facilitate reading the image and
-applying image augmentation**]. 
-The `transform` argument provided by PyTorch's
-dataset applies augmentation to transform the images.
-For
-a detailed introduction to `DataLoader`, please refer to :numref:`sec_fashion_mnist`.
+다음으로, [**이미지를 읽고 이미지 증강을 적용하는 것을 용이하게 하기 위해 보조 함수를 정의**]합니다.
+PyTorch의 데이터셋에서 제공하는 `transform` 인자는 증강을 적용하여 이미지를 변환합니다.
+`DataLoader`에 대한 자세한 소개는 :numref:`sec_fashion_mnist`를 참조하세요.
 :end_tab:
 
 ```{.python .input}
@@ -284,15 +257,11 @@ def load_cifar10(is_train, augs, batch_size):
     return dataloader
 ```
 
-### Multi-GPU Training
+### 다중 GPU 훈련
 
-We train the ResNet-18 model from
-:numref:`sec_resnet` on the
-CIFAR-10 dataset.
-Recall the introduction to
-multi-GPU training in :numref:`sec_multi_gpu_concise`.
-In the following,
-[**we define a function to train and evaluate the model using multiple GPUs**].
+저희는 :numref:`sec_resnet`의 ResNet-18 모델을 CIFAR-10 데이터셋에서 훈련합니다.
+:numref:`sec_multi_gpu_concise`에서 다중 GPU 훈련에 대한 소개를 떠올려 보세요.
+이어서, [**여러 GPU를 사용해 모델을 훈련하고 평가하는 함수를 정의합니다**].
 
 ```{.python .input}
 #@tab mxnet
@@ -401,11 +370,8 @@ def train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs,
           f'{str(devices)}')
 ```
 
-Now we can [**define the `train_with_data_aug` function to train the model with image augmentation**].
-This function gets all available GPUs, 
-uses Adam as the optimization algorithm,
-applies image augmentation to the training dataset,
-and finally calls the `train_ch13` function just defined to train and evaluate the model.
+이제 [**`train_with_data_aug` 함수를 정의해 이미지 증강을 사용하여 모델을 훈련**]할 수 있습니다.
+이 함수는 사용 가능한 모든 GPU를 가져오고, 최적화 알고리즘으로 Adam을 사용하며, 훈련 데이터셋에 이미지 증강을 적용하고, 마지막으로 방금 정의한 `train_ch13` 함수를 호출하여 모델을 훈련하고 평가합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -435,25 +401,25 @@ def train_with_data_aug(train_augs, test_augs, net, lr=0.001):
     train_ch13(net, train_iter, test_iter, loss, trainer, 10, devices)
 ```
 
-Let's [**train the model**] using image augmentation based on random left-right flipping.
+랜덤 좌우 뒤집기에 기반한 이미지 증강을 사용해 [**모델을 훈련**]해 봅시다.
 
 ```{.python .input}
 #@tab all
 train_with_data_aug(train_augs, test_augs, net)
 ```
 
-## Summary
+## 요약
 
-* Image augmentation generates random images based on existing training data to improve the generalization ability of models.
-* In order to obtain definitive results during prediction, we usually only apply image augmentation to training examples, and do not use image augmentation with random operations during prediction.
-* Deep learning frameworks provide many different image augmentation methods, which can be applied simultaneously.
+* 이미지 증강은 기존의 훈련 데이터를 기반으로 랜덤한 이미지를 생성해 모델의 일반화 능력을 향상시킵니다.
+* 예측 시에 결정적인 결과를 얻기 위해, 저희는 보통 훈련 예제에만 이미지 증강을 적용하고, 예측 중에는 랜덤한 연산이 포함된 이미지 증강을 사용하지 않습니다.
+* 딥러닝 프레임워크는 다양한 이미지 증강 방법을 제공하며, 이들은 동시에 적용될 수 있습니다.
 
 
-## Exercises
+## 연습문제
 
-1. Train the model without using image augmentation: `train_with_data_aug(test_augs, test_augs)`. Compare training and testing accuracy when using and not using image augmentation. Can this comparative experiment support the argument that image augmentation can mitigate overfitting? Why?
-1. Combine multiple different image augmentation methods in model training on the CIFAR-10 dataset. Does it improve test accuracy? 
-1. Refer to the online documentation of the deep learning framework. What other image augmentation methods does it also provide?
+1. 이미지 증강을 사용하지 않고 모델을 훈련해 보세요: `train_with_data_aug(test_augs, test_augs)`. 이미지 증강을 사용했을 때와 사용하지 않았을 때의 훈련 정확도와 테스트 정확도를 비교해 보세요. 이 비교 실험이 이미지 증강이 과적합을 완화할 수 있다는 주장을 뒷받침할 수 있나요? 왜 그런가요?
+1. CIFAR-10 데이터셋에서의 모델 훈련에서 여러 가지 다른 이미지 증강 방법을 결합해 보세요. 테스트 정확도가 향상되나요?
+1. 딥러닝 프레임워크의 온라인 문서를 참조하세요. 또 어떤 이미지 증강 방법들을 제공하나요?
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/367)

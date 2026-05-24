@@ -1,27 +1,25 @@
-#  Preliminaries
+#  사전 준비
 :label:`chap_preliminaries`
 
-To prepare for your dive into deep learning,
-you will need a few survival skills:
-(i) techniques for storing and manipulating data;
-(ii) libraries for ingesting 
-and preprocessing data from a variety of sources;
-(iii) knowledge of the basic linear algebraic operations
-that we apply to high-dimensional data elements;
-(iv) just enough calculus to determine
-which direction to adjust each parameter
-in order to decrease the loss function;
-(v) the ability to automatically compute derivatives
-so that you can forget much of 
-the calculus you just learned;
-(vi) some basic fluency in probability,
-our primary language for reasoning under uncertainty;
-and (vii) some aptitude for finding answers 
-in the official documentation when you get stuck.
+딥러닝에 본격적으로 뛰어들 준비를 하기 위해서는
+몇 가지 생존 기술이 필요합니다.
+(i) 데이터를 저장하고 조작하기 위한 기법,
+(ii) 다양한 출처의 데이터를 수집하고
+전처리하기 위한 라이브러리,
+(iii) 고차원 데이터 요소에 적용하는
+기본적인 선형대수 연산에 대한 지식,
+(iv) 손실 함수를 감소시키기 위해
+각 파라미터를 어느 방향으로 조정해야 할지
+결정할 수 있을 만큼의 미적분,
+(v) 방금 배운 미적분의 상당 부분을 잊어버릴 수 있도록
+미분을 자동으로 계산하는 능력,
+(vi) 불확실성 하에서 추론하기 위한
+저희의 주요 언어인 확률에 대한 기본적인 숙달,
+그리고 (vii) 막혔을 때 공식 문서에서
+답을 찾을 수 있는 어느 정도의 적성.
 
-In short, this chapter provides a rapid introduction 
-to the basics that you will need to follow 
-*most* of the technical content in this book.
+요컨대 이 장은 이 책의 *대부분의* 기술적 내용을 따라가는 데
+필요한 기초를 빠르게 소개합니다.
 
 ```toc
 :maxdepth: 2

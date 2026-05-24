@@ -3,15 +3,15 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Parameter Initialization
+# 파라미터 초기화
 
-Now that we know how to access the parameters,
-let's look at how to initialize them properly.
-We discussed the need for proper initialization in :numref:`sec_numerical_stability`.
-The deep learning framework provides default random initializations to its layers.
-However, we often want to initialize our weights
-according to various other protocols. The framework provides most commonly
-used protocols, and also allows to create a custom initializer.
+이제 파라미터에 접근하는 방법을 알게 되었으니,
+파라미터를 적절히 초기화하는 방법을 살펴보겠습니다.
+:numref:`sec_numerical_stability`에서 적절한 초기화의 필요성을 논의했습니다.
+딥러닝 프레임워크는 자신의 층들에 기본적인 무작위 초기화를 제공합니다.
+그러나 저희는 종종 다양한 다른 규약에 따라
+가중치를 초기화하고 싶어 합니다. 프레임워크는 가장 흔히
+사용되는 규약을 제공하며, 커스텀 초기화기를 만드는 것도 허용합니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -40,32 +40,30 @@ from jax import numpy as jnp
 ```
 
 :begin_tab:`mxnet`
-By default, MXNet initializes weight parameters by randomly drawing from a uniform distribution $U(-0.07, 0.07)$,
-clearing bias parameters to zero.
-MXNet's `init` module provides a variety
-of preset initialization methods.
+기본적으로 MXNet은 균등 분포 $U(-0.07, 0.07)$에서 무작위로
+표본을 추출해 가중치 파라미터를 초기화하고,
+편향 파라미터는 0으로 비웁니다.
+MXNet의 `init` 모듈은 다양한 사전 정의된 초기화 방법을 제공합니다.
 :end_tab:
 
 :begin_tab:`pytorch`
-By default, PyTorch initializes weight and bias matrices
-uniformly by drawing from a range that is computed according to the input and output dimension.
-PyTorch's `nn.init` module provides a variety
-of preset initialization methods.
+기본적으로 PyTorch는 입력과 출력 차원에 따라 계산된 범위에서
+표본을 추출하는 방식으로 가중치와 편향 행렬을 균등하게 초기화합니다.
+PyTorch의 `nn.init` 모듈은 다양한 사전 정의된 초기화 방법을 제공합니다.
 :end_tab:
 
 :begin_tab:`tensorflow`
-By default, Keras initializes weight matrices uniformly by drawing from a range that is computed according to the input and output dimension, and the bias parameters are all set to zero.
-TensorFlow provides a variety of initialization methods both in the root module and the `keras.initializers` module.
+기본적으로 Keras는 입력과 출력 차원에 따라 계산된 범위에서
+표본을 추출하는 방식으로 가중치 행렬을 균등하게 초기화하며, 편향 파라미터는 모두 0으로 설정됩니다.
+TensorFlow는 루트 모듈과 `keras.initializers` 모듈 양쪽에서 다양한 초기화 방법을 제공합니다.
 :end_tab:
 
 :begin_tab:`jax`
-By default, Flax initializes weights using `jax.nn.initializers.lecun_normal`,
-i.e., by drawing samples from a truncated normal distribution centered on 0 with
-the standard deviation set as the squared root of $1 / \textrm{fan}_{\textrm{in}}$
-where `fan_in` is the number of input units in the weight tensor. The bias
-parameters are all set to zero.
-Jax's `nn.initializers` module provides a variety
-of preset initialization methods.
+기본적으로 Flax는 `jax.nn.initializers.lecun_normal`을 사용해 가중치를 초기화합니다.
+즉, 0을 중심으로 하고 표준편차를 $1 / \textrm{fan}_{\textrm{in}}$의 제곱근으로
+설정한 절단 정규 분포(여기서 `fan_in`은 가중치 텐서의 입력 단위 수)에서
+표본을 추출합니다. 편향 파라미터는 모두 0으로 설정됩니다.
+Jax의 `nn.initializers` 모듈은 다양한 사전 정의된 초기화 방법을 제공합니다.
 :end_tab:
 
 ```{.python .input}
@@ -106,12 +104,11 @@ params = net.init(d2l.get_key(), X)
 net.apply(params, X).shape
 ```
 
-## [**Built-in Initialization**]
+## [**내장 초기화**]
 
-Let's begin by calling on built-in initializers.
-The code below initializes all weight parameters
-as Gaussian random variables
-with standard deviation 0.01, while bias parameters are cleared to zero.
+먼저 내장 초기화기를 호출해 보는 것으로 시작해 보겠습니다.
+아래 코드는 모든 가중치 파라미터를 표준편차 0.01인
+가우시안 무작위 변수로 초기화하며, 편향 파라미터는 0으로 비웁니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -160,8 +157,8 @@ layer_0 = params['params']['layers_0']
 layer_0['kernel'][:, 0], layer_0['bias'][0]
 ```
 
-We can also initialize all the parameters
-to a given constant value (say, 1).
+모든 파라미터를 주어진 상수 값(예를 들어 1)으로
+초기화할 수도 있습니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -208,11 +205,9 @@ layer_0 = params['params']['layers_0']
 layer_0['kernel'][:, 0], layer_0['bias'][0]
 ```
 
-[**We can also apply different initializers for certain blocks.**]
-For example, below we initialize the first layer
-with the Xavier initializer
-and initialize the second layer
-to a constant value of 42.
+[**특정 블록에 대해 서로 다른 초기화기를 적용할 수도 있습니다.**]
+예를 들어 아래에서는 첫 번째 층은 Xavier 초기화기로 초기화하고,
+두 번째 층은 상수 값 42로 초기화합니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -267,12 +262,12 @@ params = net.init(jax.random.PRNGKey(d2l.get_seed()), X)
 params['params']['layers_0']['kernel'][:, 0], params['params']['layers_2']['kernel']
 ```
 
-### [**Custom Initialization**]
+### [**커스텀 초기화**]
 
-Sometimes, the initialization methods we need
-are not provided by the deep learning framework.
-In the example below, we define an initializer
-for any weight parameter $w$ using the following strange distribution:
+때로는 저희가 필요로 하는 초기화 방법이
+딥러닝 프레임워크에서 제공되지 않을 때도 있습니다.
+아래 예제에서는 임의의 가중치 파라미터 $w$에 대해
+다음과 같이 별난 분포를 사용하는 초기화기를 정의합니다.
 
 $$
 \begin{aligned}
@@ -285,25 +280,25 @@ $$
 $$
 
 :begin_tab:`mxnet`
-Here we define a subclass of the `Initializer` class.
-Usually, we only need to implement the `_init_weight` function
-which takes a tensor argument (`data`)
-and assigns to it the desired initialized values.
+여기서는 `Initializer` 클래스의 하위 클래스를 정의합니다.
+일반적으로는 텐서 인자(`data`)를 받아
+원하는 초기 값을 할당해 주는 `_init_weight` 함수만 구현하면 됩니다.
 :end_tab:
 
 :begin_tab:`pytorch`
-Again, we implement a `my_init` function to apply to `net`.
+다시 한 번, `net`에 적용할 `my_init` 함수를 구현합니다.
 :end_tab:
 
 :begin_tab:`tensorflow`
-Here we define a subclass of `Initializer` and implement the `__call__`
-function that return a desired tensor given the shape and data type.
+여기서는 `Initializer`의 하위 클래스를 정의하고,
+주어진 모양과 자료형에 대해 원하는 텐서를 반환하는
+`__call__` 함수를 구현합니다.
 :end_tab:
 
 :begin_tab:`jax`
-Jax initialization functions take as arguments the `PRNGKey`, `shape` and
-`dtype`. Here we implement the function `my_init` that returns a desired
-tensor given the shape and data type.
+Jax 초기화 함수는 인자로 `PRNGKey`, `shape`, `dtype`을 받습니다.
+여기서는 주어진 모양과 자료형에 대해 원하는 텐서를 반환하는
+`my_init` 함수를 구현합니다.
 :end_tab:
 
 ```{.python .input}
@@ -365,15 +360,15 @@ print(params['params']['layers_0']['kernel'][:, :2])
 ```
 
 :begin_tab:`mxnet, pytorch, tensorflow`
-Note that we always have the option
-of setting parameters directly.
+저희에게는 언제든 파라미터를 직접 설정하는
+선택지가 있다는 점에 유의하세요.
 :end_tab:
 
 :begin_tab:`jax`
-When initializing parameters in JAX and Flax, the the dictionary of parameters
-returned has a `flax.core.frozen_dict.FrozenDict` type. It is not advisable in
-the Jax ecosystem to directly alter the values of an array, hence the datatypes
-are generally immutable. One might use `params.unfreeze()` to make changes.
+JAX와 Flax에서 파라미터를 초기화하면, 반환되는 파라미터 사전은
+`flax.core.frozen_dict.FrozenDict` 타입을 가집니다. Jax 생태계에서는
+배열의 값을 직접 변경하는 것이 권장되지 않으며, 따라서 자료형들은
+대체로 불변입니다. 변경을 가하려면 `params.unfreeze()`를 사용할 수 있습니다.
 :end_tab:
 
 ```{.python .input}
@@ -397,13 +392,13 @@ net.layers[1].weights[0][0, 0].assign(42)
 net.layers[1].weights[0]
 ```
 
-## Summary
+## 요약
 
-We can initialize parameters using built-in and custom initializers.
+내장 초기화기와 커스텀 초기화기를 사용해 파라미터를 초기화할 수 있습니다.
 
-## Exercises
+## 연습문제
 
-Look up the online documentation for more built-in initializers.
+더 많은 내장 초기화기에 대해 온라인 문서를 찾아보세요.
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/8089)

@@ -3,11 +3,11 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Utility Functions and Classes
+# 유틸리티 함수 및 클래스
 :label:`sec_utils`
 
 
-This section contains the implementations of utility functions and classes used in this book.
+이 절은 이 책에서 사용되는 유틸리티 함수와 클래스의 구현을 담고 있습니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -48,7 +48,7 @@ from d2l import jax as d2l
 import jax
 ```
 
-Hyperparameters.
+하이퍼파라미터.
 
 ```{.python .input}
 %%tab all
@@ -63,7 +63,7 @@ def save_hyperparameters(self, ignore=[]):
         setattr(self, k, v)
 ```
 
-Progress bar.
+진행 막대.
 
 ```{.python .input  n=22}
 %%tab all
@@ -108,7 +108,7 @@ def draw(self, x, y, label, every_n=1):
     display.clear_output(wait=True)
 ```
 
-Add FrozenLake enviroment
+FrozenLake 환경 추가
 ```{.python .input}
 %%tab pytorch
 
@@ -145,7 +145,7 @@ def frozen_lake(seed): #@save
 
 ```
 
-Create enviroment
+환경 생성
 ```{.python .input}
 %%tab pytorch
 
@@ -161,7 +161,7 @@ def make_env(name ='', seed=0): #@save
 
 ```
 
-Show value function
+가치 함수 보여 주기
 ```{.python .input}
 %%tab pytorch
 
@@ -220,7 +220,7 @@ def show_value_function_progress(env_desc, V, pi): #@save
     plt.show()
 
 ```
-Show Q function
+Q 함수 보여 주기
 ```{.python .input}
 %%tab pytorch
 
@@ -294,7 +294,7 @@ def show_Q_function_progress(env_desc, V_all, pi_all): #@save
 
 Trainer
 
-A bunch of functions that will be deprecated:
+곧 폐기될 함수 모음입니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -829,7 +829,7 @@ def grad_clipping(grads, theta):  #@save
     return new_grad
 ```
 
-More for the attention chapter.
+어텐션 장에 더 필요한 내용.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -852,7 +852,7 @@ def preprocess_nmt(text):
 
     # Replace non-breaking space with space, and convert uppercase letters to
     # lowercase ones
-    text = text.replace('\u202f', ' ').replace('\xa0', ' ').lower()
+    text = text.replace(' ', ' ').replace('\xa0', ' ').lower()
     # Insert space between words and punctuation marks
     out = [' ' + char if i > 0 and no_space(char, text[i - 1]) else char
            for i, char in enumerate(text)]

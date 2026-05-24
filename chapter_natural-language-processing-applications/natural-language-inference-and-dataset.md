@@ -1,55 +1,55 @@
-# Natural Language Inference and the Dataset
+# 자연어 추론과 데이터셋
 :label:`sec_natural-language-inference-and-dataset`
 
-In :numref:`sec_sentiment`, we discussed the problem of sentiment analysis.
-This task aims to classify a single text sequence into predefined categories,
-such as a set of sentiment polarities.
-However, when there is a need to decide whether one sentence can be inferred form another, 
-or eliminate redundancy by identifying sentences that are semantically equivalent,
-knowing how to classify one text sequence is insufficient.
-Instead, we need to be able to reason over pairs of text sequences.
+:numref:`sec_sentiment`에서, 저희는 감성 분석 문제를 논의했습니다.
+이 작업은 단일 텍스트 시퀀스를 감정 극성 집합과 같은
+미리 정의된 범주로 분류하는 것을 목표로 합니다.
+그러나 한 문장이 다른 문장으로부터 추론될 수 있는지 결정하거나,
+의미적으로 동등한 문장을 식별하여 중복을 제거해야 할 필요가 있을 때,
+하나의 텍스트 시퀀스를 분류하는 방법을 아는 것만으로는 충분하지 않습니다.
+대신, 저희는 텍스트 시퀀스 쌍에 대해 추론할 수 있어야 합니다.
 
 
-## Natural Language Inference
+## 자연어 추론
 
-*Natural language inference* studies whether a *hypothesis*
-can be inferred from a *premise*, where both are a text sequence.
-In other words, natural language inference determines the logical relationship between a pair of text sequences.
-Such relationships usually fall into three types:
+*자연어 추론*은 *가설*이 *전제*로부터 추론될 수 있는지를 연구하며,
+둘 다 텍스트 시퀀스입니다.
+다시 말해, 자연어 추론은 텍스트 시퀀스 쌍 간의 논리적 관계를 결정합니다.
+이러한 관계는 일반적으로 세 가지 유형으로 구분됩니다:
 
-* *Entailment*: the hypothesis can be inferred from the premise.
-* *Contradiction*: the negation of the hypothesis can be inferred from the premise.
-* *Neutral*: all the other cases.
+* *함의(Entailment)*: 가설이 전제로부터 추론될 수 있습니다.
+* *모순(Contradiction)*: 가설의 부정이 전제로부터 추론될 수 있습니다.
+* *중립(Neutral)*: 그 외의 모든 경우.
 
-Natural language inference is also known as the recognizing textual entailment task.
-For example, the following pair will be labeled as *entailment* because "showing affection" in the hypothesis can be inferred from "hugging one another" in the premise.
+자연어 추론은 텍스트 함의 인식 작업으로도 알려져 있습니다.
+예를 들어, 다음 쌍은 *함의*로 레이블링되는데, 이는 가설의 "애정을 표현"이 전제의 "서로 안고 있다"로부터 추론될 수 있기 때문입니다.
 
-> Premise: Two women are hugging each other.
+> 전제: 두 여성이 서로 안고 있다.
 
-> Hypothesis: Two women are showing affection.
+> 가설: 두 여성이 애정을 표현하고 있다.
 
-The following is an example of *contradiction* as "running the coding example" indicates "not sleeping" rather than "sleeping".
+다음은 *모순*의 예로, "코딩 예제를 실행하고 있다"는 "잠자고 있다"가 아니라 "잠자지 않고 있다"를 나타내기 때문입니다.
 
-> Premise: A man is running the coding example from Dive into Deep Learning.
+> 전제: 한 남자가 Dive into Deep Learning의 코딩 예제를 실행하고 있다.
 
-> Hypothesis: The man is sleeping.
+> 가설: 그 남자는 잠자고 있다.
 
-The third example shows a *neutrality* relationship because neither "famous" nor "not famous" can be inferred from the fact that "are performing for us". 
+세 번째 예는 *중립* 관계를 보여주는데, 이는 "우리를 위해 공연하고 있다"는 사실로부터 "유명하다"도 "유명하지 않다"도 추론할 수 없기 때문입니다.
 
-> Premise: The musicians are performing for us.
+> 전제: 음악가들이 우리를 위해 공연하고 있다.
 
-> Hypothesis: The musicians are famous.
+> 가설: 음악가들은 유명하다.
 
-Natural language inference has been a central topic for understanding natural language.
-It enjoys wide applications ranging from
-information retrieval to open-domain question answering.
-To study this problem, we will begin by investigating a popular natural language inference benchmark dataset.
+자연어 추론은 자연어 이해를 위한 중심 주제로 여겨져 왔습니다.
+이는 정보 검색에서 오픈 도메인 질의응답에 이르기까지
+폭넓게 활용되고 있습니다.
+이 문제를 연구하기 위해, 인기 있는 자연어 추론 벤치마크 데이터셋을 조사하는 것부터 시작하겠습니다.
 
 
-## The Stanford Natural Language Inference (SNLI) Dataset
+## 스탠퍼드 자연어 추론(SNLI) 데이터셋
 
-[**Stanford Natural Language Inference (SNLI) Corpus**] is a collection of over 500000 labeled English sentence pairs :cite:`Bowman.Angeli.Potts.ea.2015`.
-We download and store the extracted SNLI dataset in the path `../data/snli_1.0`.
+[**스탠퍼드 자연어 추론(SNLI) 코퍼스**]는 500000개 이상의 레이블링된 영어 문장 쌍의 모음입니다 :cite:`Bowman.Angeli.Potts.ea.2015`.
+저희는 압축이 풀린 SNLI 데이터셋을 다운로드하여 `../data/snli_1.0` 경로에 저장합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -84,9 +84,9 @@ d2l.DATA_HUB['SNLI'] = (
 data_dir = d2l.download_extract('SNLI')
 ```
 
-### [**Reading the Dataset**]
+### [**데이터셋 읽기**]
 
-The original SNLI dataset contains much richer information than what we really need in our experiments. Thus, we define a function `read_snli` to only extract part of the dataset, then return lists of premises, hypotheses, and their labels.
+원본 SNLI 데이터셋은 저희가 실험에서 실제로 필요로 하는 것보다 훨씬 풍부한 정보를 담고 있습니다. 따라서 데이터셋의 일부만을 추출한 다음, 전제, 가설, 그리고 그 레이블의 리스트를 반환하는 `read_snli` 함수를 정의합니다.
 
 ```{.python .input}
 #@tab all
@@ -111,7 +111,7 @@ def read_snli(data_dir, is_train):
     return premises, hypotheses, labels
 ```
 
-Now let's [**print the first 3 pairs**] of premise and hypothesis, as well as their labels ("0", "1", and "2" correspond to "entailment", "contradiction", and "neutral", respectively ).
+이제 전제와 가설의 [**처음 3쌍을 출력**]해 보겠습니다. 그 레이블("0", "1", "2"는 각각 "함의", "모순", "중립"에 해당)도 함께 출력합니다.
 
 ```{.python .input}
 #@tab all
@@ -122,11 +122,12 @@ for x0, x1, y in zip(train_data[0][:3], train_data[1][:3], train_data[2][:3]):
     print('label:', y)
 ```
 
-The training set has about 550000 pairs,
-and the testing set has about 10000 pairs.
-The following shows that 
-the three [**labels "entailment", "contradiction", and "neutral" are balanced**] in 
-both the training set and the testing set.
+학습 세트는 약 550000쌍을 가지고 있고,
+테스트 세트는 약 10000쌍을 가지고 있습니다.
+다음은
+학습 세트와 테스트 세트 모두에서
+[**"함의", "모순", "중립" 세 가지 레이블이 균형을 이루고 있음**]을
+보여줍니다.
 
 ```{.python .input}
 #@tab all
@@ -135,12 +136,12 @@ for data in [train_data, test_data]:
     print([[row for row in data[2]].count(i) for i in range(3)])
 ```
 
-### [**Defining a Class for Loading the Dataset**]
+### [**데이터셋 로딩을 위한 클래스 정의하기**]
 
-Below we define a class for loading the SNLI dataset by inheriting from the `Dataset` class in Gluon. The argument `num_steps` in the class constructor specifies the length of a text sequence so that each minibatch of sequences will have the same shape. 
-In other words,
-tokens after the first `num_steps` ones in longer sequence are trimmed, while special tokens “&lt;pad&gt;” will be appended to shorter sequences until their length becomes `num_steps`.
-By implementing the `__getitem__` function, we can arbitrarily access the premise, hypothesis, and label with the index `idx`.
+아래에서 저희는 Gluon의 `Dataset` 클래스를 상속하여 SNLI 데이터셋을 로드하기 위한 클래스를 정의합니다. 클래스 생성자의 `num_steps` 인자는 텍스트 시퀀스의 길이를 지정하여 시퀀스의 각 미니배치가 같은 형상을 갖도록 합니다.
+다시 말해,
+긴 시퀀스에서 처음 `num_steps`개 이후의 토큰은 잘라내며, 짧은 시퀀스에는 그 길이가 `num_steps`가 될 때까지 특수 토큰 “&lt;pad&gt;”가 추가됩니다.
+`__getitem__` 함수를 구현함으로써, 인덱스 `idx`로 전제, 가설, 레이블에 임의로 접근할 수 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -204,12 +205,11 @@ class SNLIDataset(torch.utils.data.Dataset):
         return len(self.premises)
 ```
 
-### [**Putting It All Together**]
+### [**모두 통합하기**]
 
-Now we can invoke the `read_snli` function and the `SNLIDataset` class to download the SNLI dataset and return `DataLoader` instances for both training and testing sets, together with the vocabulary of the training set.
-It is noteworthy that we must use the vocabulary constructed from the training set
-as that of the testing set. 
-As a result, any new token from the testing set will be unknown to the model trained on the training set.
+이제 SNLI 데이터셋을 다운로드하고 학습 및 테스트 세트 모두에 대한 `DataLoader` 인스턴스를 학습 세트의 어휘와 함께 반환하기 위해 `read_snli` 함수와 `SNLIDataset` 클래스를 호출할 수 있습니다.
+주목할 점은 저희가 학습 세트로부터 구성된 어휘를 테스트 세트의 어휘로도 반드시 사용해야 한다는 것입니다.
+결과적으로, 테스트 세트의 어떤 새로운 토큰도 학습 세트로 학습된 모델에게는 미지의 것이 됩니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -249,9 +249,9 @@ def load_data_snli(batch_size, num_steps=50):
     return train_iter, test_iter, train_set.vocab
 ```
 
-Here we set the batch size to 128 and sequence length to 50,
-and invoke the `load_data_snli` function to get the data iterators and vocabulary.
-Then we print the vocabulary size.
+여기서 저희는 배치 크기를 128, 시퀀스 길이를 50으로 설정하고,
+데이터 이터레이터와 어휘를 얻기 위해 `load_data_snli` 함수를 호출합니다.
+그런 다음 어휘 크기를 출력합니다.
 
 ```{.python .input}
 #@tab all
@@ -259,9 +259,9 @@ train_iter, test_iter, vocab = load_data_snli(128, 50)
 len(vocab)
 ```
 
-Now we print the shape of the first minibatch.
-Contrary to sentiment analysis,
-we have two inputs `X[0]` and `X[1]` representing pairs of premises and hypotheses.
+이제 첫 번째 미니배치의 형상을 출력합니다.
+감성 분석과는 달리,
+전제와 가설의 쌍을 나타내는 두 입력 `X[0]`과 `X[1]`이 있습니다.
 
 ```{.python .input}
 #@tab all
@@ -272,22 +272,22 @@ for X, Y in train_iter:
     break
 ```
 
-## Summary
+## 요약
 
-* Natural language inference studies whether a hypothesis can be inferred from a premise, where both are a text sequence.
-* In natural language inference, relationships between premises and hypotheses include entailment, contradiction, and neutral.
-* Stanford Natural Language Inference (SNLI) Corpus is a popular benchmark dataset of natural language inference.
+* 자연어 추론은 가설이 전제로부터 추론될 수 있는지를 연구하며, 둘 다 텍스트 시퀀스입니다.
+* 자연어 추론에서 전제와 가설 간의 관계는 함의, 모순, 중립을 포함합니다.
+* 스탠퍼드 자연어 추론(SNLI) 코퍼스는 자연어 추론의 인기 있는 벤치마크 데이터셋입니다.
 
 
-## Exercises
+## 연습문제
 
-1. Machine translation has long been evaluated based on superficial $n$-gram matching between an output translation and a ground-truth translation. Can you design a measure for evaluating machine translation results by using natural language inference?
-1. How can we change hyperparameters to reduce the vocabulary size?
+1. 기계 번역은 오랫동안 출력 번역과 정답 번역 간의 표면적인 $n$-그램 일치에 기반하여 평가되어 왔습니다. 자연어 추론을 사용하여 기계 번역 결과를 평가하기 위한 측정 지표를 설계할 수 있겠습니까?
+1. 어휘 크기를 줄이기 위해 하이퍼파라미터를 어떻게 변경할 수 있습니까?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/394)
+[토론](https://discuss.d2l.ai/t/394)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1388)
+[토론](https://discuss.d2l.ai/t/1388)
 :end_tab:

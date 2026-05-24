@@ -3,37 +3,35 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Padding and Stride
+# 패딩과 스트라이드
 :label:`sec_padding`
 
-Recall the example of a convolution in :numref:`fig_correlation`. 
-The input had both a height and width of 3
-and the convolution kernel had both a height and width of 2,
-yielding an output representation with dimension $2\times2$.
-Assuming that the input shape is $n_\textrm{h}\times n_\textrm{w}$
-and the convolution kernel shape is $k_\textrm{h}\times k_\textrm{w}$,
-the output shape will be $(n_\textrm{h}-k_\textrm{h}+1) \times (n_\textrm{w}-k_\textrm{w}+1)$: 
-we can only shift the convolution kernel so far until it runs out
-of pixels to apply the convolution to. 
+:numref:`fig_correlation`에서의 합성곱 예제를 떠올려 보세요.
+입력은 높이와 너비가 모두 3이었고
+합성곱 커널은 높이와 너비가 모두 2였으며,
+$2\times2$ 차원의 출력 표현을 산출했습니다.
+입력 모양이 $n_\textrm{h}\times n_\textrm{w}$이고
+합성곱 커널 모양이 $k_\textrm{h}\times k_\textrm{w}$라고 가정할 때,
+출력 모양은 $(n_\textrm{h}-k_\textrm{h}+1) \times (n_\textrm{w}-k_\textrm{w}+1)$이 됩니다.
+저희는 합성곱을 적용할 픽셀이 다 떨어질 때까지만
+합성곱 커널을 이동시킬 수 있습니다.
 
-In the following we will explore a number of techniques, 
-including padding and strided convolutions,
-that offer more control over the size of the output. 
-As motivation, note that since kernels generally
-have width and height greater than $1$,
-after applying many successive convolutions,
-we tend to wind up with outputs that are
-considerably smaller than our input.
-If we start with a $240 \times 240$ pixel image,
-ten layers of $5 \times 5$ convolutions
-reduce the image to $200 \times 200$ pixels,
-slicing off $30 \%$ of the image and with it
-obliterating any interesting information
-on the boundaries of the original image.
-*Padding* is the most popular tool for handling this issue.
-In other cases, we may want to reduce the dimensionality drastically,
-e.g., if we find the original input resolution to be unwieldy.
-*Strided convolutions* are a popular technique that can help in these instances.
+다음에서 저희는 출력 크기를 더 잘 제어할 수 있는
+패딩과 스트라이드 합성곱을 포함한
+여러 기법을 탐색할 것입니다.
+동기로서, 커널은 일반적으로 너비와 높이가 $1$보다 크기 때문에,
+많은 연속적인 합성곱을 적용한 후에는
+입력보다 상당히 작은 출력을 얻게 되는 경향이 있다는 점에
+주목하세요.
+$240 \times 240$ 픽셀 이미지로 시작한다면,
+$5 \times 5$ 합성곱의 열 개 계층은 이미지를
+$200 \times 200$ 픽셀로 줄여,
+이미지의 $30 \%$를 잘라내고 그와 함께
+원본 이미지 경계의 흥미로운 정보를 모두 지워버립니다.
+*패딩*은 이 문제를 처리하기 위한 가장 인기 있는 도구입니다.
+다른 경우에는, 원본 입력 해상도가 다루기 어렵다고 판단되는 경우 등,
+차원성을 극적으로 줄이고 싶을 수도 있습니다.
+*스트라이드 합성곱(strided convolution)*은 이러한 경우에 도움이 될 수 있는 인기 있는 기법입니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -61,77 +59,74 @@ import jax
 from jax import numpy as jnp
 ```
 
-## Padding
+## 패딩
 
-As described above, one tricky issue when applying convolutional layers
-is that we tend to lose pixels on the perimeter of our image. Consider :numref:`img_conv_reuse` that depicts the pixel utilization as a function of the convolution kernel size and the position within the image. The pixels in the corners are hardly used at all. 
+위에서 기술한 대로, 합성곱 계층을 적용할 때 까다로운 한 가지 문제는
+이미지 둘레의 픽셀을 잃는 경향이 있다는 것입니다. 합성곱 커널 크기와 이미지 내 위치에 대한 함수로서의 픽셀 활용을 묘사한 :numref:`img_conv_reuse`를 고려해 보세요. 모서리의 픽셀들은 거의 사용되지 않습니다.
 
-![Pixel utilization for convolutions of size $1 \times 1$, $2 \times 2$, and $3 \times 3$ respectively.](../img/conv-reuse.svg)
+![각각 $1 \times 1$, $2 \times 2$, $3 \times 3$ 크기의 합성곱에 대한 픽셀 활용.](../img/conv-reuse.svg)
 :label:`img_conv_reuse`
 
-Since we typically use small kernels,
-for any given convolution
-we might only lose a few pixels
-but this can add up as we apply
-many successive convolutional layers.
-One straightforward solution to this problem
-is to add extra pixels of filler around the boundary of our input image,
-thus increasing the effective size of the image.
-Typically, we set the values of the extra pixels to zero.
-In :numref:`img_conv_pad`, we pad a $3 \times 3$ input,
-increasing its size to $5 \times 5$.
-The corresponding output then increases to a $4 \times 4$ matrix.
-The shaded portions are the first output element as well as the input and kernel tensor elements used for the output computation: $0\times0+0\times1+0\times2+0\times3=0$.
+저희는 일반적으로 작은 커널을 사용하기 때문에,
+주어진 임의의 합성곱에 대해
+몇 개의 픽셀만 잃을 수 있지만,
+많은 연속적인 합성곱 계층을 적용함에 따라
+이는 누적될 수 있습니다.
+이 문제에 대한 한 가지 직관적인 해결책은
+저희 입력 이미지의 경계 주변에 채움용 픽셀을 추가하여,
+이미지의 유효 크기를 늘리는 것입니다.
+일반적으로, 저희는 추가 픽셀의 값을 0으로 설정합니다.
+:numref:`img_conv_pad`에서, 저희는 $3 \times 3$ 입력을 패딩하여
+그 크기를 $5 \times 5$로 늘립니다.
+대응하는 출력은 그러면 $4 \times 4$ 행렬로 늘어납니다.
+음영 처리된 부분은 첫 번째 출력 요소와 출력 계산에 사용된 입력 및 커널 텐서 요소입니다: $0\times0+0\times1+0\times2+0\times3=0$.
 
-![Two-dimensional cross-correlation with padding.](../img/conv-pad.svg)
+![패딩을 사용한 2차원 상호상관.](../img/conv-pad.svg)
 :label:`img_conv_pad`
 
-In general, if we add a total of $p_\textrm{h}$ rows of padding
-(roughly half on top and half on bottom)
-and a total of $p_\textrm{w}$ columns of padding
-(roughly half on the left and half on the right),
-the output shape will be
+일반적으로, 총 $p_\textrm{h}$ 행의 패딩
+(대략 절반은 위쪽, 절반은 아래쪽)과
+총 $p_\textrm{w}$ 열의 패딩
+(대략 절반은 왼쪽, 절반은 오른쪽)을 추가하면,
+출력 모양은 다음과 같이 됩니다.
 
 $$(n_\textrm{h}-k_\textrm{h}+p_\textrm{h}+1)\times(n_\textrm{w}-k_\textrm{w}+p_\textrm{w}+1).$$
 
-This means that the height and width of the output
-will increase by $p_\textrm{h}$ and $p_\textrm{w}$, respectively.
+이는 출력의 높이와 너비가
+각각 $p_\textrm{h}$와 $p_\textrm{w}$만큼 늘어남을 의미합니다.
 
-In many cases, we will want to set $p_\textrm{h}=k_\textrm{h}-1$ and $p_\textrm{w}=k_\textrm{w}-1$
-to give the input and output the same height and width.
-This will make it easier to predict the output shape of each layer
-when constructing the network.
-Assuming that $k_\textrm{h}$ is odd here,
-we will pad $p_\textrm{h}/2$ rows on both sides of the height.
-If $k_\textrm{h}$ is even, one possibility is to
-pad $\lceil p_\textrm{h}/2\rceil$ rows on the top of the input
-and $\lfloor p_\textrm{h}/2\rfloor$ rows on the bottom.
-We will pad both sides of the width in the same way.
+많은 경우, 저희는 입력과 출력에 동일한 높이와 너비를 주기 위해
+$p_\textrm{h}=k_\textrm{h}-1$과 $p_\textrm{w}=k_\textrm{w}-1$로 설정하고 싶을 것입니다.
+이는 네트워크를 구성할 때 각 계층의 출력 모양을 예측하는 것을
+더 쉽게 만들 것입니다.
+여기서 $k_\textrm{h}$가 홀수라고 가정하면,
+저희는 높이의 양쪽에 각각 $p_\textrm{h}/2$ 행을 패딩할 것입니다.
+$k_\textrm{h}$가 짝수라면, 한 가지 가능성은
+입력의 위쪽에 $\lceil p_\textrm{h}/2\rceil$ 행을,
+아래쪽에 $\lfloor p_\textrm{h}/2\rfloor$ 행을 패딩하는 것입니다.
+저희는 너비의 양쪽도 같은 방식으로 패딩할 것입니다.
 
-CNNs commonly use convolution kernels
-with odd height and width values, such as 1, 3, 5, or 7.
-Choosing odd kernel sizes has the benefit
-that we can preserve the dimensionality
-while padding with the same number of rows on top and bottom,
-and the same number of columns on left and right.
+CNN은 일반적으로 1, 3, 5, 7과 같이 홀수의 높이와 너비 값을 가진
+합성곱 커널을 사용합니다.
+홀수 커널 크기를 선택하는 것은
+위쪽과 아래쪽에 동일한 수의 행으로,
+그리고 왼쪽과 오른쪽에 동일한 수의 열로 패딩하면서
+차원성을 유지할 수 있다는 이점이 있습니다.
 
-Moreover, this practice of using odd kernels
-and padding to precisely preserve dimensionality
-offers a clerical benefit.
-For any two-dimensional tensor `X`,
-when the kernel's size is odd
-and the number of padding rows and columns
-on all sides are the same,
-thereby producing an output with the same height and width as the input,
-we know that the output `Y[i, j]` is calculated
-by cross-correlation of the input and convolution kernel
-with the window centered on `X[i, j]`.
+게다가, 차원성을 정확히 유지하기 위해 홀수 커널과 패딩을 사용하는
+이 관행은 사무적 이점도 제공합니다.
+임의의 2차원 텐서 `X`에 대해,
+커널의 크기가 홀수이고
+모든 측면에서 패딩 행과 열의 수가 같을 때,
+입력과 동일한 높이와 너비를 가진 출력을 생성하므로,
+저희는 출력 `Y[i, j]`가 `X[i, j]`를 중심으로 한
+윈도우로 입력과 합성곱 커널의 상호상관에 의해
+계산된다는 것을 압니다.
 
-In the following example, we create a two-dimensional convolutional layer
-with a height and width of 3
-and (**apply 1 pixel of padding on all sides.**)
-Given an input with a height and width of 8,
-we find that the height and width of the output is also 8.
+다음 예제에서, 저희는 높이와 너비가 3인 2차원 합성곱 계층을 생성하고
+(**모든 측면에 1픽셀의 패딩을 적용**)합니다.
+높이와 너비가 8인 입력이 주어졌을 때,
+저희는 출력의 높이와 너비도 8임을 발견합니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -207,9 +202,9 @@ X = jax.random.uniform(jax.random.PRNGKey(d2l.get_seed()), shape=(8, 8))
 comp_conv2d(conv2d, X).shape
 ```
 
-When the height and width of the convolution kernel are different,
-we can make the output and input have the same height and width
-by [**setting different padding numbers for height and width.**]
+합성곱 커널의 높이와 너비가 다를 때,
+저희는 [**높이와 너비에 다른 패딩 수를 설정**]함으로써
+출력과 입력이 동일한 높이와 너비를 가지도록 할 수 있습니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -243,50 +238,49 @@ conv2d = nn.Conv(1, kernel_size=(5, 3), padding=(2, 1))
 comp_conv2d(conv2d, X).shape
 ```
 
-## Stride
+## 스트라이드
 
-When computing the cross-correlation,
-we start with the convolution window
-at the upper-left corner of the input tensor,
-and then slide it over all locations both down and to the right.
-In the previous examples, we defaulted to sliding one element at a time.
-However, sometimes, either for computational efficiency
-or because we wish to downsample,
-we move our window more than one element at a time,
-skipping the intermediate locations. This is particularly useful if the convolution 
-kernel is large since it captures a large area of the underlying image.
+상호상관을 계산할 때,
+저희는 입력 텐서의 왼쪽 위 모서리에서 합성곱 윈도우로 시작하여,
+그 다음 모든 위치에 걸쳐 아래쪽과 오른쪽 모두로 그것을 미끄러뜨립니다.
+이전 예제에서, 저희는 기본적으로 한 번에 한 원소씩 미끄러뜨렸습니다.
+하지만 때로는, 계산 효율성을 위해서나
+다운샘플링하고 싶기 때문에,
+저희는 윈도우를 한 번에 두 원소 이상 이동시켜
+중간 위치를 건너뜁니다. 이는 합성곱 커널이
+큰 경우, 기저 이미지의 큰 영역을 포착하므로 특히 유용합니다.
 
-We refer to the number of rows and columns traversed per slide as *stride*.
-So far, we have used strides of 1, both for height and width.
-Sometimes, we may want to use a larger stride.
-:numref:`img_conv_stride` shows a two-dimensional cross-correlation operation
-with a stride of 3 vertically and 2 horizontally.
-The shaded portions are the output elements as well as the input and kernel tensor elements used for the output computation: $0\times0+0\times1+1\times2+2\times3=8$, $0\times0+6\times1+0\times2+0\times3=6$.
-We can see that when the second element of the first column is generated,
-the convolution window slides down three rows.
-The convolution window slides two columns to the right
-when the second element of the first row is generated.
-When the convolution window continues to slide two columns to the right on the input,
-there is no output because the input element cannot fill the window
-(unless we add another column of padding).
+저희는 슬라이드당 횡단되는 행과 열의 수를 *스트라이드(stride)*라고 부릅니다.
+지금까지, 저희는 높이와 너비 모두에 대해 1의 스트라이드를 사용해 왔습니다.
+때로는, 저희는 더 큰 스트라이드를 사용하고 싶을 수도 있습니다.
+:numref:`img_conv_stride`는 수직으로 3, 수평으로 2의 스트라이드를 가진
+2차원 상호상관 연산을 보여줍니다.
+음영 처리된 부분은 출력 요소와 출력 계산에 사용된 입력 및 커널 텐서 요소입니다: $0\times0+0\times1+1\times2+2\times3=8$, $0\times0+6\times1+0\times2+0\times3=6$.
+첫 번째 열의 두 번째 원소가 생성될 때,
+합성곱 윈도우가 세 행 아래로 미끄러진다는 것을 볼 수 있습니다.
+첫 번째 행의 두 번째 원소가 생성될 때
+합성곱 윈도우는 오른쪽으로 두 열 미끄러집니다.
+합성곱 윈도우가 입력에서 계속해서 오른쪽으로 두 열 미끄러지면,
+입력 원소가 윈도우를 채울 수 없기 때문에 출력이 없습니다
+(다른 열의 패딩을 추가하지 않는 한).
 
-![Cross-correlation with strides of 3 and 2 for height and width, respectively.](../img/conv-stride.svg)
+![각각 높이와 너비에 대해 3과 2의 스트라이드를 가진 상호상관.](../img/conv-stride.svg)
 :label:`img_conv_stride`
 
-In general, when the stride for the height is $s_\textrm{h}$
-and the stride for the width is $s_\textrm{w}$, the output shape is
+일반적으로, 높이에 대한 스트라이드가 $s_\textrm{h}$이고
+너비에 대한 스트라이드가 $s_\textrm{w}$일 때, 출력 모양은 다음과 같습니다.
 
 $$\lfloor(n_\textrm{h}-k_\textrm{h}+p_\textrm{h}+s_\textrm{h})/s_\textrm{h}\rfloor \times \lfloor(n_\textrm{w}-k_\textrm{w}+p_\textrm{w}+s_\textrm{w})/s_\textrm{w}\rfloor.$$
 
-If we set $p_\textrm{h}=k_\textrm{h}-1$ and $p_\textrm{w}=k_\textrm{w}-1$,
-then the output shape can be simplified to
-$\lfloor(n_\textrm{h}+s_\textrm{h}-1)/s_\textrm{h}\rfloor \times \lfloor(n_\textrm{w}+s_\textrm{w}-1)/s_\textrm{w}\rfloor$.
-Going a step further, if the input height and width
-are divisible by the strides on the height and width,
-then the output shape will be $(n_\textrm{h}/s_\textrm{h}) \times (n_\textrm{w}/s_\textrm{w})$.
+만약 저희가 $p_\textrm{h}=k_\textrm{h}-1$과 $p_\textrm{w}=k_\textrm{w}-1$로 설정한다면,
+출력 모양은
+$\lfloor(n_\textrm{h}+s_\textrm{h}-1)/s_\textrm{h}\rfloor \times \lfloor(n_\textrm{w}+s_\textrm{w}-1)/s_\textrm{w}\rfloor$로 단순화될 수 있습니다.
+한 단계 더 나아가, 입력 높이와 너비가
+높이와 너비의 스트라이드로 나누어떨어진다면,
+출력 모양은 $(n_\textrm{h}/s_\textrm{h}) \times (n_\textrm{w}/s_\textrm{w})$이 될 것입니다.
 
-Below, we [**set the strides on both the height and width to 2**],
-thus halving the input height and width.
+아래에서, 저희는 [**높이와 너비 모두에 대해 스트라이드를 2로 설정**]하여,
+입력 높이와 너비를 절반으로 만듭니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -312,7 +306,7 @@ conv2d = nn.Conv(1, kernel_size=(3, 3), padding=1, strides=2)
 comp_conv2d(conv2d, X).shape
 ```
 
-Let's look at (**a slightly more complicated example**).
+(**조금 더 복잡한 예제**)를 살펴봅시다.
 
 ```{.python .input}
 %%tab mxnet
@@ -339,37 +333,37 @@ conv2d = nn.Conv(1, kernel_size=(3, 5), padding=(0, 1), strides=(3, 4))
 comp_conv2d(conv2d, X).shape
 ```
 
-## Summary and Discussion
+## 요약 및 논의
 
-Padding can increase the height and width of the output. This is often used to give the output the same height and width as the input to avoid undesirable shrinkage of the output. Moreover, it ensures that all pixels are used equally frequently. Typically we pick symmetric padding on both sides of the input height and width. In this case we refer to $(p_\textrm{h}, p_\textrm{w})$ padding. Most commonly we set $p_\textrm{h} = p_\textrm{w}$, in which case we simply state that we choose padding $p$. 
+패딩은 출력의 높이와 너비를 늘릴 수 있습니다. 이는 출력의 바람직하지 않은 수축을 피하기 위해 출력에 입력과 동일한 높이와 너비를 부여하는 데 자주 사용됩니다. 게다가, 그것은 모든 픽셀이 동등하게 자주 사용되도록 보장합니다. 일반적으로 저희는 입력 높이와 너비의 양쪽에 대칭 패딩을 선택합니다. 이 경우 저희는 $(p_\textrm{h}, p_\textrm{w})$ 패딩이라고 지칭합니다. 가장 흔하게는 $p_\textrm{h} = p_\textrm{w}$로 설정하며, 이 경우 저희는 단순히 패딩 $p$를 선택했다고 말합니다.
 
-A similar convention applies to strides. When horizontal stride $s_\textrm{h}$ and vertical stride $s_\textrm{w}$ match, we simply talk about stride $s$. The stride can reduce the resolution of the output, for example reducing the height and width of the output to only $1/n$ of the height and width of the input for $n > 1$. By default, the padding is 0 and the stride is 1. 
+스트라이드에도 비슷한 관례가 적용됩니다. 수평 스트라이드 $s_\textrm{h}$와 수직 스트라이드 $s_\textrm{w}$가 일치할 때, 저희는 단순히 스트라이드 $s$에 대해 이야기합니다. 스트라이드는 출력의 해상도를 줄일 수 있으며, 예를 들어 $n > 1$일 때 출력의 높이와 너비를 입력의 높이와 너비의 $1/n$으로만 줄입니다. 기본적으로, 패딩은 0이고 스트라이드는 1입니다.
 
-So far all padding that we discussed simply extended images with zeros. This has significant computational benefit since it is trivial to accomplish. Moreover, operators can be engineered to take advantage of this padding implicitly without the need to allocate additional memory. At the same time, it allows CNNs to encode implicit position information within an image, simply by learning where the "whitespace" is. There are many alternatives to zero-padding. :citet:`Alsallakh.Kokhlikyan.Miglani.ea.2020` provided an extensive overview of those (albeit without a clear case for when to use nonzero paddings unless artifacts occur). 
+지금까지 저희가 논의한 모든 패딩은 단순히 이미지를 0으로 확장했습니다. 이것을 달성하기는 쉽기 때문에 상당한 계산상의 이점이 있습니다. 게다가, 연산자는 추가 메모리를 할당할 필요 없이 이 패딩을 암시적으로 활용하도록 설계될 수 있습니다. 동시에, 그것은 CNN이 "여백"이 어디 있는지를 단순히 학습함으로써 이미지 내에서 암시적 위치 정보를 인코딩할 수 있도록 허용합니다. 0-패딩의 많은 대안이 있습니다. :citet:`Alsallakh.Kokhlikyan.Miglani.ea.2020`은 이러한 것들에 대한 광범위한 개요를 제공했습니다(다만 아티팩트가 발생하지 않는 한 0이 아닌 패딩을 언제 사용해야 하는지에 대한 명확한 사례는 없습니다).
 
 
-## Exercises
+## 연습문제
 
-1. Given the final code example in this section with kernel size $(3, 5)$, padding $(0, 1)$, and stride $(3, 4)$, 
-   calculate the output shape to check if it is consistent with the experimental result.
-1. For audio signals, what does a stride of 2 correspond to?
-1. Implement mirror padding, i.e., padding where the border values are simply mirrored to extend tensors. 
-1. What are the computational benefits of a stride larger than 1?
-1. What might be statistical benefits of a stride larger than 1?
-1. How would you implement a stride of $\frac{1}{2}$? What does it correspond to? When would this be useful?
+1. 이 절의 마지막 코드 예제에서 커널 크기 $(3, 5)$, 패딩 $(0, 1)$, 스트라이드 $(3, 4)$가 주어졌을 때,
+   실험 결과와 일치하는지 확인하기 위해 출력 모양을 계산하세요.
+1. 오디오 신호에서 2의 스트라이드는 무엇에 대응합니까?
+1. 미러 패딩, 즉 경계 값이 텐서를 확장하기 위해 단순히 거울처럼 비춰지는 패딩을 구현하세요.
+1. 1보다 큰 스트라이드의 계산적 이점은 무엇입니까?
+1. 1보다 큰 스트라이드의 통계적 이점은 무엇일 수 있습니까?
+1. $\frac{1}{2}$의 스트라이드를 어떻게 구현하시겠습니까? 그것은 무엇에 대응합니까? 언제 이것이 유용할까요?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/67)
+[토론](https://discuss.d2l.ai/t/67)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/68)
+[토론](https://discuss.d2l.ai/t/68)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/272)
+[토론](https://discuss.d2l.ai/t/272)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17997)
+[토론](https://discuss.d2l.ai/t/17997)
 :end_tab:

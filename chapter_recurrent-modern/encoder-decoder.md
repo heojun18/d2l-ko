@@ -3,41 +3,16 @@
 tab.interact_select('mxnet', 'pytorch', 'tensorflow', 'jax')
 ```
 
-# The Encoder--Decoder Architecture
+# 인코더-디코더 아키텍처 (The Encoder-Decoder Architecture)
 :label:`sec_encoder-decoder`
 
-In general sequence-to-sequence problems
-like machine translation
-(:numref:`sec_machine_translation`),
-inputs and outputs are of varying lengths
-that are unaligned.
-The standard approach to handling this sort of data
-is to design an *encoder--decoder* architecture (:numref:`fig_encoder_decoder`)
-consisting of two major components:
-an *encoder* that takes a variable-length sequence as input,
-and a *decoder* that acts as a conditional language model,
-taking in the encoded input
-and the leftwards context of the target sequence
-and predicting the subsequent token in the target sequence.
+기계 번역(:numref:`sec_machine_translation`)과 같은 일반적인 시퀀스 대 시퀀스 문제에서, 입력과 출력은 정렬되지 않은 다양한 길이를 가집니다. 이런 종류의 데이터를 다루기 위한 표준 접근 방식은 두 개의 주요 구성 요소로 이루어진 *인코더-디코더(encoder-decoder)* 아키텍처(:numref:`fig_encoder_decoder`)를 설계하는 것입니다. 가변 길이 시퀀스를 입력으로 받는 *인코더(encoder)*와, 조건부 언어 모델로 작동하여 인코딩된 입력과 대상 시퀀스의 왼쪽 문맥을 받아 대상 시퀀스에서의 다음 토큰을 예측하는 *디코더(decoder)*입니다.
 
 
-![The encoder--decoder architecture.](../img/encoder-decoder.svg)
+![인코더-디코더 아키텍처.](../img/encoder-decoder.svg)
 :label:`fig_encoder_decoder`
 
-Let's take machine translation from English to French as an example.
-Given an input sequence in English:
-"They", "are", "watching", ".",
-this encoder--decoder architecture
-first encodes the variable-length input into a state,
-then decodes the state
-to generate the translated sequence,
-token by token, as output:
-"Ils", "regardent", ".".
-Since the encoder--decoder architecture
-forms the basis of different sequence-to-sequence models
-in subsequent sections,
-this section will convert this architecture
-into an interface that will be implemented later.
+영어에서 프랑스어로의 기계 번역을 예시로 들어봅시다. 영어로 된 입력 시퀀스 "They", "are", "watching", "."가 주어지면, 이 인코더-디코더 아키텍처는 먼저 가변 길이 입력을 하나의 상태로 인코딩한 다음, 그 상태를 디코딩하여 번역된 시퀀스를 토큰별로 출력으로 생성합니다. "Ils", "regardent", ".". 인코더-디코더 아키텍처는 이후 절들에서 다양한 시퀀스 대 시퀀스 모델의 기반을 형성하기 때문에, 이 절에서는 이 아키텍처를 이후에 구현될 인터페이스로 변환할 것입니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -63,13 +38,9 @@ from d2l import jax as d2l
 from flax import linen as nn
 ```
 
-## (**Encoder**)
+## (**인코더**)
 
-In the encoder interface,
-we just specify that
-the encoder takes variable-length sequences as input `X`.
-The implementation will be provided
-by any model that inherits this base `Encoder` class.
+인코더 인터페이스에서, 저희는 단지 인코더가 가변 길이 시퀀스를 입력 `X`로 받는다는 것만 명시합니다. 구현은 이 기본 `Encoder` 클래스를 상속하는 어떤 모델에 의해서든 제공될 것입니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -119,22 +90,9 @@ class Encoder(nn.Module):  #@save
         raise NotImplementedError
 ```
 
-## [**Decoder**]
+## [**디코더**]
 
-In the following decoder interface,
-we add an additional `init_state` method
-to convert the encoder output (`enc_all_outputs`)
-into the encoded state.
-Note that this step
-may require extra inputs,
-such as the valid length of the input,
-which was explained
-in :numref:`sec_machine_translation`.
-To generate a variable-length sequence token by token,
-every time the decoder may map an input
-(e.g., the generated token at the previous time step)
-and the encoded state
-into an output token at the current time step.
+다음 디코더 인터페이스에서, 저희는 인코더 출력(`enc_all_outputs`)을 인코딩된 상태로 변환하기 위한 추가적인 `init_state` 메서드를 더합니다. 이 단계는 :numref:`sec_machine_translation`에서 설명되었던 입력의 유효 길이와 같은 추가 입력을 요구할 수 있다는 점에 유의하십시오. 가변 길이 시퀀스를 토큰별로 생성하기 위해, 매번 디코더는 입력(예: 이전 시간 단계에서 생성된 토큰)과 인코딩된 상태를 현재 시간 단계의 출력 토큰으로 매핑할 수 있습니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -196,13 +154,9 @@ class Decoder(nn.Module):  #@save
         raise NotImplementedError
 ```
 
-## [**Putting the Encoder and Decoder Together**]
+## [**인코더와 디코더를 함께 결합하기**]
 
-In the forward propagation,
-the output of the encoder
-is used to produce the encoded state,
-and this state will be further used
-by the decoder as one of its input.
+순방향 전파에서, 인코더의 출력은 인코딩된 상태를 생성하는 데 사용되며, 이 상태는 디코더의 입력 중 하나로 디코더에 의해 추가로 사용될 것입니다.
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -251,42 +205,31 @@ class EncoderDecoder(d2l.Classifier):  #@save
         return self.decoder(dec_X, dec_state, training=self.training)[0]
 ```
 
-In the next section,
-we will see how to apply RNNs to design
-sequence-to-sequence models based on
-this encoder--decoder architecture.
+다음 절에서, 저희는 이 인코더-디코더 아키텍처에 기반한 시퀀스 대 시퀀스 모델을 설계하기 위해 RNN을 적용하는 방법을 보게 될 것입니다.
 
 
-## Summary
+## 요약
 
-Encoder-decoder architectures
-can handle inputs and outputs
-that both consist of variable-length sequences
-and thus are suitable for sequence-to-sequence problems
-such as machine translation.
-The encoder takes a variable-length sequence as input
-and transforms it into a state with a fixed shape.
-The decoder maps the encoded state of a fixed shape
-to a variable-length sequence.
+인코더-디코더 아키텍처는 둘 다 가변 길이 시퀀스로 구성된 입력과 출력을 다룰 수 있으며, 따라서 기계 번역과 같은 시퀀스 대 시퀀스 문제에 적합합니다. 인코더는 가변 길이 시퀀스를 입력으로 받아 고정된 형태의 상태로 변환합니다. 디코더는 고정된 형태의 인코딩된 상태를 가변 길이 시퀀스로 매핑합니다.
 
 
-## Exercises
+## 연습문제
 
-1. Suppose that we use neural networks to implement the encoder--decoder architecture. Do the encoder and the decoder have to be the same type of neural network?
-1. Besides machine translation, can you think of another application where the encoder--decoder architecture can be applied?
+1. 저희가 인코더-디코더 아키텍처를 구현하기 위해 신경망을 사용한다고 가정해 봅시다. 인코더와 디코더가 같은 유형의 신경망이어야 합니까?
+1. 기계 번역 외에, 인코더-디코더 아키텍처가 적용될 수 있는 다른 응용 사례를 생각해 볼 수 있습니까?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/341)
+[토론](https://discuss.d2l.ai/t/341)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1061)
+[토론](https://discuss.d2l.ai/t/1061)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/3864)
+[토론](https://discuss.d2l.ai/t/3864)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18021)
+[토론](https://discuss.d2l.ai/t/18021)
 :end_tab:

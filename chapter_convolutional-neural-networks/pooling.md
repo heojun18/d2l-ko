@@ -3,40 +3,39 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Pooling
+# 풀링
 :label:`sec_pooling`
 
-In many cases our ultimate task asks some global question about the image,
-e.g., *does it contain a cat?* Consequently, the units of our final layer 
-should be sensitive to the entire input.
-By gradually aggregating information, yielding coarser and coarser maps,
-we accomplish this goal of ultimately learning a global representation,
-while keeping all of the advantages of convolutional layers at the intermediate layers of processing.
-The deeper we go in the network,
-the larger the receptive field (relative to the input)
-to which each hidden node is sensitive. Reducing spatial resolution 
-accelerates this process, 
-since the convolution kernels cover a larger effective area. 
+많은 경우 저희의 궁극적인 과제는 이미지에 관한 어떤 전역적인 질문을 던집니다.
+예를 들어, *이미지에 고양이가 있는가?* 결과적으로, 저희의 최종 계층 유닛은
+전체 입력에 민감해야 합니다.
+정보를 점진적으로 집계하여 점점 더 거친 맵을 산출함으로써,
+저희는 중간 처리 계층에서 합성곱 계층의 모든 이점을 유지하면서
+궁극적으로 전역 표현을 학습한다는 이 목표를 달성합니다.
+네트워크에서 더 깊이 들어갈수록,
+각 은닉 노드가 민감한 (입력에 상대적인) 수용 영역은 더 커집니다.
+공간 해상도를 줄이면
+합성곱 커널이 더 큰 유효 영역을 덮으므로
+이 과정이 가속화됩니다.
 
-Moreover, when detecting lower-level features, such as edges
-(as discussed in :numref:`sec_conv_layer`),
-we often want our representations to be somewhat invariant to translation.
-For instance, if we take the image `X`
-with a sharp delineation between black and white
-and shift the whole image by one pixel to the right,
-i.e., `Z[i, j] = X[i, j + 1]`,
-then the output for the new image `Z` might be vastly different.
-The edge will have shifted by one pixel.
-In reality, objects hardly ever occur exactly at the same place.
-In fact, even with a tripod and a stationary object,
-vibration of the camera due to the movement of the shutter
-might shift everything by a pixel or so
-(high-end cameras are loaded with special features to address this problem).
+게다가, 에지와 같은 하위 수준 특성을 검출할 때
+(:numref:`sec_conv_layer`에서 논의한 것처럼),
+저희는 종종 저희의 표현이 이동에 대해 어느 정도 불변이기를 원합니다.
+예를 들어, 흑백 사이에 뚜렷한 경계가 있는 이미지 `X`를 가져다가
+전체 이미지를 오른쪽으로 한 픽셀 이동시키면,
+즉 `Z[i, j] = X[i, j + 1]`로 하면,
+새 이미지 `Z`에 대한 출력은 크게 다를 수 있습니다.
+에지가 한 픽셀 이동되었을 것입니다.
+실제로는, 객체가 정확히 동일한 장소에서 발생하는 경우는 거의 없습니다.
+사실, 삼각대와 정지된 객체가 있더라도,
+셔터 움직임으로 인한 카메라 진동으로
+모든 것이 한 픽셀 정도 이동될 수 있습니다
+(고급 카메라에는 이 문제를 해결하기 위한 특수 기능이 가득합니다).
 
-This section introduces *pooling layers*,
-which serve the dual purposes of
-mitigating the sensitivity of convolutional layers to location
-and of spatially downsampling representations.
+이 절은 *풀링 계층(pooling layers)*을 소개합니다.
+이는 합성곱 계층의 위치에 대한 민감도를 완화하고
+표현을 공간적으로 다운샘플링하는
+이중 목적을 수행합니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -61,47 +60,45 @@ import jax
 from jax import numpy as jnp
 ```
 
-## Maximum Pooling and Average Pooling
+## 최대 풀링 및 평균 풀링
 
-Like convolutional layers, *pooling* operators
-consist of a fixed-shape window that is slid over
-all regions in the input according to its stride,
-computing a single output for each location traversed
-by the fixed-shape window (sometimes known as the *pooling window*).
-However, unlike the cross-correlation computation
-of the inputs and kernels in the convolutional layer,
-the pooling layer contains no parameters (there is no *kernel*).
-Instead, pooling operators are deterministic,
-typically calculating either the maximum or the average value
-of the elements in the pooling window.
-These operations are called *maximum pooling* (*max-pooling* for short)
-and *average pooling*, respectively.
+합성곱 계층과 마찬가지로, *풀링* 연산자는
+스트라이드에 따라 입력의 모든 영역에 걸쳐 미끄러지는
+고정된 모양의 윈도우로 구성되며,
+고정된 모양의 윈도우(때때로 *풀링 윈도우*라고 알려진)에 의해
+횡단되는 각 위치에 대해 단일 출력을 계산합니다.
+하지만, 합성곱 계층에서 입력과 커널의 상호상관 계산과 달리,
+풀링 계층은 매개변수를 포함하지 않습니다 (*커널*이 없습니다).
+대신, 풀링 연산자는 결정적이며,
+일반적으로 풀링 윈도우 내의 원소들의 최댓값이나
+평균값을 계산합니다.
+이러한 연산은 각각 *최대 풀링(maximum pooling)* (줄여서 *맥스 풀링(max-pooling)*)과
+*평균 풀링(average pooling)*이라고 불립니다.
 
-*Average pooling* is essentially as old as CNNs. The idea is akin to 
-downsampling an image. Rather than just taking the value of every second (or third) 
-pixel for the lower resolution image, we can average over adjacent pixels to obtain 
-an image with better signal-to-noise ratio since we are combining the information 
-from multiple adjacent pixels. *Max-pooling* was introduced in 
-:citet:`Riesenhuber.Poggio.1999` in the context of cognitive neuroscience to describe 
-how information aggregation might be aggregated hierarchically for the purpose 
-of object recognition; there already was an earlier version in speech recognition :cite:`Yamaguchi.Sakamoto.Akabane.ea.1990`. In almost all cases, max-pooling, as it is also referred to, 
-is preferable to average pooling. 
+*평균 풀링*은 본질적으로 CNN만큼이나 오래되었습니다. 그 아이디어는 이미지를
+다운샘플링하는 것과 유사합니다. 저해상도 이미지를 위해 모든 두 번째(또는 세 번째)
+픽셀의 값만 취하는 대신, 인접 픽셀에 대해 평균을 내어 여러 인접 픽셀의 정보를
+결합하므로 더 나은 신호 대 잡음비를 가진
+이미지를 얻을 수 있습니다. *맥스 풀링*은
+:citet:`Riesenhuber.Poggio.1999`에서 객체 인식의 목적을 위해
+정보 집계가 어떻게 계층적으로 집계될 수 있는지를 기술하기 위해 인지신경과학의 맥락에서
+도입되었습니다. 음성 인식에는 이미 더 이른 버전이 있었습니다 :cite:`Yamaguchi.Sakamoto.Akabane.ea.1990`. 거의 모든 경우에, 맥스 풀링은 그렇게도 불리는데,
+평균 풀링보다 선호됩니다.
 
-In both cases, as with the cross-correlation operator,
-we can think of the pooling window
-as starting from the upper-left of the input tensor
-and sliding across it from left to right and top to bottom.
-At each location that the pooling window hits,
-it computes the maximum or average
-value of the input subtensor in the window,
-depending on whether max or average pooling is employed.
+두 경우 모두, 상호상관 연산자와 마찬가지로,
+저희는 풀링 윈도우를 입력 텐서의 왼쪽 위에서 시작하여
+왼쪽에서 오른쪽으로, 위에서 아래로 그것을 가로질러 미끄러지는 것으로
+생각할 수 있습니다.
+풀링 윈도우가 도달하는 각 위치에서,
+맥스 풀링이 사용되는지 평균 풀링이 사용되는지에 따라
+윈도우 내 입력 부분 텐서의 최댓값이나 평균값을 계산합니다.
 
 
-![Max-pooling with a pooling window shape of $2\times 2$. The shaded portions are the first output element as well as the input tensor elements used for the output computation: $\max(0, 1, 3, 4)=4$.](../img/pooling.svg)
+![$2\times 2$ 모양의 풀링 윈도우를 가진 맥스 풀링. 음영 처리된 부분은 첫 번째 출력 요소와 출력 계산에 사용된 입력 텐서 요소입니다: $\max(0, 1, 3, 4)=4$.](../img/pooling.svg)
 :label:`fig_pooling`
 
-The output tensor in :numref:`fig_pooling`  has a height of 2 and a width of 2.
-The four elements are derived from the maximum value in each pooling window:
+:numref:`fig_pooling`의 출력 텐서는 높이 2와 너비 2를 가집니다.
+네 원소는 각 풀링 윈도우에서의 최댓값으로부터 도출됩니다.
 
 $$
 \max(0, 1, 3, 4)=4,\\
@@ -110,24 +107,22 @@ $$
 \max(4, 5, 7, 8)=8.\\
 $$
 
-More generally, we can define a $p \times q$ pooling layer by aggregating over 
-a region of said size. Returning to the problem of edge detection, 
-we use the output of the convolutional layer
-as input for $2\times 2$ max-pooling.
-Denote by `X` the input of the convolutional layer input and `Y` the pooling layer output. 
-Regardless of whether or not the values of `X[i, j]`, `X[i, j + 1]`, 
-`X[i+1, j]` and `X[i+1, j + 1]` are different,
-the pooling layer always outputs `Y[i, j] = 1`.
-That is to say, using the $2\times 2$ max-pooling layer,
-we can still detect if the pattern recognized by the convolutional layer
-moves no more than one element in height or width.
+더 일반적으로, 저희는 해당 크기의 영역에 대해 집계함으로써
+$p \times q$ 풀링 계층을 정의할 수 있습니다. 에지 검출 문제로 돌아가서,
+저희는 합성곱 계층의 출력을 $2\times 2$ 맥스 풀링의 입력으로 사용합니다.
+`X`를 합성곱 계층의 입력으로, `Y`를 풀링 계층의 출력으로 표기합시다.
+`X[i, j]`, `X[i, j + 1]`, `X[i+1, j]`, `X[i+1, j + 1]`의 값이
+다른지 여부에 관계없이,
+풀링 계층은 항상 `Y[i, j] = 1`을 출력합니다.
+즉, $2\times 2$ 맥스 풀링 계층을 사용하면,
+합성곱 계층에 의해 인식된 패턴이 높이나 너비에서 한 원소를 넘지 않게
+이동하는 경우 여전히 그것을 검출할 수 있습니다.
 
-In the code below, we (**implement the forward propagation
-of the pooling layer**) in the `pool2d` function.
-This function is similar to the `corr2d` function
-in :numref:`sec_conv_layer`.
-However, no kernel is needed, computing the output
-as either the maximum or the average of each region in the input.
+아래 코드에서, 저희는 `pool2d` 함수에서
+(**풀링 계층의 순전파를 구현**)합니다.
+이 함수는 :numref:`sec_conv_layer`의 `corr2d` 함수와 유사합니다.
+하지만, 커널이 필요 없으며,
+출력은 입력의 각 영역의 최댓값이나 평균값으로 계산됩니다.
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -173,7 +168,7 @@ def pool2d(X, pool_size, mode='max'):
     return Y
 ```
 
-We can construct the input tensor `X` in :numref:`fig_pooling` to [**validate the output of the two-dimensional max-pooling layer**].
+저희는 [**2차원 맥스 풀링 계층의 출력을 검증하기 위해**] :numref:`fig_pooling`에서 입력 텐서 `X`를 구성할 수 있습니다.
 
 ```{.python .input}
 %%tab all
@@ -181,27 +176,27 @@ X = d2l.tensor([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0], [6.0, 7.0, 8.0]])
 pool2d(X, (2, 2))
 ```
 
-Also, we can experiment with (**the average pooling layer**).
+또한, 저희는 (**평균 풀링 계층**)으로 실험해 볼 수 있습니다.
 
 ```{.python .input}
 %%tab all
 pool2d(X, (2, 2), 'avg')
 ```
 
-## [**Padding and Stride**]
+## [**패딩과 스트라이드**]
 
-As with convolutional layers, pooling layers
-change the output shape.
-And as before, we can adjust the operation to achieve a desired output shape
-by padding the input and adjusting the stride.
-We can demonstrate the use of padding and strides
-in pooling layers via the built-in two-dimensional max-pooling layer from the deep learning framework.
-We first construct an input tensor `X` whose shape has four dimensions,
-where the number of examples (batch size) and number of channels are both 1.
+합성곱 계층과 마찬가지로, 풀링 계층도
+출력 모양을 변경합니다.
+그리고 이전과 마찬가지로, 저희는 입력을 패딩하고 스트라이드를 조정함으로써
+원하는 출력 모양을 얻기 위해 연산을 조정할 수 있습니다.
+저희는 딥러닝 프레임워크의 내장 2차원 맥스 풀링 계층을 통해
+풀링 계층에서의 패딩과 스트라이드 사용을 시연할 수 있습니다.
+저희는 먼저 예제의 수(배치 크기)와 채널 수가 모두 1인,
+모양에 네 차원이 있는 입력 텐서 `X`를 구성합니다.
 
 :begin_tab:`tensorflow`
-Note that unlike other frameworks, TensorFlow
-prefers and is optimized for *channels-last* input.
+다른 프레임워크와 달리, TensorFlow는
+*channels-last* 입력을 선호하고 그것에 최적화되어 있다는 점에 주목하세요.
 :end_tab:
 
 ```{.python .input}
@@ -216,8 +211,7 @@ X = d2l.reshape(d2l.arange(16, dtype=d2l.float32), (1, 4, 4, 1))
 X
 ```
 
-Since pooling aggregates information from an area, (**deep learning frameworks default to matching pooling window sizes and stride.**) For instance, if we use a pooling window of shape `(3, 3)`
-we get a stride shape of `(3, 3)` by default.
+풀링은 영역으로부터 정보를 집계하기 때문에, (**딥러닝 프레임워크는 풀링 윈도우 크기와 스트라이드를 일치시키는 것을 기본값으로 합니다.**) 예를 들어, 모양 `(3, 3)`의 풀링 윈도우를 사용하면 기본적으로 `(3, 3)`의 스트라이드 모양을 얻습니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -246,7 +240,7 @@ pool2d(X)
 nn.max_pool(X, window_shape=(3, 3), strides=(3, 3))
 ```
 
-Needless to say, [**the stride and padding can be manually specified**] to override framework defaults if required.
+말할 필요도 없이, 필요한 경우 프레임워크 기본값을 재정의하기 위해 [**스트라이드와 패딩을 수동으로 지정할 수 있습니다**].
 
 ```{.python .input}
 %%tab mxnet
@@ -275,7 +269,7 @@ X_padded = jnp.pad(X, ((0, 0), (1, 0), (1, 0), (0, 0)), mode='constant')
 nn.max_pool(X_padded, window_shape=(3, 3), padding='VALID', strides=(2, 2))
 ```
 
-Of course, we can specify an arbitrary rectangular pooling window with arbitrary height and width respectively, as the example below shows.
+물론, 저희는 아래 예제가 보여주는 것처럼 각각 임의의 높이와 너비를 가진 임의의 직사각형 풀링 윈도우를 지정할 수 있습니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -306,20 +300,19 @@ X_padded = jnp.pad(X, ((0, 0), (0, 0), (1, 1), (0, 0)), mode='constant')
 nn.max_pool(X_padded, window_shape=(2, 3), strides=(2, 3), padding='VALID')
 ```
 
-## Multiple Channels
+## 다중 채널
 
-When processing multi-channel input data,
-[**the pooling layer pools each input channel separately**],
-rather than summing the inputs up over channels
-as in a convolutional layer.
-This means that the number of output channels for the pooling layer
-is the same as the number of input channels.
-Below, we will concatenate tensors `X` and `X + 1`
-on the channel dimension to construct an input with two channels.
+다중 채널 입력 데이터를 처리할 때,
+[**풀링 계층은 합성곱 계층에서처럼 채널에 걸쳐 입력을 합산하기보다,
+각 입력 채널을 별도로 풀링**]합니다.
+이는 풀링 계층의 출력 채널 수가
+입력 채널 수와 같음을 의미합니다.
+아래에서, 저희는 채널 차원에서 텐서 `X`와 `X + 1`을 연결하여
+두 채널을 가진 입력을 구성할 것입니다.
 
 :begin_tab:`tensorflow`
-Note that this will require a
-concatenation along the last dimension for TensorFlow due to the channels-last syntax.
+이는 channels-last 구문 때문에 TensorFlow에서는 마지막 차원을 따라
+연결해야 한다는 점에 주목하세요.
 :end_tab:
 
 ```{.python .input}
@@ -335,7 +328,7 @@ X = d2l.concat([X, X + 1], 3)
 X
 ```
 
-As we can see, the number of output channels is still two after pooling.
+보시다시피, 풀링 후에도 출력 채널 수는 여전히 두 개입니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -366,45 +359,45 @@ nn.max_pool(X_padded, window_shape=(3, 3), padding='VALID', strides=(2, 2))
 ```
 
 :begin_tab:`tensorflow`
-Note that the output for the TensorFlow pooling appears at first glance to be different, however
-numerically the same results are presented as MXNet and PyTorch.
-The difference lies in the dimensionality, and reading the
-output vertically yields the same output as the other implementations.
+TensorFlow 풀링의 출력은 언뜻 보기에는 다르게 나타나지만,
+수치적으로는 MXNet 및 PyTorch와 동일한 결과가 제시된다는 점에 주목하세요.
+차이는 차원성에 있으며, 출력을 수직으로 읽으면 다른 구현과
+동일한 출력이 산출됩니다.
 :end_tab:
 
-## Summary
+## 요약
 
-Pooling is an exceedingly simple operation. It does exactly what its name indicates, aggregate results over a window of values. All convolution semantics, such as strides and padding apply in the same way as they did previously. Note that pooling is indifferent to channels, i.e., it leaves the number of channels unchanged and it applies to each channel separately. Lastly, of the two popular pooling choices, max-pooling is preferable to average pooling, as it confers some degree of invariance to output. A popular choice is to pick a pooling window size of $2 \times 2$ to quarter the spatial resolution of output. 
+풀링은 매우 단순한 연산입니다. 이름이 나타내는 그대로의 일을 합니다. 값들의 윈도우에 대해 결과를 집계하는 것입니다. 스트라이드와 패딩과 같은 모든 합성곱 의미론은 이전과 같은 방식으로 적용됩니다. 풀링은 채널에 무관함, 즉 채널 수를 변경하지 않은 채로 두고 각 채널에 별도로 적용된다는 점에 주목하세요. 마지막으로, 두 가지 인기 있는 풀링 선택 중 맥스 풀링은 출력에 어느 정도의 불변성을 부여하므로 평균 풀링보다 선호됩니다. 인기 있는 선택은 출력의 공간 해상도를 4분의 1로 만들기 위해 $2 \times 2$의 풀링 윈도우 크기를 고르는 것입니다.
 
-Note that there are many more ways of reducing resolution beyond pooling. For instance, in stochastic pooling :cite:`Zeiler.Fergus.2013` and fractional max-pooling :cite:`Graham.2014` aggregation is combined with randomization. This can slightly improve the accuracy in some cases. Lastly, as we will see later with the attention mechanism, there are more refined ways of aggregating over outputs, e.g., by using the alignment between a query and representation vectors. 
+풀링 이외에도 해상도를 줄이는 더 많은 방법이 있다는 점에 주목하세요. 예를 들어, 확률적 풀링(stochastic pooling) :cite:`Zeiler.Fergus.2013`과 분수 맥스 풀링(fractional max-pooling) :cite:`Graham.2014`에서 집계는 무작위화와 결합됩니다. 이는 어떤 경우에는 정확도를 약간 향상시킬 수 있습니다. 마지막으로, 저희가 어텐션 메커니즘에서 나중에 볼 것처럼, 예를 들어 쿼리와 표현 벡터 사이의 정렬을 사용하는 등 출력에 걸쳐 집계하는 더 정교한 방법이 있습니다.
 
 
-## Exercises
+## 연습문제
 
-1. Implement average pooling through a convolution. 
-1. Prove that max-pooling cannot be implemented through a convolution alone. 
-1. Max-pooling can be accomplished using ReLU operations, i.e., $\textrm{ReLU}(x) = \max(0, x)$.
-    1. Express $\max (a, b)$ by using only ReLU operations.
-    1. Use this to implement max-pooling by means of convolutions and ReLU layers. 
-    1. How many channels and layers do you need for a $2 \times 2$ convolution? How many for a $3 \times 3$ convolution?
-1. What is the computational cost of the pooling layer? Assume that the input to the pooling layer is of size $c\times h\times w$, the pooling window has a shape of $p_\textrm{h}\times p_\textrm{w}$ with a padding of $(p_\textrm{h}, p_\textrm{w})$ and a stride of $(s_\textrm{h}, s_\textrm{w})$.
-1. Why do you expect max-pooling and average pooling to work differently?
-1. Do we need a separate minimum pooling layer? Can you replace it with another operation?
-1. We could use the softmax operation for pooling. Why might it not be so popular?
+1. 합성곱을 통해 평균 풀링을 구현하세요.
+1. 맥스 풀링이 합성곱만으로 구현될 수 없음을 증명하세요.
+1. 맥스 풀링은 ReLU 연산을 사용하여, 즉 $\textrm{ReLU}(x) = \max(0, x)$로 달성될 수 있습니다.
+    1. ReLU 연산만 사용하여 $\max (a, b)$를 표현하세요.
+    1. 이것을 사용하여 합성곱과 ReLU 계층을 통해 맥스 풀링을 구현하세요.
+    1. $2 \times 2$ 합성곱에 얼마나 많은 채널과 계층이 필요합니까? $3 \times 3$ 합성곱에는 얼마나 많이 필요합니까?
+1. 풀링 계층의 계산 비용은 얼마입니까? 풀링 계층의 입력이 $c\times h\times w$ 크기이고, 풀링 윈도우가 $(p_\textrm{h}, p_\textrm{w})$의 패딩과 $(s_\textrm{h}, s_\textrm{w})$의 스트라이드를 가진 $p_\textrm{h}\times p_\textrm{w}$의 모양이라고 가정하세요.
+1. 왜 맥스 풀링과 평균 풀링이 다르게 작동할 것으로 기대합니까?
+1. 별도의 최소 풀링 계층이 필요합니까? 그것을 다른 연산으로 대체할 수 있습니까?
+1. 저희는 풀링을 위해 소프트맥스 연산을 사용할 수 있을 것입니다. 왜 그것이 그렇게 인기가 없을 수 있습니까?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/71)
+[토론](https://discuss.d2l.ai/t/71)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/72)
+[토론](https://discuss.d2l.ai/t/72)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/274)
+[토론](https://discuss.d2l.ai/t/274)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17999)
+[토론](https://discuss.d2l.ai/t/17999)
 :end_tab:
 

@@ -1,21 +1,14 @@
-# Dog Breed Identification (ImageNet Dogs) on Kaggle
+# Kaggle 개 품종 식별(ImageNet Dogs)
 
-In this section, we will practice
-the dog breed identification problem on
-Kaggle. (**The web address of this competition is https://www.kaggle.com/c/dog-breed-identification**)
+이 절에서, 저희는 Kaggle에서의 개 품종 식별 문제를 연습할 것입니다. (**이 대회의 웹 주소는 https://www.kaggle.com/c/dog-breed-identification 입니다**)
 
-In this competition,
-120 different breeds of dogs will be recognized.
-In fact,
-the dataset for this competition is
-a subset of the ImageNet dataset.
-Unlike the images in the CIFAR-10 dataset in :numref:`sec_kaggle_cifar10`,
-the images in the ImageNet dataset are both higher and wider in varying dimensions.
-:numref:`fig_kaggle_dog` shows the information on the competition's webpage. You need a Kaggle account
-to submit your results.
+이 대회에서는, 120가지의 다양한 개 품종이 인식됩니다.
+사실, 이 대회를 위한 데이터셋은 ImageNet 데이터셋의 부분 집합입니다.
+:numref:`sec_kaggle_cifar10`의 CIFAR-10 데이터셋의 이미지와는 달리, ImageNet 데이터셋의 이미지는 다양한 차원에서 더 높고 넓습니다.
+:numref:`fig_kaggle_dog`는 대회의 웹페이지에 있는 정보를 보여줍니다. 결과를 제출하려면 Kaggle 계정이 필요합니다.
 
 
-![The dog breed identification competition website. The competition dataset can be obtained by clicking the "Data" tab.](../img/kaggle-dog.jpg)
+![개 품종 식별 대회 웹사이트. 대회 데이터셋은 "Data" 탭을 클릭하여 얻을 수 있습니다.](../img/kaggle-dog.jpg)
 :width:`400px`
 :label:`fig_kaggle_dog`
 
@@ -38,32 +31,25 @@ from torch import nn
 import os
 ```
 
-## Obtaining and Organizing the Dataset
+## 데이터셋 가져오기와 정리
 
-The competition dataset is divided into a training set and a test set, which contain 10222 and 10357 JPEG images
-of three RGB (color) channels, respectively.
-Among the training dataset,
-there are 120 breeds of dogs
-such as Labradors, Poodles, Dachshunds, Samoyeds, Huskies, Chihuahuas, and Yorkshire Terriers.
+대회 데이터셋은 훈련 셋과 테스트 셋으로 나뉘는데, 각각 세 RGB(컬러) 채널의 10222개와 10357개의 JPEG 이미지를 포함합니다.
+훈련 데이터셋에는, 래브라도, 푸들, 닥스훈트, 사모예드, 허스키, 치와와, 요크셔 테리어와 같은 120가지의 개 품종이 있습니다.
 
 
-### Downloading the Dataset
+### 데이터셋 다운로드
 
-After logging into Kaggle,
-you can click on the "Data" tab on the
-competition webpage shown in :numref:`fig_kaggle_dog` and download the dataset by clicking the "Download All" button.
-After unzipping the downloaded file in `../data`, you will find the entire dataset in the following paths:
+Kaggle에 로그인한 후, :numref:`fig_kaggle_dog`에 표시된 대회 웹페이지의 "Data" 탭을 클릭하고 "Download All" 버튼을 클릭해 데이터셋을 다운로드할 수 있습니다.
+다운로드한 파일을 `../data`에서 압축 해제한 후, 다음 경로에서 전체 데이터셋을 찾을 수 있습니다.
 
 * ../data/dog-breed-identification/labels.csv
 * ../data/dog-breed-identification/sample_submission.csv
 * ../data/dog-breed-identification/train
 * ../data/dog-breed-identification/test
 
-You may have noticed that the above structure is
-similar to that of the CIFAR-10 competition in :numref:`sec_kaggle_cifar10`, where folders `train/` and `test/` contain training and testing dog images, respectively, and `labels.csv` contains
-the labels for the training images.
-Similarly, to make it easier to get started, [**we provide a small sample of the dataset**] mentioned above: `train_valid_test_tiny.zip`.
-If you are going to use the full dataset for the Kaggle competition, you need to change the `demo` variable below to `False`.
+위의 구조가 :numref:`sec_kaggle_cifar10`의 CIFAR-10 대회의 구조와 유사하다는 것을 알아차리셨을 수 있습니다. 폴더 `train/`과 `test/`는 훈련 및 테스트 개 이미지를 각각 포함하고, `labels.csv`는 훈련 이미지에 대한 라벨을 포함합니다.
+비슷하게, 시작하기 더 쉽도록, [**저희는 위에서 언급한 데이터셋의 작은 샘플을 제공합니다**]: `train_valid_test_tiny.zip`.
+Kaggle 대회를 위한 전체 데이터셋을 사용하려면, 아래의 `demo` 변수를 `False`로 변경해야 합니다.
 
 ```{.python .input}
 #@tab all
@@ -80,13 +66,11 @@ else:
     data_dir = os.path.join('..', 'data', 'dog-breed-identification')
 ```
 
-### [**Organizing the Dataset**]
+### [**데이터셋 정리**]
 
-We can organize the dataset similarly to what we did in :numref:`sec_kaggle_cifar10`, namely splitting out
-a validation set from the original training set, and moving images into subfolders grouped by labels.
+저희는 :numref:`sec_kaggle_cifar10`에서 한 것과 유사하게 데이터셋을 정리할 수 있는데, 즉 원래 훈련 셋에서 검증 셋을 분리하고, 이미지를 라벨별로 그룹화된 하위 폴더로 이동시킵니다.
 
-The `reorg_dog_data` function below reads
-the training data labels, splits out the validation set, and organizes the training set.
+아래의 `reorg_dog_data` 함수는 훈련 데이터 라벨을 읽고, 검증 셋을 분리하고, 훈련 셋을 정리합니다.
 
 ```{.python .input}
 #@tab all
@@ -101,16 +85,10 @@ valid_ratio = 0.1
 reorg_dog_data(data_dir, valid_ratio)
 ```
 
-## [**Image Augmentation**]
+## [**이미지 증강**]
 
-Recall that this dog breed dataset
-is a subset of the ImageNet dataset,
-whose images
-are larger than those of the CIFAR-10 dataset
-in :numref:`sec_kaggle_cifar10`.
-The following
-lists a few image augmentation operations
-that might be useful for relatively larger images.
+이 개 품종 데이터셋이 :numref:`sec_kaggle_cifar10`의 CIFAR-10 데이터셋보다 이미지가 더 큰 ImageNet 데이터셋의 부분 집합이라는 점을 기억하세요.
+다음은 상대적으로 큰 이미지에 유용할 수 있는 몇 가지 이미지 증강 연산을 나열합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -153,9 +131,7 @@ transform_train = torchvision.transforms.Compose([
                                      [0.229, 0.224, 0.225])])
 ```
 
-During prediction,
-we only use image preprocessing operations
-without randomness.
+예측 중에, 저희는 무작위성 없이 이미지 전처리 연산만 사용합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -179,11 +155,9 @@ transform_test = torchvision.transforms.Compose([
                                      [0.229, 0.224, 0.225])])
 ```
 
-## [**Reading the Dataset**]
+## [**데이터셋 읽기**]
 
-As in :numref:`sec_kaggle_cifar10`,
-we can read the organized dataset
-consisting of raw image files.
+:numref:`sec_kaggle_cifar10`에서와 같이, 저희는 원시 이미지 파일로 구성된 정리된 데이터셋을 읽을 수 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -204,9 +178,7 @@ valid_ds, test_ds = [torchvision.datasets.ImageFolder(
     transform=transform_test) for folder in ['valid', 'test']]
 ```
 
-Below we create data iterator instances
-the same way
-as in :numref:`sec_kaggle_cifar10`.
+아래에서 저희는 :numref:`sec_kaggle_cifar10`에서와 같은 방법으로 데이터 이터레이터 인스턴스를 생성합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -236,41 +208,17 @@ test_iter = torch.utils.data.DataLoader(test_ds, batch_size, shuffle=False,
                                         drop_last=False)
 ```
 
-## [**Fine-Tuning a Pretrained Model**]
+## [**사전 훈련된 모델 파인튜닝**]
 
-Again,
-the dataset for this competition is a subset of the ImageNet dataset.
-Therefore, we can use the approach discussed in
-:numref:`sec_fine_tuning`
-to select a model pretrained on the
-full ImageNet dataset and use it to extract image features to be fed into a
-custom small-scale output network.
-High-level APIs of deep learning frameworks
-provide a wide range of models
-pretrained on the ImageNet dataset.
-Here, we choose
-a pretrained ResNet-34 model,
-where we simply reuse
-the input of this model's output layer
-(i.e., the extracted
-features).
-Then we can replace the original output layer with a small custom
-output network that can be trained,
-such as stacking two
-fully connected layers.
-Different from the experiment in
-:numref:`sec_fine_tuning`,
-the following does
-not retrain the pretrained model used for feature
-extraction. This reduces training time and
-memory for storing gradients.
+다시 말하지만, 이 대회를 위한 데이터셋은 ImageNet 데이터셋의 부분 집합입니다.
+따라서, 저희는 :numref:`sec_fine_tuning`에서 논의된 접근법을 사용해, 전체 ImageNet 데이터셋에서 사전 훈련된 모델을 선택하고 이를 사용해 커스텀 소규모 출력 신경망에 입력할 이미지 특징을 추출할 수 있습니다.
+딥러닝 프레임워크의 고수준 API는 ImageNet 데이터셋에서 사전 훈련된 다양한 모델을 제공합니다.
+여기서, 저희는 사전 훈련된 ResNet-34 모델을 선택하는데, 이 모델의 출력 계층의 입력(즉, 추출된 특징)을 단순히 재사용합니다.
+그런 다음 저희는 원래의 출력 계층을 두 개의 완전 연결 계층을 쌓는 것과 같은 훈련될 수 있는 작은 커스텀 출력 신경망으로 대체할 수 있습니다.
+:numref:`sec_fine_tuning`의 실험과는 달리, 다음은 특징 추출에 사용된 사전 훈련된 모델을 재훈련하지 않습니다. 이는 훈련 시간과 그래디언트 저장을 위한 메모리를 줄입니다.
 
-Recall that we
-standardized images using
-the means and standard deviations of the three RGB channels for the full ImageNet dataset.
-In fact,
-this is also consistent with the standardization operation
-by the pretrained model on ImageNet.
+전체 ImageNet 데이터셋의 세 RGB 채널의 평균과 표준편차를 사용해 이미지를 표준화한 것을 기억하세요.
+사실, 이는 ImageNet에서 사전 훈련된 모델에 의한 표준화 연산과도 일관됩니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -305,9 +253,8 @@ def get_net(devices):
     return finetune_net
 ```
 
-Before [**calculating the loss**],
-we first obtain the input of the pretrained model's output layer, i.e., the extracted feature.
-Then we use this feature as input for our small custom output network to calculate the loss.
+[**손실을 계산**]하기 전에, 저희는 먼저 사전 훈련된 모델의 출력 계층의 입력, 즉 추출된 특징을 얻습니다.
+그런 다음 저희는 이 특징을 작은 커스텀 출력 신경망의 입력으로 사용해 손실을 계산합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -341,10 +288,9 @@ def evaluate_loss(data_iter, net, devices):
     return l_sum / n
 ```
 
-## Defining [**the Training Function**]
+## [**훈련 함수**] 정의
 
-We will select the model and tune hyperparameters according to the model's performance on the validation set. The model training function `train` only
-iterates parameters of the small custom output network.
+저희는 검증 셋에서의 모델의 성능에 따라 모델을 선택하고 하이퍼파라미터를 조정할 것입니다. 모델 훈련 함수 `train`은 작은 커스텀 출력 신경망의 매개변수만 반복합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -432,11 +378,11 @@ def train(net, train_iter, valid_iter, num_epochs, lr, wd, devices, lr_period,
           f' examples/sec on {str(devices)}')
 ```
 
-## [**Training and Validating the Model**]
+## [**모델 훈련 및 검증**]
 
-Now we can train and validate the model.
-The following hyperparameters are all tunable.
-For example, the number of epochs can be increased. Because `lr_period` and `lr_decay` are set to 2 and 0.9, respectively, the learning rate of the optimization algorithm will be multiplied by 0.9 after every 2 epochs.
+이제 저희는 모델을 훈련하고 검증할 수 있습니다.
+다음 하이퍼파라미터는 모두 조정 가능합니다.
+예를 들어, 에폭 수를 늘릴 수 있습니다. `lr_period`와 `lr_decay`가 각각 2와 0.9로 설정되었기 때문에, 최적화 알고리즘의 학습률은 매 2 에폭마다 0.9가 곱해질 것입니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -455,13 +401,11 @@ train(net, train_iter, valid_iter, num_epochs, lr, wd, devices, lr_period,
       lr_decay)
 ```
 
-## [**Classifying the Testing Set**] and Submitting Results on Kaggle
+## [**테스트 셋 분류**] 및 Kaggle에 결과 제출
 
 
-Similar to the final step in :numref:`sec_kaggle_cifar10`,
-in the end all the labeled data (including the validation set) are used for training the model and classifying the testing set.
-We will use the trained custom output network
-for classification.
+:numref:`sec_kaggle_cifar10`의 마지막 단계와 유사하게, 마지막에는 모든 라벨링된 데이터(검증 셋 포함)가 모델을 훈련하고 테스트 셋을 분류하는 데 사용됩니다.
+저희는 분류에 훈련된 커스텀 출력 신경망을 사용할 것입니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -503,23 +447,20 @@ with open('submission.csv', 'w') as f:
             [str(num) for num in output]) + '\n')
 ```
 
-The above code
-will generate a `submission.csv` file
-to be submitted
-to Kaggle in the same way described in :numref:`sec_kaggle_house`.
+위 코드는 :numref:`sec_kaggle_house`에서 설명된 같은 방식으로 Kaggle에 제출될 `submission.csv` 파일을 생성할 것입니다.
 
 
-## Summary
+## 요약
 
 
-* Images in the ImageNet dataset are larger (with varying dimensions) than CIFAR-10 images. We may modify image augmentation operations for tasks on a different dataset.
-* To classify a subset of the ImageNet dataset, we can leverage pre-trained models on the full ImageNet dataset to extract features and only train a custom small-scale output network. This will lead to less computational time and memory cost.
+* ImageNet 데이터셋의 이미지는 CIFAR-10 이미지보다 더 큽니다(다양한 차원으로). 저희는 다양한 데이터셋의 작업에 대해 이미지 증강 연산을 수정할 수 있습니다.
+* ImageNet 데이터셋의 부분 집합을 분류하기 위해, 저희는 특징을 추출하기 위해 전체 ImageNet 데이터셋에서 사전 훈련된 모델을 활용하고 커스텀 소규모 출력 신경망만 훈련할 수 있습니다. 이는 더 적은 계산 시간과 메모리 비용으로 이어질 것입니다.
 
 
-## Exercises
+## 연습문제
 
-1. When using the full Kaggle competition dataset, what results can you achieve when you increase `batch_size` (batch size) and `num_epochs` (number of epochs) while setting some other hyperparameters as `lr = 0.01`, `lr_period = 10`, and `lr_decay = 0.1`?
-1. Do you get better results if you use a deeper pretrained model? How do you tune hyperparameters? Can you further improve the results?
+1. 전체 Kaggle 대회 데이터셋을 사용할 때, `batch_size`(배치 크기)와 `num_epochs`(에폭 수)를 증가시키면서 다른 일부 하이퍼파라미터를 `lr = 0.01`, `lr_period = 10`, `lr_decay = 0.1`로 설정하면 어떤 결과를 얻을 수 있나요?
+1. 더 깊은 사전 훈련된 모델을 사용하면 더 나은 결과를 얻나요? 하이퍼파라미터를 어떻게 조정하나요? 결과를 추가로 개선할 수 있나요?
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/380)

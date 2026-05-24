@@ -1,253 +1,87 @@
-# Beam Search
+# 빔 서치 (Beam Search)
 :label:`sec_beam-search`
 
-In :numref:`sec_seq2seq`, 
-we introduced the encoder--decoder architecture,
-and the standard techniques for training them end-to-end. However, when it came to test-time prediction,
-we mentioned only the *greedy* strategy,
-where we select at each time step 
-the token given the highest 
-predicted probability of coming next, 
-until, at some time step, 
-we find that we have predicted
-the special end-of-sequence "&lt;eos&gt;" token.
-In this section, we will begin 
-by formalizing this *greedy search* strategy
-and identifying some problems 
-that practitioners tend to run into.
-Subsequently, we compare this strategy
-with two alternatives:
-*exhaustive search* (illustrative but not practical)
-and *beam search* (the standard method in practice).
+:numref:`sec_seq2seq`에서, 저희는 인코더-디코더 아키텍처와 그것들을 종단 간(end-to-end)으로 훈련하기 위한 표준 기법들을 소개했습니다. 그러나, 테스트 시 예측에 관해서는, 저희는 *그리디(greedy)* 전략만 언급했는데, 여기서는 어떤 시간 단계에서, 저희가 특수한 시퀀스 끝 "&lt;eos&gt;" 토큰을 예측했음을 발견할 때까지, 매 시간 단계마다 다음에 올 가장 높은 예측된 확률이 주어진 토큰을 선택합니다. 이 절에서는, 이 *그리디 서치(greedy search)* 전략을 형식화하고 실무자들이 직면하기 쉬운 몇 가지 문제를 식별하는 것으로 시작할 것입니다. 이어서, 저희는 이 전략을 두 가지 대안, 즉 *완전 탐색(exhaustive search)* (예시로는 좋지만 실용적이지 않음)과 *빔 서치(beam search)* (실제로 표준적인 방법)와 비교합니다.
 
-Let's begin by setting up our mathematical notation,
-borrowing conventions from :numref:`sec_seq2seq`.
-At any time step $t'$, the decoder outputs 
-predictions representing the probability 
-of each token in the vocabulary 
-coming next in the sequence 
-(the likely value of $y_{t'+1}$), 
-conditioned on the previous tokens
-$y_1, \ldots, y_{t'}$ and 
-the context variable $\mathbf{c}$,
-produced by the encoder 
-to represent the input sequence.
-To quantify computational cost,
-denote by $\mathcal{Y}$
-the output vocabulary 
-(including the special end-of-sequence token "&lt;eos&gt;").
-Let's also specify the maximum number of tokens
-of an output sequence as $T'$.
-Our goal is to search for an ideal output from all 
-$\mathcal{O}(\left|\mathcal{Y}\right|^{T'})$
-possible output sequences.
-Note that this slightly overestimates 
-the number of distinct outputs 
-because there are no subsequent tokens
-once the  "&lt;eos&gt;" token occurs.
-However, for our purposes, 
-this number roughly captures 
-the size of the search space.
+:numref:`sec_seq2seq`의 관례를 빌려, 저희의 수학적 표기법을 설정하는 것으로 시작합시다. 어떤 시간 단계 $t'$에서, 디코더는 이전 토큰들 $y_1, \ldots, y_{t'}$와 입력 시퀀스를 나타내기 위해 인코더에 의해 생성된 문맥 변수 $\mathbf{c}$에 조건이 부여된 상태에서, 어휘의 각 토큰이 시퀀스에서 다음으로 올 확률($y_{t'+1}$의 가능한 값)을 나타내는 예측을 출력합니다. 계산 비용을 정량화하기 위해, 출력 어휘(특수한 시퀀스 끝 토큰 "&lt;eos&gt;" 포함)를 $\mathcal{Y}$로 표시합니다. 출력 시퀀스의 최대 토큰 수도 $T'$로 명시합시다. 저희의 목표는 모든 $\mathcal{O}(\left|\mathcal{Y}\right|^{T'})$개의 가능한 출력 시퀀스 중에서 이상적인 출력을 찾는 것입니다. 이는 "&lt;eos&gt;" 토큰이 나타나면 더 이상 후속 토큰이 없기 때문에 구별되는 출력의 수를 약간 과대 추정한다는 점에 유의하십시오. 그러나, 저희의 목적상, 이 숫자는 검색 공간의 크기를 대략적으로 포착합니다.
 
 
-## Greedy Search
+## 그리디 서치 (Greedy Search)
 
-Consider the simple *greedy search* strategy from :numref:`sec_seq2seq`.
-Here, at any time step $t'$, 
-we simply select the token 
-with the highest conditional probability
-from $\mathcal{Y}$, i.e., 
+:numref:`sec_seq2seq`의 단순한 *그리디 서치* 전략을 고려해 봅시다. 여기서, 어떤 시간 단계 $t'$에서, 저희는 단순히 $\mathcal{Y}$로부터 가장 높은 조건부 확률을 가진 토큰을 선택합니다. 즉,
 
 $$y_{t'} = \operatorname*{argmax}_{y \in \mathcal{Y}} P(y \mid y_1, \ldots, y_{t'-1}, \mathbf{c}).$$
 
-Once our model outputs "&lt;eos&gt;" 
-(or we reach the maximum length $T'$)
-the output sequence is completed.
+저희의 모델이 "&lt;eos&gt;"를 출력하면 (또는 최대 길이 $T'$에 도달하면) 출력 시퀀스가 완료됩니다.
 
-This strategy might look reasonable, 
-and in fact it is not so bad!
-Considering how computationally undemanding it is,
-you'd be hard pressed to get more bang for your buck. 
-However, if we put aside efficiency for a minute,
-it might seem more reasonable to search 
-for the *most likely sequence*, 
-not the sequence of (greedily selected) *most likely tokens*.
-It turns out that these two objects can be quite different. 
-The most likely sequence is the one that maximizes the expression
-$\prod_{t'=1}^{T'} P(y_{t'} \mid y_1, \ldots, y_{t'-1}, \mathbf{c})$.
-In our machine translation example,
-if the decoder truly recovered the probabilities
-of the underlying generative process, 
-then this would give us the most likely translation.
-Unfortunately, there is no guarantee 
-that greedy search will give us this sequence.
+이 전략은 합리적으로 보일 수 있으며, 사실 그렇게 나쁘지도 않습니다! 그것이 얼마나 계산적으로 부담이 적은지를 고려하면, 그 가격 대비 더 큰 효과를 얻기는 어려울 것입니다. 그러나, 잠시 효율성을 제쳐두면, (그리디하게 선택된) *가장 가능성 있는 토큰들*의 시퀀스가 아닌 *가장 가능성 있는 시퀀스*를 찾는 것이 더 합리적으로 보일 수 있습니다. 이 두 객체는 상당히 다를 수 있다는 것이 밝혀졌습니다. 가장 가능성 있는 시퀀스는 표현 $\prod_{t'=1}^{T'} P(y_{t'} \mid y_1, \ldots, y_{t'-1}, \mathbf{c})$를 최대화하는 것입니다. 저희의 기계 번역 예시에서, 디코더가 기저에 있는 생성 과정의 확률을 진정으로 복원했다면, 이는 저희에게 가장 가능성 있는 번역을 줄 것입니다. 안타깝게도, 그리디 서치가 이 시퀀스를 줄 것이라는 보장은 없습니다.
 
-Let's illustrate it with an example.
-Suppose that there are four tokens 
-"A", "B", "C", and "&lt;eos&gt;" in the output dictionary.
-In :numref:`fig_s2s-prob1`,
-the four numbers under each time step represent
-the conditional probabilities of generating "A", "B", "C", 
-and "&lt;eos&gt;" respectively, at that time step.
+예시로 이를 설명해 봅시다. 출력 사전에 네 개의 토큰 "A", "B", "C", "&lt;eos&gt;"가 있다고 가정합시다. :numref:`fig_s2s-prob1`에서, 각 시간 단계 아래의 네 숫자는 그 시간 단계에서 각각 "A", "B", "C", "&lt;eos&gt;"를 생성할 조건부 확률을 나타냅니다.
 
-![At each time step, greedy search selects the token with the highest conditional probability.](../img/s2s-prob1.svg)
+![각 시간 단계에서, 그리디 서치는 가장 높은 조건부 확률을 가진 토큰을 선택합니다.](../img/s2s-prob1.svg)
 :label:`fig_s2s-prob1`
 
-At each time step, greedy search selects 
-the token with the highest conditional probability. 
-Therefore, the output sequence "A", "B", "C", and "&lt;eos&gt;" 
-will be predicted (:numref:`fig_s2s-prob1`). 
-The conditional probability of this output sequence
-is $0.5\times0.4\times0.4\times0.6 = 0.048$.
+각 시간 단계에서, 그리디 서치는 가장 높은 조건부 확률을 가진 토큰을 선택합니다. 따라서, 출력 시퀀스 "A", "B", "C", "&lt;eos&gt;"가 예측될 것입니다(:numref:`fig_s2s-prob1`). 이 출력 시퀀스의 조건부 확률은 $0.5\times0.4\times0.4\times0.6 = 0.048$입니다.
 
 
-Next, let's look at another example in :numref:`fig_s2s-prob2`. 
-Unlike in :numref:`fig_s2s-prob1`, 
-at time step 2 we select the token "C", 
-which has the *second* highest conditional probability.
+다음으로, :numref:`fig_s2s-prob2`의 또 다른 예시를 살펴봅시다. :numref:`fig_s2s-prob1`과 달리, 시간 단계 2에서 저희는 *두 번째로* 높은 조건부 확률을 가진 토큰 "C"를 선택합니다.
 
-![The four numbers under each time step represent 
-the conditional probabilities of generating "A", "B", "C", and "&lt;eos&gt;" at that time step. 
-At time step 2, the token "C", which has the second highest conditional probability, 
-is selected.](../img/s2s-prob2.svg)
+![각 시간 단계 아래의 네 숫자는 그 시간 단계에서 "A", "B", "C", "&lt;eos&gt;"를 생성할 조건부 확률을 나타냅니다. 시간 단계 2에서, 두 번째로 높은 조건부 확률을 가진 토큰 "C"가 선택됩니다.](../img/s2s-prob2.svg)
 :label:`fig_s2s-prob2`
 
-Since the output subsequences at time steps 1 and 2, 
-on which time step 3 is based, 
-have changed from "A" and "B" in :numref:`fig_s2s-prob1` 
-to "A" and "C" in :numref:`fig_s2s-prob2`, 
-the conditional probability of each token 
-at time step 3 has also changed in :numref:`fig_s2s-prob2`. 
-Suppose that we choose the token "B" at time step 3. 
-Now time step 4 is conditional on
-the output subsequence at the first three time steps
-"A", "C", and "B", 
-which has changed from "A", "B", and "C" in :numref:`fig_s2s-prob1`. 
-Therefore, the conditional probability of generating 
-each token at time step 4 in :numref:`fig_s2s-prob2` 
-is also different from that in :numref:`fig_s2s-prob1`. 
-As a result, the conditional probability of the output sequence 
-"A", "C", "B", and "&lt;eos&gt;" in :numref:`fig_s2s-prob2`
-is $0.5\times0.3 \times0.6\times0.6=0.054$, 
-which is greater than that of greedy search in :numref:`fig_s2s-prob1`. 
-In this example, the output sequence "A", "B", "C", and "&lt;eos&gt;" 
-obtained by the greedy search is not optimal.
+시간 단계 3이 기반하는 시간 단계 1과 2에서의 출력 부분 시퀀스가 :numref:`fig_s2s-prob1`의 "A"와 "B"에서 :numref:`fig_s2s-prob2`의 "A"와 "C"로 바뀌었기 때문에, :numref:`fig_s2s-prob2`에서 시간 단계 3에서의 각 토큰의 조건부 확률도 변경되었습니다. 시간 단계 3에서 토큰 "B"를 선택한다고 가정해 봅시다. 이제 시간 단계 4는 처음 세 시간 단계에서의 출력 부분 시퀀스 "A", "C", "B"에 조건이 부여되며, 이는 :numref:`fig_s2s-prob1`의 "A", "B", "C"에서 바뀐 것입니다. 따라서, :numref:`fig_s2s-prob2`에서 시간 단계 4에서 각 토큰을 생성할 조건부 확률도 :numref:`fig_s2s-prob1`의 그것과 다릅니다. 결과적으로, :numref:`fig_s2s-prob2`에서 출력 시퀀스 "A", "C", "B", "&lt;eos&gt;"의 조건부 확률은 $0.5\times0.3 \times0.6\times0.6=0.054$이며, 이는 :numref:`fig_s2s-prob1`의 그리디 서치의 그것보다 큽니다. 이 예시에서, 그리디 서치에 의해 얻어진 출력 시퀀스 "A", "B", "C", "&lt;eos&gt;"는 최적이 아닙니다.
 
 
 
 
+## 완전 탐색 (Exhaustive Search)
 
-## Exhaustive Search
-
-If the goal is to obtain the most likely sequence, 
-we may consider using *exhaustive search*: 
-enumerate all the possible output sequences 
-with their conditional probabilities,
-and then output the one that scores 
-the highest predicted probability.
+가장 가능성 있는 시퀀스를 얻는 것이 목표라면, 저희는 *완전 탐색(exhaustive search)*을 사용하는 것을 고려할 수 있습니다. 모든 가능한 출력 시퀀스를 그것들의 조건부 확률과 함께 열거한 다음, 가장 높은 예측된 확률을 점수로 받은 것을 출력하는 것입니다.
 
 
-While this would certainly give us what we desire,
-it would come at a prohibitive computational cost 
-of $\mathcal{O}(\left|\mathcal{Y}\right|^{T'})$,
-exponential in the sequence length and with an enormous
-base given by the vocabulary size.
-For example, when $|\mathcal{Y}|=10000$ and $T'=10$, 
-both small numbers when compared with ones in real applications, we will need to evaluate $10000^{10} = 10^{40}$ sequences, which is already beyond the capabilities of any foreseeable computers.
-On the other hand, the computational cost of greedy search is 
-$\mathcal{O}(\left|\mathcal{Y}\right|T')$: 
-miraculously cheap but far from optimal.
-For example, when $|\mathcal{Y}|=10000$ and $T'=10$, 
-we only need to evaluate $10000\times10=10^5$ sequences.
+이는 확실히 저희가 원하는 것을 제공하겠지만, 시퀀스 길이에 지수적이고 어휘 크기로 주어지는 거대한 밑수를 가진 $\mathcal{O}(\left|\mathcal{Y}\right|^{T'})$의 금지적인 계산 비용을 수반할 것입니다. 예를 들어, $|\mathcal{Y}|=10000$이고 $T'=10$일 때(둘 다 실제 응용의 것들과 비교했을 때 작은 숫자), 저희는 $10000^{10} = 10^{40}$개의 시퀀스를 평가할 필요가 있을 것이며, 이는 이미 어떤 예측 가능한 컴퓨터의 능력을 넘어섭니다. 반면에, 그리디 서치의 계산 비용은 $\mathcal{O}(\left|\mathcal{Y}\right|T')$입니다. 기적적으로 저렴하지만 최적과는 거리가 멉니다. 예를 들어, $|\mathcal{Y}|=10000$이고 $T'=10$일 때, 저희는 $10000\times10=10^5$개의 시퀀스만 평가하면 됩니다.
 
 
-## Beam Search
+## 빔 서치 (Beam Search)
 
-You could view sequence decoding strategies as lying on a spectrum,
-with *beam search* striking a compromise 
-between the efficiency of greedy search
-and the optimality of exhaustive search.
-The most straightforward version of beam search 
-is characterized by a single hyperparameter,
-the *beam size*, $k$.
-Let's explain this terminology.
-At time step 1, we select the $k$ tokens 
-with the highest predicted probabilities.
-Each of them will be the first token of 
-$k$ candidate output sequences, respectively.
-At each subsequent time step, 
-based on the $k$ candidate output sequences
-at the previous time step,
-we continue to select $k$ candidate output sequences 
-with the highest predicted probabilities 
-from $k\left|\mathcal{Y}\right|$ possible choices.
+시퀀스 디코딩 전략을 스펙트럼 상에 놓여있는 것으로 볼 수 있으며, *빔 서치*는 그리디 서치의 효율성과 완전 탐색의 최적성 사이의 타협을 이룹니다. 빔 서치의 가장 간단한 버전은 단일 하이퍼파라미터, 즉 *빔 크기(beam size)* $k$로 특징지어집니다. 이 용어를 설명해 봅시다. 시간 단계 1에서, 저희는 가장 높은 예측된 확률을 가진 $k$개의 토큰을 선택합니다. 그것들 각각이 각각 $k$개의 후보 출력 시퀀스의 첫 번째 토큰이 될 것입니다. 각 후속 시간 단계에서, 이전 시간 단계의 $k$개의 후보 출력 시퀀스에 기반하여, 저희는 $k\left|\mathcal{Y}\right|$개의 가능한 선택지 중에서 가장 높은 예측된 확률을 가진 $k$개의 후보 출력 시퀀스를 계속 선택합니다.
 
-![The process of beam search (beam size $=2$; maximum length of an output sequence $=3$). The candidate output sequences are $\mathit{A}$, $\mathit{C}$, $\mathit{AB}$, $\mathit{CE}$, $\mathit{ABD}$, and $\mathit{CED}$.](../img/beam-search.svg)
+![빔 서치 과정 (빔 크기 $=2$; 출력 시퀀스의 최대 길이 $=3$). 후보 출력 시퀀스는 $\mathit{A}$, $\mathit{C}$, $\mathit{AB}$, $\mathit{CE}$, $\mathit{ABD}$, $\mathit{CED}$입니다.](../img/beam-search.svg)
 :label:`fig_beam-search`
 
 
-:numref:`fig_beam-search` demonstrates the 
-process of beam search with an example. 
-Suppose that the output vocabulary
-contains only five elements: 
-$\mathcal{Y} = \{A, B, C, D, E\}$, 
-where one of them is “&lt;eos&gt;”. 
-Let the beam size be two and 
-the maximum length of an output sequence be three. 
-At time step 1, 
-suppose that the tokens with the highest conditional probabilities 
-$P(y_1 \mid \mathbf{c})$ are $A$ and $C$. 
-At time step 2, for all $y_2 \in \mathcal{Y},$ 
-we compute 
+:numref:`fig_beam-search`는 빔 서치의 과정을 예시로 보여줍니다. 출력 어휘가 다섯 요소만 포함하고 있다고 가정합시다. $\mathcal{Y} = \{A, B, C, D, E\}$, 그 중 하나는 "&lt;eos&gt;"입니다. 빔 크기를 2로, 출력 시퀀스의 최대 길이를 3으로 둡시다. 시간 단계 1에서, 가장 높은 조건부 확률 $P(y_1 \mid \mathbf{c})$을 가진 토큰들이 $A$와 $C$라고 가정합시다. 시간 단계 2에서, 모든 $y_2 \in \mathcal{Y},$에 대해 저희는 다음을 계산하고
 
 $$\begin{aligned}P(A, y_2 \mid \mathbf{c}) = P(A \mid \mathbf{c})P(y_2 \mid A, \mathbf{c}),\\ P(C, y_2 \mid \mathbf{c}) = P(C \mid \mathbf{c})P(y_2 \mid C, \mathbf{c}),\end{aligned}$$  
 
-and pick the largest two among these ten values, say
-$P(A, B \mid \mathbf{c})$ and $P(C, E \mid \mathbf{c})$.
-Then at time step 3, for all $y_3 \in \mathcal{Y}$, we compute 
+이 열 개의 값 중 가장 큰 두 개, 예를 들어 $P(A, B \mid \mathbf{c})$와 $P(C, E \mid \mathbf{c})$를 고릅니다. 그러면 시간 단계 3에서, 모든 $y_3 \in \mathcal{Y}$에 대해 저희는 다음을 계산하고
 
 $$\begin{aligned}P(A, B, y_3 \mid \mathbf{c}) = P(A, B \mid \mathbf{c})P(y_3 \mid A, B, \mathbf{c}),\\P(C, E, y_3 \mid \mathbf{c}) = P(C, E \mid \mathbf{c})P(y_3 \mid C, E, \mathbf{c}),\end{aligned}$$ 
 
-and pick the largest two among these ten values, say 
-$P(A, B, D \mid \mathbf{c})$   and  $P(C, E, D \mid  \mathbf{c}).$
-As a result, we get six candidates output sequences: 
-(i) $A$; (ii) $C$; (iii) $A$, $B$; (iv) $C$, $E$; (v) $A$, $B$, $D$; and (vi) $C$, $E$, $D$. 
+이 열 개의 값 중 가장 큰 두 개, 예를 들어 $P(A, B, D \mid \mathbf{c})$와 $P(C, E, D \mid  \mathbf{c}).$를 고릅니다. 결과적으로, 저희는 여섯 개의 후보 출력 시퀀스를 얻습니다. (i) $A$; (ii) $C$; (iii) $A$, $B$; (iv) $C$, $E$; (v) $A$, $B$, $D$; (vi) $C$, $E$, $D$.
 
 
-In the end, we obtain the set of final candidate output sequences 
-based on these six sequences (e.g., discard portions including and after “&lt;eos&gt;”).
-Then we choose the output sequence which maximizes the following score:
+마지막으로, 저희는 이 여섯 시퀀스(예: "&lt;eos&gt;"를 포함하고 그 이후의 부분은 버립니다)에 기반하여 최종 후보 출력 시퀀스의 집합을 얻습니다. 그런 다음 저희는 다음 점수를 최대화하는 출력 시퀀스를 선택합니다.
 
 $$ \frac{1}{L^\alpha} \log P(y_1, \ldots, y_{L}\mid \mathbf{c}) = \frac{1}{L^\alpha} \sum_{t'=1}^L \log P(y_{t'} \mid y_1, \ldots, y_{t'-1}, \mathbf{c});$$
 :eqlabel:`eq_beam-search-score`
 
-here $L$ is the length of the final candidate sequence 
-and $\alpha$ is usually set to 0.75. 
-Since a longer sequence has more logarithmic terms 
-in the summation of :eqref:`eq_beam-search-score`,
-the term $L^\alpha$ in the denominator penalizes
-long sequences.
+여기서 $L$은 최종 후보 시퀀스의 길이이고 $\alpha$는 일반적으로 0.75로 설정됩니다. 더 긴 시퀀스가 :eqref:`eq_beam-search-score`의 합산에서 더 많은 로그 항을 가지기 때문에, 분모의 항 $L^\alpha$는 긴 시퀀스에 패널티를 부과합니다.
 
-The computational cost of beam search is $\mathcal{O}(k\left|\mathcal{Y}\right|T')$. 
-This result is in between that of greedy search and that of exhaustive search.
-Greedy search can be treated as a special case of beam search 
-arising when the beam size is set to 1.
+빔 서치의 계산 비용은 $\mathcal{O}(k\left|\mathcal{Y}\right|T')$입니다. 이 결과는 그리디 서치와 완전 탐색의 그것 사이에 있습니다. 그리디 서치는 빔 크기가 1로 설정될 때 발생하는 빔 서치의 특수한 경우로 다룰 수 있습니다.
 
 
 
 
-## Summary
+## 요약
 
-Sequence searching strategies include 
-greedy search, exhaustive search, and beam search.
-Beam search provides a trade-off between accuracy and 
-computational cost via the flexible choice of the beam size.
+시퀀스 검색 전략은 그리디 서치, 완전 탐색, 빔 서치를 포함합니다. 빔 서치는 빔 크기의 유연한 선택을 통해 정확도와 계산 비용 사이의 트레이드오프를 제공합니다.
 
 
-## Exercises
+## 연습문제
 
-1. Can we treat exhaustive search as a special type of beam search? Why or why not?
-1. Apply beam search in the machine translation problem in :numref:`sec_seq2seq`. How does the beam size affect the translation results and the prediction speed?
-1. We used language modeling for generating text following  user-provided prefixes in :numref:`sec_rnn-scratch`. Which kind of search strategy does it use? Can you improve it?
+1. 완전 탐색을 빔 서치의 특수한 유형으로 다룰 수 있습니까? 왜 그렇거나 그렇지 않습니까?
+1. :numref:`sec_seq2seq`의 기계 번역 문제에 빔 서치를 적용해 보십시오. 빔 크기는 번역 결과와 예측 속도에 어떻게 영향을 미칩니까?
+1. 저희는 :numref:`sec_rnn-scratch`에서 사용자가 제공한 접두사를 따라 텍스트를 생성하기 위해 언어 모델링을 사용했습니다. 이는 어떤 종류의 검색 전략을 사용합니까? 그것을 개선할 수 있습니까?
 
-[Discussions](https://discuss.d2l.ai/t/338)
+[토론](https://discuss.d2l.ai/t/338)

@@ -1,12 +1,12 @@
-# Stochastic Gradient Descent
+# 확률적 경사 하강법(Stochastic Gradient Descent)
 :label:`sec_sgd`
 
-In earlier chapters we kept using stochastic gradient descent in our training procedure, however, without explaining why it works.
-To shed some light on it,
-we just described the basic principles of gradient descent
-in :numref:`sec_gd`.
-In this section, we go on to discuss
-*stochastic gradient descent* in greater detail.
+앞선 장들에서는 학습 절차에서 확률적 경사 하강법을 계속 사용했지만, 그것이 왜 작동하는지 설명하지는 않았습니다.
+이를 좀 더 명확히 하기 위해,
+저희는 방금 :numref:`sec_gd`에서
+경사 하강법의 기본 원리를 설명했습니다.
+이번 절에서는 *확률적 경사 하강법*에 대해
+더 자세히 다루겠습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -33,34 +33,33 @@ import math
 import tensorflow as tf
 ```
 
-## Stochastic Gradient Updates
+## 확률적 경사 업데이트
 
-In deep learning, the objective function is usually the average of the loss functions for each example in the training dataset.
-Given a training dataset of $n$ examples,
-we assume that $f_i(\mathbf{x})$ is the loss function
-with respect to the training example of index $i$,
-where $\mathbf{x}$ is the parameter vector.
-Then we arrive at the objective function
+딥러닝에서 목적 함수는 보통 학습 데이터셋의 각 예제에 대한 손실 함수들의 평균입니다.
+$n$개의 예제로 이루어진 학습 데이터셋이 주어졌을 때,
+$f_i(\mathbf{x})$를 인덱스 $i$의 학습 예제에 대한 손실 함수라고 가정합니다.
+여기서 $\mathbf{x}$는 파라미터 벡터입니다.
+그러면 저희는 목적 함수에 도달합니다.
 
 $$f(\mathbf{x}) = \frac{1}{n} \sum_{i = 1}^n f_i(\mathbf{x}).$$
 
-The gradient of the objective function at $\mathbf{x}$ is computed as
+$\mathbf{x}$에서의 목적 함수의 경사도는 다음과 같이 계산됩니다.
 
 $$\nabla f(\mathbf{x}) = \frac{1}{n} \sum_{i = 1}^n \nabla f_i(\mathbf{x}).$$
 
-If gradient descent is used, the computational cost for each independent variable iteration is $\mathcal{O}(n)$, which grows linearly with $n$. Therefore, when the  training dataset is larger, the cost of gradient descent for each iteration will be higher.
+경사 하강법을 사용한다면, 각 독립 변수 반복의 계산 비용은 $\mathcal{O}(n)$이며, 이는 $n$에 선형적으로 증가합니다. 따라서 학습 데이터셋이 더 클수록, 각 반복에 대한 경사 하강법의 비용은 더 높아질 것입니다.
 
-Stochastic gradient descent (SGD) reduces computational cost at each iteration. At each iteration of stochastic gradient descent, we uniformly sample an index $i\in\{1,\ldots, n\}$ for data examples at random, and compute the gradient $\nabla f_i(\mathbf{x})$ to update $\mathbf{x}$:
+확률적 경사 하강법(SGD)은 각 반복에서의 계산 비용을 줄입니다. 확률적 경사 하강법의 각 반복에서, 저희는 데이터 예제에 대한 인덱스 $i\in\{1,\ldots, n\}$를 균등하게 무작위로 샘플링하고, $\mathbf{x}$를 업데이트하기 위해 경사도 $\nabla f_i(\mathbf{x})$를 계산합니다.
 
 $$\mathbf{x} \leftarrow \mathbf{x} - \eta \nabla f_i(\mathbf{x}),$$
 
-where $\eta$ is the learning rate. We can see that the computational cost for each iteration drops from $\mathcal{O}(n)$ of the gradient descent to the constant $\mathcal{O}(1)$. Moreover, we want to emphasize that the stochastic gradient $\nabla f_i(\mathbf{x})$ is an unbiased estimate of the full gradient $\nabla f(\mathbf{x})$ because
+여기서 $\eta$는 학습률입니다. 각 반복의 계산 비용이 경사 하강법의 $\mathcal{O}(n)$에서 상수 $\mathcal{O}(1)$로 떨어지는 것을 볼 수 있습니다. 더욱이, 저희는 확률적 경사도 $\nabla f_i(\mathbf{x})$가 전체 경사도 $\nabla f(\mathbf{x})$의 비편향 추정량이라는 점을 강조하고 싶습니다. 왜냐하면
 
 $$\mathbb{E}_i \nabla f_i(\mathbf{x}) = \frac{1}{n} \sum_{i = 1}^n \nabla f_i(\mathbf{x}) = \nabla f(\mathbf{x}).$$
 
-This means that, on average, the stochastic gradient is a good estimate of the gradient.
+이기 때문입니다. 이는 평균적으로 확률적 경사도가 경사도의 좋은 추정값이라는 것을 의미합니다.
 
-Now, we will compare it with gradient descent by adding random noise with a mean of 0 and a variance of 1 to the gradient to simulate a stochastic gradient descent.
+이제 저희는 확률적 경사 하강법을 시뮬레이션하기 위해 평균 0, 분산 1의 무작위 노이즈를 경사도에 더하는 방식으로 경사 하강법과 비교해 볼 것입니다.
 
 ```{.python .input}
 #@tab all
@@ -114,13 +113,13 @@ lr = constant_lr  # Constant learning rate
 d2l.show_trace_2d(f, d2l.train_2d(sgd, steps=50, f_grad=f_grad))
 ```
 
-As we can see, the trajectory of the variables in the stochastic gradient descent is much more noisy than the one we observed in gradient descent in :numref:`sec_gd`. This is due to the stochastic nature of the gradient. That is, even when we arrive near the minimum, we are still subject to the uncertainty injected by the instantaneous gradient via $\eta \nabla f_i(\mathbf{x})$. Even after 50 steps the quality is still not so good. Even worse, it will not improve after additional steps (we encourage you to experiment with a larger number of steps to confirm this). This leaves us with the only alternative: change the learning rate $\eta$. However, if we pick this too small, we will not make any meaningful progress initially. On the other hand, if we pick it too large, we will not get a good solution, as seen above. The only way to resolve these conflicting goals is to reduce the learning rate *dynamically* as optimization progresses.
+보시다시피, 확률적 경사 하강법에서 변수들의 궤적은 :numref:`sec_gd`의 경사 하강법에서 관찰한 것보다 훨씬 더 잡음이 많습니다. 이는 경사도의 확률적 특성 때문입니다. 즉, 최솟값 근처에 도달했을 때조차도, 저희는 여전히 $\eta \nabla f_i(\mathbf{x})$를 통해 순간 경사도가 주입하는 불확실성에 영향을 받습니다. 50번의 단계 이후에도 품질은 여전히 그다지 좋지 않습니다. 더욱 나쁜 것은, 추가 단계 이후에도 개선되지 않을 것입니다(이를 확인하기 위해 더 많은 단계로 실험해 보시기를 권합니다). 이로 인해 저희에게는 유일한 대안이 남습니다. 학습률 $\eta$를 변경하는 것입니다. 그러나 이를 너무 작게 선택하면 처음에는 의미 있는 진전을 이루지 못할 것입니다. 반면, 너무 크게 선택하면 위에서 본 것처럼 좋은 해를 얻지 못할 것입니다. 이러한 상충하는 목표를 해결하는 유일한 방법은 최적화가 진행됨에 따라 학습률을 *동적으로* 줄이는 것입니다.
 
-This is also the reason for adding a learning rate function `lr` into the `sgd` step function. In the example above any functionality for learning rate scheduling lies dormant as we set the associated `lr` function to be constant.
+이는 또한 `sgd` 스텝 함수에 학습률 함수 `lr`을 추가한 이유이기도 합니다. 위 예제에서는 관련된 `lr` 함수를 상수로 설정했으므로 학습률 스케줄링을 위한 모든 기능은 휴면 상태에 있습니다.
 
-## Dynamic Learning Rate
+## 동적 학습률
 
-Replacing $\eta$ with a time-dependent learning rate $\eta(t)$ adds to the complexity of controlling convergence of an optimization algorithm. In particular, we need to figure out how rapidly $\eta$ should decay. If it is too quick, we will stop optimizing prematurely. If we decrease it too slowly, we waste too much time on optimization. The following are a few basic strategies that are used in adjusting $\eta$ over time (we will discuss more advanced strategies later):
+$\eta$를 시간 의존적인 학습률 $\eta(t)$로 대체하면 최적화 알고리즘의 수렴을 제어하는 복잡성이 더해집니다. 특히, $\eta$가 얼마나 빠르게 감소해야 하는지를 알아내야 합니다. 너무 빠르면, 저희는 최적화를 너무 일찍 중단할 것입니다. 너무 느리게 감소시키면, 최적화에 너무 많은 시간을 낭비하게 됩니다. 다음은 시간에 따라 $\eta$를 조정하는 데 사용되는 몇 가지 기본 전략입니다(나중에 더 발전된 전략을 논의할 것입니다).
 
 $$
 \begin{aligned}
@@ -130,9 +129,9 @@ $$
 \end{aligned}
 $$
 
-In the first *piecewise constant* scenario we decrease the learning rate, e.g., whenever progress in optimization stalls. This is a common strategy for training deep networks. Alternatively we could decrease it much more aggressively by an *exponential decay*. Unfortunately this often leads to premature stopping before the algorithm has converged. A popular choice is *polynomial decay* with $\alpha = 0.5$. In the case of convex optimization there are a number of proofs that show that this rate is well behaved.
+첫 번째 *조각별 상수(piecewise constant)* 시나리오에서는, 예를 들어 최적화의 진전이 멈출 때마다 학습률을 감소시킵니다. 이는 딥 네트워크 학습을 위한 일반적인 전략입니다. 또는 *지수적 감쇠(exponential decay)*에 의해 훨씬 더 공격적으로 감소시킬 수 있습니다. 안타깝게도 이는 종종 알고리즘이 수렴하기 전에 조기 중단으로 이어집니다. 인기 있는 선택은 $\alpha = 0.5$의 *다항 감쇠(polynomial decay)*입니다. 볼록 최적화의 경우 이 속도가 잘 동작함을 보여주는 여러 증명이 있습니다.
 
-Let's see what the exponential decay looks like in practice.
+지수적 감쇠가 실제로 어떻게 보이는지 봅시다.
 
 ```{.python .input}
 #@tab all
@@ -147,7 +146,7 @@ lr = exponential_lr
 d2l.show_trace_2d(f, d2l.train_2d(sgd, steps=1000, f_grad=f_grad))
 ```
 
-As expected, the variance in the parameters is significantly reduced. However, this comes at the expense of failing to converge to the optimal solution $\mathbf{x} = (0, 0)$. Even after 1000 iteration steps are we are still very far away from the optimal solution. Indeed, the algorithm fails to converge at all. On the other hand, if we use a polynomial decay where the learning rate decays with the inverse square root of the number of steps, convergence gets better after only 50 steps.
+예상한 대로, 파라미터의 분산은 상당히 감소했습니다. 그러나 이는 최적해 $\mathbf{x} = (0, 0)$로 수렴하지 못하는 대가로 옵니다. 1000번의 반복 단계 후에도 저희는 여전히 최적해에서 매우 멀리 있습니다. 실제로 알고리즘은 전혀 수렴하지 못합니다. 반면, 단계 수의 역제곱근으로 학습률이 감쇠하는 다항 감쇠를 사용하면, 50번의 단계만으로 수렴이 더 좋아집니다.
 
 ```{.python .input}
 #@tab all
@@ -162,131 +161,126 @@ lr = polynomial_lr
 d2l.show_trace_2d(f, d2l.train_2d(sgd, steps=50, f_grad=f_grad))
 ```
 
-There exist many more choices for how to set the learning rate. For instance, we could start with a small rate, then rapidly ramp up and then decrease it again, albeit more slowly. We could even alternate between smaller and larger learning rates. There exists a large variety of such schedules. For now let's focus on learning rate schedules for which a comprehensive theoretical analysis is possible, i.e., on learning rates in a convex setting. For general nonconvex problems it is very difficult to obtain meaningful convergence guarantees, since in general minimizing nonlinear nonconvex problems is NP hard. For a survey see e.g., the excellent [lecture notes](https://www.stat.cmu.edu/%7Eryantibs/convexopt-F15/lectures/26-nonconvex.pdf) of Tibshirani 2015.
+학습률을 설정하는 방법에는 훨씬 더 많은 선택지가 있습니다. 예를 들어, 작은 속도로 시작해서 빠르게 끌어올린 다음 더 천천히 다시 감소시킬 수 있습니다. 더 작은 학습률과 더 큰 학습률 사이를 번갈아 사용할 수도 있습니다. 이러한 스케줄에는 매우 다양한 종류가 있습니다. 지금은 포괄적인 이론적 분석이 가능한 학습률 스케줄, 즉 볼록 환경에서의 학습률에 초점을 맞춥시다. 일반적인 비볼록 문제의 경우, 일반적으로 비선형 비볼록 문제를 최소화하는 것이 NP 하드이므로 의미 있는 수렴 보장을 얻기가 매우 어렵습니다. 개관을 위해서는 예를 들어 Tibshirani 2015의 훌륭한 [강의 노트](https://www.stat.cmu.edu/%7Eryantibs/convexopt-F15/lectures/26-nonconvex.pdf)를 참조하세요.
 
 
 
-## Convergence Analysis for Convex Objectives
+## 볼록 목적에 대한 수렴 분석
 
-The following convergence analysis of stochastic gradient descent for convex objective functions
-is optional and primarily serves to convey more intuition about the problem.
-We limit ourselves to one of the simplest proofs :cite:`Nesterov.Vial.2000`.
-Significantly more advanced proof techniques exist, e.g., whenever the objective function is particularly well behaved.
+볼록 목적 함수에 대한 확률적 경사 하강법의 다음 수렴 분석은 선택 사항이며, 주로 문제에 대한 더 많은 직관을 전달하는 데 사용됩니다.
+저희는 가장 단순한 증명 중 하나로 :cite:`Nesterov.Vial.2000`에 제한합니다.
+훨씬 더 발전된 증명 기법들이 존재합니다. 예를 들어, 목적 함수가 특히 잘 동작할 때마다 그러합니다.
 
 
-Suppose that the objective function $f(\boldsymbol{\xi}, \mathbf{x})$ is convex in $\mathbf{x}$
-for all $\boldsymbol{\xi}$.
-More concretely,
-we consider the stochastic gradient descent update:
+목적 함수 $f(\boldsymbol{\xi}, \mathbf{x})$가 모든 $\boldsymbol{\xi}$에 대해
+$\mathbf{x}$에서 볼록이라고 가정해 봅시다.
+더 구체적으로,
+저희는 확률적 경사 하강법 업데이트를 고려합니다.
 
 $$\mathbf{x}_{t+1} = \mathbf{x}_{t} - \eta_t \partial_\mathbf{x} f(\boldsymbol{\xi}_t, \mathbf{x}),$$
 
-where $f(\boldsymbol{\xi}_t, \mathbf{x})$
-is the objective function
-with respect to the training example $\boldsymbol{\xi}_t$
-drawn from some distribution
-at step $t$ and $\mathbf{x}$ is the model parameter.
-Denote by
+여기서 $f(\boldsymbol{\xi}_t, \mathbf{x})$는
+단계 $t$에서 어떤 분포로부터 추출된
+학습 예제 $\boldsymbol{\xi}_t$에 대한
+목적 함수이고 $\mathbf{x}$는 모델 파라미터입니다.
+다음을 표기합니다.
 
 $$R(\mathbf{x}) = E_{\boldsymbol{\xi}}[f(\boldsymbol{\xi}, \mathbf{x})]$$
 
-the expected risk and by $R^*$ its minimum with regard to $\mathbf{x}$. Last let $\mathbf{x}^*$ be the minimizer (we assume that it exists within the domain where $\mathbf{x}$ is defined). In this case we can track the distance between the current parameter $\mathbf{x}_t$ at time $t$ and the risk minimizer $\mathbf{x}^*$ and see whether it improves over time:
+이는 기댓값 위험이고 $R^*$는 $\mathbf{x}$에 대한 그것의 최솟값입니다. 마지막으로 $\mathbf{x}^*$를 최소화자라고 합시다(저희는 그것이 $\mathbf{x}$가 정의된 영역 내에 존재한다고 가정합니다). 이 경우 저희는 시간 $t$에서의 현재 파라미터 $\mathbf{x}_t$와 위험 최소화자 $\mathbf{x}^*$ 사이의 거리를 추적하고 시간이 지남에 따라 개선되는지 볼 수 있습니다.
 
 $$\begin{aligned}    &\|\mathbf{x}_{t+1} - \mathbf{x}^*\|^2 \\ =& \|\mathbf{x}_{t} - \eta_t \partial_\mathbf{x} f(\boldsymbol{\xi}_t, \mathbf{x}) - \mathbf{x}^*\|^2 \\    =& \|\mathbf{x}_{t} - \mathbf{x}^*\|^2 + \eta_t^2 \|\partial_\mathbf{x} f(\boldsymbol{\xi}_t, \mathbf{x})\|^2 - 2 \eta_t    \left\langle \mathbf{x}_t - \mathbf{x}^*, \partial_\mathbf{x} f(\boldsymbol{\xi}_t, \mathbf{x})\right\rangle.   \end{aligned}$$
 :eqlabel:`eq_sgd-xt+1-xstar`
 
-We assume that the $\ell_2$ norm of stochastic gradient $\partial_\mathbf{x} f(\boldsymbol{\xi}_t, \mathbf{x})$ is bounded  by some  constant $L$, hence we have that
+저희는 확률적 경사도 $\partial_\mathbf{x} f(\boldsymbol{\xi}_t, \mathbf{x})$의 $\ell_2$ 노름이 어떤 상수 $L$에 의해 한정된다고 가정하므로, 다음을 얻습니다.
 
 $$\eta_t^2 \|\partial_\mathbf{x} f(\boldsymbol{\xi}_t, \mathbf{x})\|^2 \leq \eta_t^2 L^2.$$
 :eqlabel:`eq_sgd-L`
 
 
-We are mostly interested in how the distance between $\mathbf{x}_t$ and $\mathbf{x}^*$ changes *in expectation*. In fact, for any specific sequence of steps the distance might well increase, depending on whichever $\boldsymbol{\xi}_t$ we encounter. Hence we need to bound the dot product.
-Since for any convex function $f$ it holds that
-$f(\mathbf{y}) \geq f(\mathbf{x}) + \langle f'(\mathbf{x}), \mathbf{y} - \mathbf{x} \rangle$
-for all $\mathbf{x}$ and $\mathbf{y}$,
-by convexity we have
+저희는 $\mathbf{x}_t$와 $\mathbf{x}^*$ 사이의 거리가 *기댓값으로* 어떻게 변하는지에 주로 관심이 있습니다. 사실, 특정한 단계 시퀀스에 대해 저희가 어떤 $\boldsymbol{\xi}_t$를 만나느냐에 따라 거리는 증가할 수도 있습니다. 따라서 저희는 내적을 한정해야 합니다.
+임의의 볼록 함수 $f$에 대해 모든 $\mathbf{x}$와 $\mathbf{y}$에 대해
+$f(\mathbf{y}) \geq f(\mathbf{x}) + \langle f'(\mathbf{x}), \mathbf{y} - \mathbf{x} \rangle$가 성립하므로,
+볼록성에 의해 저희는
 
 $$f(\boldsymbol{\xi}_t, \mathbf{x}^*) \geq f(\boldsymbol{\xi}_t, \mathbf{x}_t) + \left\langle \mathbf{x}^* - \mathbf{x}_t, \partial_{\mathbf{x}} f(\boldsymbol{\xi}_t, \mathbf{x}_t) \right\rangle.$$
 :eqlabel:`eq_sgd-f-xi-xstar`
 
-Plugging both inequalities :eqref:`eq_sgd-L` and :eqref:`eq_sgd-f-xi-xstar` into :eqref:`eq_sgd-xt+1-xstar` we obtain a bound on the distance between parameters at time $t+1$ as follows:
+를 얻습니다. :eqref:`eq_sgd-L`와 :eqref:`eq_sgd-f-xi-xstar`의 두 부등식을 :eqref:`eq_sgd-xt+1-xstar`에 대입하면, 시간 $t+1$에서 파라미터 사이의 거리에 대한 한계를 다음과 같이 얻습니다.
 
 $$\|\mathbf{x}_{t} - \mathbf{x}^*\|^2 - \|\mathbf{x}_{t+1} - \mathbf{x}^*\|^2 \geq 2 \eta_t (f(\boldsymbol{\xi}_t, \mathbf{x}_t) - f(\boldsymbol{\xi}_t, \mathbf{x}^*)) - \eta_t^2 L^2.$$
 :eqlabel:`eqref_sgd-xt-diff`
 
-This means that we make progress as long as the  difference between current loss and the optimal loss outweighs $\eta_t L^2/2$. Since this difference is bound to converge to zero it follows that the learning rate $\eta_t$ also needs to *vanish*.
+이는 현재 손실과 최적 손실의 차이가 $\eta_t L^2/2$를 능가하는 한 진전을 이룬다는 것을 의미합니다. 이 차이는 0으로 수렴하게 되어 있으므로 학습률 $\eta_t$ 또한 *사라져야* 한다는 것이 따릅니다.
 
-Next we take expectations over :eqref:`eqref_sgd-xt-diff`. This yields
+다음으로 저희는 :eqref:`eqref_sgd-xt-diff`에 대해 기댓값을 취합니다. 이는
 
 $$E\left[\|\mathbf{x}_{t} - \mathbf{x}^*\|^2\right] - E\left[\|\mathbf{x}_{t+1} - \mathbf{x}^*\|^2\right] \geq 2 \eta_t [E[R(\mathbf{x}_t)] - R^*] -  \eta_t^2 L^2.$$
 
-The last step involves summing over the inequalities for $t \in \{1, \ldots, T\}$. Since the sum telescopes and by dropping the lower term we obtain
+를 산출합니다. 마지막 단계는 $t \in \{1, \ldots, T\}$에 대한 부등식의 합을 구하는 것입니다. 합이 망원경적이고 더 낮은 항을 떨어뜨리면 다음을 얻습니다.
 
 $$\|\mathbf{x}_1 - \mathbf{x}^*\|^2 \geq 2 \left (\sum_{t=1}^T   \eta_t \right) [E[R(\mathbf{x}_t)] - R^*] - L^2 \sum_{t=1}^T \eta_t^2.$$
 :eqlabel:`eq_sgd-x1-xstar`
 
-Note that we exploited that $\mathbf{x}_1$ is given and thus the expectation can be dropped. Last define
+저희는 $\mathbf{x}_1$이 주어진 것이므로 기댓값을 떨어뜨릴 수 있음을 활용했습니다. 마지막으로 정의합니다.
 
 $$\bar{\mathbf{x}} \stackrel{\textrm{def}}{=} \frac{\sum_{t=1}^T \eta_t \mathbf{x}_t}{\sum_{t=1}^T \eta_t}.$$
 
-Since
+다음
 
 $$E\left(\frac{\sum_{t=1}^T \eta_t R(\mathbf{x}_t)}{\sum_{t=1}^T \eta_t}\right) = \frac{\sum_{t=1}^T \eta_t E[R(\mathbf{x}_t)]}{\sum_{t=1}^T \eta_t} = E[R(\mathbf{x}_t)],$$
 
-by Jensen's inequality (setting $i=t$, $\alpha_i = \eta_t/\sum_{t=1}^T \eta_t$ in :eqref:`eq_jensens-inequality`) and convexity of $R$ it follows that $E[R(\mathbf{x}_t)] \geq E[R(\bar{\mathbf{x}})]$, thus
+이므로, 옌센 부등식에 의해(:eqref:`eq_jensens-inequality`에서 $i=t$, $\alpha_i = \eta_t/\sum_{t=1}^T \eta_t$로 설정) 그리고 $R$의 볼록성에 의해 $E[R(\mathbf{x}_t)] \geq E[R(\bar{\mathbf{x}})]$가 성립하므로,
 
 $$\sum_{t=1}^T \eta_t E[R(\mathbf{x}_t)] \geq \sum_{t=1}^T \eta_t  E\left[R(\bar{\mathbf{x}})\right].$$
 
-Plugging this into the inequality :eqref:`eq_sgd-x1-xstar` yields the bound
+이를 부등식 :eqref:`eq_sgd-x1-xstar`에 대입하면 한계를 얻습니다.
 
 $$
 \left[E[\bar{\mathbf{x}}]\right] - R^* \leq \frac{r^2 + L^2 \sum_{t=1}^T \eta_t^2}{2 \sum_{t=1}^T \eta_t},
 $$
 
-where $r^2 \stackrel{\textrm{def}}{=} \|\mathbf{x}_1 - \mathbf{x}^*\|^2$ is a bound on the distance between the initial choice of parameters and the final outcome. In short, the speed of convergence depends on how
-the norm of stochastic gradient is bounded ($L$) and how far away from optimality the initial parameter value is ($r$). Note that the bound is in terms of $\bar{\mathbf{x}}$ rather than $\mathbf{x}_T$. This is the case since $\bar{\mathbf{x}}$ is a smoothed version of the optimization path.
-Whenever $r, L$, and $T$ are known we can pick the learning rate $\eta = r/(L \sqrt{T})$. This yields as upper bound $rL/\sqrt{T}$. That is, we converge with rate $\mathcal{O}(1/\sqrt{T})$ to the optimal solution.
+여기서 $r^2 \stackrel{\textrm{def}}{=} \|\mathbf{x}_1 - \mathbf{x}^*\|^2$는 초기 파라미터 선택과 최종 결과 사이의 거리에 대한 한계입니다. 요약하면, 수렴 속도는 확률적 경사도의 노름이 어떻게 한정되어 있는지($L$)와 초기 파라미터 값이 최적성에서 얼마나 멀리 떨어져 있는지($r$)에 달려 있습니다. 한계가 $\mathbf{x}_T$가 아니라 $\bar{\mathbf{x}}$로 표현된다는 점에 유의하세요. 이는 $\bar{\mathbf{x}}$가 최적화 경로의 평활화된 버전이기 때문입니다.
+$r$, $L$, $T$가 알려져 있을 때마다 저희는 학습률 $\eta = r/(L \sqrt{T})$를 선택할 수 있습니다. 이는 상한 $rL/\sqrt{T}$를 산출합니다. 즉, 저희는 $\mathcal{O}(1/\sqrt{T})$의 속도로 최적해로 수렴합니다.
 
 
 
 
 
-## Stochastic Gradients and Finite Samples
+## 확률적 경사도와 유한 표본
 
-So far we have played a bit fast and loose when it comes to talking about stochastic gradient descent. We posited that we draw instances $x_i$, typically with labels $y_i$ from some distribution $p(x, y)$ and that we use this to update the model parameters in some manner. In particular, for a finite sample size we simply argued that the discrete distribution $p(x, y) = \frac{1}{n} \sum_{i=1}^n \delta_{x_i}(x) \delta_{y_i}(y)$
-for some functions $\delta_{x_i}$ and $\delta_{y_i}$
-allows us to perform stochastic gradient descent over it.
+지금까지 저희는 확률적 경사 하강법에 대해 다소 무신경하게 이야기해 왔습니다. 저희는 어떤 분포 $p(x, y)$로부터 인스턴스 $x_i$(일반적으로 레이블 $y_i$와 함께)를 추출하고 이를 사용해 어떤 방식으로 모델 파라미터를 업데이트한다고 가정했습니다. 특히, 유한한 표본 크기의 경우, 저희는 단순히 어떤 함수 $\delta_{x_i}$와 $\delta_{y_i}$에 대한 이산 분포 $p(x, y) = \frac{1}{n} \sum_{i=1}^n \delta_{x_i}(x) \delta_{y_i}(y)$가
+저희가 그것에 대해 확률적 경사 하강법을 수행할 수 있게 한다고 주장했습니다.
 
-However, this is not really what we did. In the toy examples in the current section we simply added noise to an otherwise non-stochastic gradient, i.e., we pretended to have pairs $(x_i, y_i)$. It turns out that this is justified here (see the exercises for a detailed discussion). More troubling is that in all previous discussions we clearly did not do this. Instead we iterated over all instances *exactly once*. To see why this is preferable consider the converse, namely that we are sampling $n$ observations from the discrete distribution *with replacement*. The probability of choosing an element $i$ at random is $1/n$. Thus to choose it *at least* once is
+그러나, 이는 사실 저희가 한 일이 아닙니다. 현재 절의 장난감 예제에서 저희는 단순히 비확률적 경사도에 노이즈를 더했습니다. 즉, 쌍 $(x_i, y_i)$를 가지고 있는 척했습니다. 여기서는 이것이 정당화된다는 것이 밝혀집니다(자세한 논의는 연습문제 참조). 더 우려스러운 것은 이전의 모든 논의에서 저희가 분명히 이렇게 하지 않았다는 점입니다. 대신 저희는 모든 인스턴스를 *정확히 한 번* 반복했습니다. 이것이 왜 더 선호되는지를 보려면 그 반대를 생각해 봅시다. 즉, *복원 추출*로 이산 분포에서 $n$개의 관측값을 샘플링하는 것입니다. 무작위로 요소 $i$를 선택할 확률은 $1/n$입니다. 따라서 *적어도* 한 번 선택할 확률은
 
 $$P(\textrm{choose~} i) = 1 - P(\textrm{omit~} i) = 1 - (1-1/n)^n \approx 1-e^{-1} \approx 0.63.$$
 
-A similar reasoning shows that the probability of picking some sample (i.e., training example) *exactly once* is given by
+이 됩니다. 비슷한 추론에 따라 어떤 표본(즉, 학습 예제)을 *정확히 한 번* 뽑을 확률은
 
 $${n \choose 1} \frac{1}{n} \left(1-\frac{1}{n}\right)^{n-1} = \frac{n}{n-1} \left(1-\frac{1}{n}\right)^{n} \approx e^{-1} \approx 0.37.$$
 
-Sampling with replacement leads to an increased variance and decreased data efficiency relative to sampling *without replacement*. Hence, in practice we perform the latter (and this is the default choice throughout this book). Last note that repeated passes through the training dataset traverse it in a *different* random order.
+로 주어집니다. 복원 추출은 *비복원 추출*과 비교해 분산이 증가하고 데이터 효율성이 감소하게 됩니다. 따라서, 실제로는 후자를 수행합니다(그리고 이것이 이 책 전체의 기본 선택입니다). 마지막으로, 학습 데이터셋의 반복적 통과는 그것을 *서로 다른* 무작위 순서로 순회한다는 점에 유의하세요.
 
 
-## Summary
+## 요약
 
-* For convex problems we can prove that for a wide choice of learning rates stochastic gradient descent will converge to the optimal solution.
-* For deep learning this is generally not the case. However, the analysis of convex problems gives us useful insight into how to approach optimization, namely to reduce the learning rate progressively, albeit not too quickly.
-* Problems occur when the learning rate is too small or too large. In practice  a suitable learning rate is often found only after multiple experiments.
-* When there are more examples in the training dataset, it costs more to compute each iteration for gradient descent, so stochastic gradient descent is preferred in these cases.
-* Optimality guarantees for stochastic gradient descent are in general not available in nonconvex cases since the number of local minima that require checking might well be exponential.
-
-
+* 볼록 문제의 경우 광범위한 학습률 선택에 대해 확률적 경사 하강법이 최적해로 수렴할 것임을 증명할 수 있습니다.
+* 딥러닝의 경우 일반적으로 그렇지 않습니다. 그러나 볼록 문제의 분석은 최적화에 접근하는 방법, 즉 학습률을 점진적으로 줄이되 너무 빠르지 않게 하는 방법에 대한 유용한 통찰을 제공합니다.
+* 학습률이 너무 작거나 너무 클 때 문제가 발생합니다. 실제로는 여러 번의 실험 후에야 적절한 학습률을 찾는 경우가 많습니다.
+* 학습 데이터셋에 더 많은 예제가 있을 때, 경사 하강법의 각 반복을 계산하는 데 더 많은 비용이 들기 때문에 이러한 경우에는 확률적 경사 하강법이 선호됩니다.
+* 확률적 경사 하강법의 최적성 보장은 일반적으로 비볼록 경우에는 사용할 수 없습니다. 왜냐하면 확인해야 할 지역 최솟값의 수가 지수적일 수 있기 때문입니다.
 
 
-## Exercises
 
-1. Experiment with different learning rate schedules for stochastic gradient descent and with different numbers of iterations. In particular, plot the distance from the optimal solution $(0, 0)$ as a function of the number of iterations.
-1. Prove that for the function $f(x_1, x_2) = x_1^2 + 2 x_2^2$ adding normal noise to the gradient is equivalent to minimizing a loss function $f(\mathbf{x}, \mathbf{w}) = (x_1 - w_1)^2 + 2 (x_2 - w_2)^2$ where $\mathbf{x}$ is drawn from a normal distribution.
-1. Compare convergence of stochastic gradient descent when you sample from $\{(x_1, y_1), \ldots, (x_n, y_n)\}$ with replacement and when you sample without replacement.
-1. How would you change the stochastic gradient descent solver if some gradient (or rather some coordinate associated with it) was consistently larger than all the other gradients?
-1. Assume that $f(x) = x^2 (1 + \sin x)$. How many local minima does $f$ have? Can you change $f$ in such a way that to minimize it one needs to evaluate all the local minima?
+
+## 연습문제
+
+1. 확률적 경사 하강법에 대해 다양한 학습률 스케줄과 다양한 반복 횟수로 실험해 보세요. 특히, 반복 횟수의 함수로 최적해 $(0, 0)$로부터의 거리를 그려 보세요.
+1. 함수 $f(x_1, x_2) = x_1^2 + 2 x_2^2$에 대해 경사도에 정규 노이즈를 더하는 것이 손실 함수 $f(\mathbf{x}, \mathbf{w}) = (x_1 - w_1)^2 + 2 (x_2 - w_2)^2$를 최소화하는 것과 동등함을 증명하세요. 여기서 $\mathbf{x}$는 정규분포에서 추출됩니다.
+1. $\{(x_1, y_1), \ldots, (x_n, y_n)\}$에서 복원 추출로 샘플링할 때와 비복원 추출로 샘플링할 때 확률적 경사 하강법의 수렴을 비교해 보세요.
+1. 어떤 경사도(또는 그것과 관련된 어떤 좌표)가 다른 모든 경사도보다 지속적으로 클 때 확률적 경사 하강법 솔버를 어떻게 변경하시겠습니까?
+1. $f(x) = x^2 (1 + \sin x)$라고 가정해 봅시다. $f$는 얼마나 많은 지역 최솟값을 가집니까? 그것을 최소화하기 위해 모든 지역 최솟값을 평가해야 하는 방식으로 $f$를 변경할 수 있습니까?
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/352)

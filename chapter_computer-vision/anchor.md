@@ -1,23 +1,14 @@
-# Anchor Boxes
+# 앵커 박스
 :label:`sec_anchor`
 
 
-Object detection algorithms usually
-sample a large number of regions in the input image, determine whether these regions contain
-objects of interest, and adjust the boundaries
-of the regions so as to predict the
-*ground-truth bounding boxes*
-of the objects more accurately.
-Different models may adopt
-different region sampling schemes. 
-Here we introduce one of such methods:
-it generates multiple bounding boxes with varying scales and aspect ratios centered on each pixel. 
-These bounding boxes are called *anchor boxes*.
-We will design an object detection model
-based on anchor boxes in :numref:`sec_ssd`.
+객체 검출 알고리즘은 보통 입력 이미지에서 많은 수의 영역을 샘플링하고, 이 영역이 관심 객체를 포함하는지 결정한 다음, 객체의 *실측(ground-truth) 바운딩 박스*를 보다 정확하게 예측하기 위해 영역의 경계를 조정합니다.
+다양한 모델은 다양한 영역 샘플링 방식을 채택할 수 있습니다.
+여기서는 그러한 방법 중 하나를 소개합니다. 이는 각 픽셀을 중심으로 다양한 스케일과 종횡비의 여러 바운딩 박스를 생성합니다.
+이러한 바운딩 박스들을 *앵커 박스*라고 부릅니다.
+저희는 :numref:`sec_ssd`에서 앵커 박스 기반의 객체 검출 모델을 설계할 것입니다.
 
-First, let's modify the printing accuracy
-just for more concise outputs.
+먼저, 더 간결한 출력을 위해 인쇄 정확도를 수정해 봅시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -38,31 +29,23 @@ import torch
 torch.set_printoptions(2)  # Simplify printing accuracy
 ```
 
-## Generating Multiple Anchor Boxes
+## 여러 앵커 박스 생성
 
-Suppose that the input image has a height of $h$ and width of $w$. 
-We generate anchor boxes with different shapes centered on each pixel of the image.
-Let the *scale* be $s\in (0, 1]$ and
-the *aspect ratio* (ratio of width to height) is $r > 0$. 
-Then [**the width and height of the anchor box are $ws\sqrt{r}$ and $hs/\sqrt{r}$, respectively.**]
-Note that when the center position is given, an anchor box with known width and height is determined.
+입력 이미지의 높이가 $h$이고 너비가 $w$라고 가정합니다.
+저희는 이미지의 각 픽셀을 중심으로 다양한 형태의 앵커 박스를 생성합니다.
+*스케일*을 $s\in (0, 1]$이라 하고, *종횡비*(너비와 높이의 비율)는 $r > 0$이라고 합시다.
+그러면 [**앵커 박스의 너비와 높이는 각각 $ws\sqrt{r}$과 $hs/\sqrt{r}$입니다.**]
+중심 위치가 주어질 때, 알려진 너비와 높이를 가진 앵커 박스가 결정된다는 점에 유의하세요.
 
-To generate multiple anchor boxes with different shapes,
-let's set a series of scales
-$s_1,\ldots, s_n$ and 
-a series of aspect ratios $r_1,\ldots, r_m$.
-When using all the combinations of these scales and aspect ratios with each pixel as the center,
-the input image will have a total of $whnm$ anchor boxes. Although these anchor boxes may cover all the
-ground-truth bounding boxes, the computational complexity is easily too high.
-In practice,
-we can only (**consider those combinations
-containing**) $s_1$ or $r_1$:
+다양한 형태의 여러 앵커 박스를 생성하기 위해, 일련의 스케일 $s_1,\ldots, s_n$과 일련의 종횡비 $r_1,\ldots, r_m$을 설정해 보겠습니다.
+이러한 스케일과 종횡비의 모든 조합을 각 픽셀을 중심으로 사용할 때, 입력 이미지는 총 $whnm$개의 앵커 박스를 가지게 됩니다. 이러한 앵커 박스들이 모든 실측 바운딩 박스를 커버할 수도 있지만, 계산 복잡도가 너무 높아지기 쉽습니다.
+실제로는 $s_1$ 또는 $r_1$을 (**포함하는 조합들만 고려**)할 수 있습니다.
 
 (**$$(s_1, r_1), (s_1, r_2), \ldots, (s_1, r_m), (s_2, r_1), (s_3, r_1), \ldots, (s_n, r_1).$$**)
 
-That is to say, the number of anchor boxes centered on the same pixel is $n+m-1$. For the entire input image, we will generate a total of $wh(n+m-1)$ anchor boxes.
+즉, 같은 픽셀을 중심으로 하는 앵커 박스의 수는 $n+m-1$입니다. 전체 입력 이미지에 대해 저희는 총 $wh(n+m-1)$개의 앵커 박스를 생성합니다.
 
-The above method of generating anchor boxes is implemented in the following `multibox_prior` function. We specify the input image, a list of scales, and a list of aspect ratios, then this function will return all the anchor boxes.
+앵커 박스를 생성하는 위의 방법은 다음 `multibox_prior` 함수에 구현되어 있습니다. 입력 이미지, 스케일 목록, 종횡비 목록을 지정하면, 이 함수가 모든 앵커 박스를 반환합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -146,8 +129,7 @@ def multibox_prior(data, sizes, ratios):
     return output.unsqueeze(0)
 ```
 
-We can see that [**the shape of the returned anchor box variable `Y`**] is
-(batch size, number of anchor boxes, 4).
+[**반환된 앵커 박스 변수 `Y`의 형태**]가 (배치 크기, 앵커 박스 수, 4)임을 볼 수 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -171,12 +153,9 @@ Y = multibox_prior(X, sizes=[0.75, 0.5, 0.25], ratios=[1, 2, 0.5])
 Y.shape
 ```
 
-After changing the shape of the anchor box variable `Y` to (image height, image width, number of anchor boxes centered on the same pixel, 4),
-we can obtain all the anchor boxes centered on a specified pixel position.
-In the following,
-we [**access the first anchor box centered on (250, 250)**]. It has four elements: the $(x, y)$-axis coordinates at the upper-left corner and the $(x, y)$-axis coordinates at the lower-right corner of the anchor box.
-The coordinate values of both axes
-are divided by the width and height of the image, respectively.
+앵커 박스 변수 `Y`의 형태를 (이미지 높이, 이미지 너비, 같은 픽셀을 중심으로 하는 앵커 박스 수, 4)로 변경한 후에는, 지정된 픽셀 위치를 중심으로 하는 모든 앵커 박스를 얻을 수 있습니다.
+이어서, 저희는 [**(250, 250)을 중심으로 하는 첫 번째 앵커 박스에 접근**]합니다. 여기에는 네 가지 요소가 있습니다. 앵커 박스의 좌상단 꼭짓점의 $(x, y)$축 좌표와 우하단 꼭짓점의 $(x, y)$축 좌표입니다.
+두 축의 좌표 값은 각각 이미지의 너비와 높이로 나누어집니다.
 
 ```{.python .input}
 #@tab all
@@ -184,8 +163,7 @@ boxes = Y.reshape(h, w, 5, 4)
 boxes[250, 250, 0, :]
 ```
 
-In order to [**show all the anchor boxes centered on one pixel in the image**],
-we define the following `show_bboxes` function to draw multiple bounding boxes on the image.
+[**이미지에서 한 픽셀을 중심으로 하는 모든 앵커 박스를 표시**]하기 위해, 이미지에 여러 바운딩 박스를 그리는 다음 `show_bboxes` 함수를 정의합니다.
 
 ```{.python .input}
 #@tab all
@@ -213,13 +191,10 @@ def show_bboxes(axes, bboxes, labels=None, colors=None):
                       bbox=dict(facecolor=color, lw=0))
 ```
 
-As we just saw, the coordinate values of the $x$ and $y$ axes in the variable `boxes` have been divided by the width and height of the image, respectively.
-When drawing anchor boxes,
-we need to restore their original coordinate values;
-thus, we define variable `bbox_scale` below. 
-Now, we can draw all the anchor boxes centered on (250, 250) in the image.
-As you can see, the blue anchor box with a scale of 0.75 and an aspect ratio of 1 well
-surrounds the dog in the image.
+방금 본 것처럼, 변수 `boxes`의 $x$축과 $y$축의 좌표 값은 각각 이미지의 너비와 높이로 나누어졌습니다.
+앵커 박스를 그릴 때는 원래의 좌표 값으로 복원해야 합니다. 따라서, 아래에서 변수 `bbox_scale`을 정의합니다.
+이제, 이미지에서 (250, 250)을 중심으로 하는 모든 앵커 박스를 그릴 수 있습니다.
+보시다시피, 스케일이 0.75이고 종횡비가 1인 파란색 앵커 박스가 이미지의 개를 잘 둘러싸고 있습니다.
 
 ```{.python .input}
 #@tab all
@@ -231,30 +206,26 @@ show_bboxes(fig.axes, boxes[250, 250, :, :] * bbox_scale,
              's=0.75, r=0.5'])
 ```
 
-## [**Intersection over Union (IoU)**]
+## [**IoU(Intersection over Union)**]
 
-We just mentioned that an anchor box "well" surrounds the dog in the image.
-If the ground-truth bounding box of the object is known, how can "well" here be quantified?
-Intuitively, we can measure the similarity between
-the anchor box and the ground-truth bounding box.
-We know that the *Jaccard index* can measure the similarity between two sets. Given sets $\mathcal{A}$ and $\mathcal{B}$, their Jaccard index is the size of their intersection divided by the size of their union:
+저희는 방금 앵커 박스가 이미지의 개를 "잘" 둘러싼다고 언급했습니다.
+객체의 실측 바운딩 박스가 알려져 있다면, 여기서 "잘"을 어떻게 정량화할 수 있을까요?
+직관적으로, 저희는 앵커 박스와 실측 바운딩 박스 사이의 유사성을 측정할 수 있습니다.
+저희는 *자카드 지수(Jaccard index)*가 두 집합 사이의 유사성을 측정할 수 있다는 것을 알고 있습니다. 집합 $\mathcal{A}$와 $\mathcal{B}$가 주어졌을 때, 그들의 자카드 지수는 교집합의 크기를 합집합의 크기로 나눈 것입니다.
 
 $$J(\mathcal{A},\mathcal{B}) = \frac{\left|\mathcal{A} \cap \mathcal{B}\right|}{\left| \mathcal{A} \cup \mathcal{B}\right|}.$$
 
 
-In fact, we can consider the pixel area of any bounding box as a set of pixels. 
-In this way, we can measure the similarity of the two bounding boxes by the Jaccard index of their pixel sets. For two bounding boxes, we usually refer their Jaccard index as *intersection over union* (*IoU*), which is the ratio of their intersection area to their union area, as shown in :numref:`fig_iou`.
-The range of an IoU is between 0 and 1:
-0 means that two bounding boxes do not overlap at all,
-while 1 indicates that the two bounding boxes are equal.
+실제로 저희는 어떤 바운딩 박스의 픽셀 영역을 픽셀의 집합으로 간주할 수 있습니다.
+이런 식으로 저희는 픽셀 집합의 자카드 지수로 두 바운딩 박스의 유사성을 측정할 수 있습니다. 두 바운딩 박스에 대해, 저희는 보통 그들의 자카드 지수를 *IoU(intersection over union)*라고 부르는데, 이는 :numref:`fig_iou`에 표시된 것처럼 교집합 영역과 합집합 영역의 비율입니다.
+IoU의 범위는 0과 1 사이입니다.
+0은 두 바운딩 박스가 전혀 겹치지 않음을 의미하고, 1은 두 바운딩 박스가 동일함을 나타냅니다.
 
-![IoU is the ratio of the intersection area to the union area of two bounding boxes.](../img/iou.svg)
+![IoU는 두 바운딩 박스의 합집합 영역에 대한 교집합 영역의 비율입니다.](../img/iou.svg)
 :label:`fig_iou`
 
-For the remainder of this section, we will use IoU to measure the similarity between anchor boxes and ground-truth bounding boxes, and between different anchor boxes.
-Given two lists of anchor or bounding boxes,
-the following `box_iou` computes their pairwise IoU
-across these two lists.
+이 절의 나머지 부분에서, 저희는 IoU를 사용해 앵커 박스와 실측 바운딩 박스 사이, 그리고 다양한 앵커 박스 사이의 유사성을 측정합니다.
+두 앵커 또는 바운딩 박스 목록이 주어졌을 때, 다음 `box_iou`는 이 두 목록에 걸쳐 그들의 쌍별 IoU를 계산합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -300,62 +271,40 @@ def box_iou(boxes1, boxes2):
     return inter_areas / union_areas
 ```
 
-## Labeling Anchor Boxes in Training Data
+## 훈련 데이터에서 앵커 박스 라벨링
 :label:`subsec_labeling-anchor-boxes`
 
 
-In a training dataset,
-we consider each anchor box as a training example.
-In order to train an object detection model,
-we need *class* and *offset* labels for each anchor box,
-where the former is
-the class of the object relevant to the anchor box
-and the latter is the offset
-of the ground-truth bounding box relative to the anchor box.
-During the prediction,
-for each image
-we generate multiple anchor boxes,
-predict classes and offsets for all the anchor boxes,
-adjust their positions according to the predicted offsets to obtain the predicted bounding boxes,
-and finally only output those 
-predicted bounding boxes that satisfy certain criteria.
+훈련 데이터셋에서 저희는 각 앵커 박스를 하나의 훈련 예제로 간주합니다.
+객체 검출 모델을 훈련하기 위해, 저희는 각 앵커 박스에 대해 *클래스*와 *오프셋* 라벨이 필요합니다. 여기서 전자는 앵커 박스와 관련된 객체의 클래스이며 후자는 앵커 박스에 대한 실측 바운딩 박스의 오프셋입니다.
+예측 중에는, 각 이미지에 대해 여러 앵커 박스를 생성하고, 모든 앵커 박스에 대해 클래스와 오프셋을 예측하고, 예측된 오프셋에 따라 위치를 조정해 예측된 바운딩 박스를 얻고, 마지막으로 특정 기준을 충족하는 예측된 바운딩 박스만 출력합니다.
 
 
-As we know, an object detection training set
-comes with labels for
-locations of *ground-truth bounding boxes*
-and classes of their surrounded objects.
-To label any generated *anchor box*,
-we refer to the labeled
-location and class of its *assigned* ground-truth bounding box that is closest to the anchor box.
-In the following,
-we describe an algorithm for assigning
-closest ground-truth bounding boxes to anchor boxes. 
+저희가 알고 있듯이, 객체 검출 훈련 셋에는 *실측 바운딩 박스*의 위치와 그것이 둘러싼 객체의 클래스에 대한 라벨이 함께 제공됩니다.
+생성된 *앵커 박스*에 라벨을 붙이기 위해, 저희는 앵커 박스와 가장 가까운 *할당된* 실측 바운딩 박스의 라벨된 위치와 클래스를 참조합니다.
+이어서, 저희는 앵커 박스에 가장 가까운 실측 바운딩 박스를 할당하기 위한 알고리즘을 설명합니다.
 
-### [**Assigning Ground-Truth Bounding Boxes to Anchor Boxes**]
+### [**앵커 박스에 실측 바운딩 박스 할당**]
 
-Given an image,
-suppose that the anchor boxes are $A_1, A_2, \ldots, A_{n_a}$ and the ground-truth bounding boxes are $B_1, B_2, \ldots, B_{n_b}$, where $n_a \geq n_b$.
-Let's define a matrix $\mathbf{X} \in \mathbb{R}^{n_a \times n_b}$, whose element $x_{ij}$ in the $i^\textrm{th}$ row and $j^\textrm{th}$ column is the IoU of the anchor box $A_i$ and the ground-truth bounding box $B_j$. The algorithm consists of the following steps:
+이미지가 주어졌을 때, 앵커 박스가 $A_1, A_2, \ldots, A_{n_a}$이고 실측 바운딩 박스가 $B_1, B_2, \ldots, B_{n_b}$라고 가정합니다. 여기서 $n_a \geq n_b$입니다.
+$i^\textrm{th}$ 행과 $j^\textrm{th}$ 열의 원소 $x_{ij}$가 앵커 박스 $A_i$와 실측 바운딩 박스 $B_j$의 IoU인 행렬 $\mathbf{X} \in \mathbb{R}^{n_a \times n_b}$를 정의합시다. 알고리즘은 다음 단계로 구성됩니다.
 
-1. Find the largest element in matrix $\mathbf{X}$ and denote its row and column indices as $i_1$ and $j_1$, respectively. Then the ground-truth bounding box $B_{j_1}$ is assigned to the anchor box $A_{i_1}$. This is quite intuitive because $A_{i_1}$ and $B_{j_1}$ are the closest among all the pairs of anchor boxes and ground-truth bounding boxes. After the first assignment, discard all the elements in the ${i_1}^\textrm{th}$ row and the ${j_1}^\textrm{th}$ column in matrix $\mathbf{X}$. 
-1. Find the largest of the remaining elements in matrix $\mathbf{X}$ and denote its row and column indices as $i_2$ and $j_2$, respectively. We assign ground-truth bounding box $B_{j_2}$ to anchor box $A_{i_2}$ and discard all the elements in the ${i_2}^\textrm{th}$ row and the ${j_2}^\textrm{th}$ column in matrix $\mathbf{X}$.
-1. At this point, elements in two rows and two columns in  matrix $\mathbf{X}$ have been discarded. We proceed until all elements in $n_b$ columns in matrix $\mathbf{X}$ are discarded. At this time, we have assigned a ground-truth bounding box to each of $n_b$ anchor boxes.
-1. Only traverse through the remaining $n_a - n_b$ anchor boxes. For example, given any anchor box $A_i$, find the ground-truth bounding box $B_j$ with the largest IoU with $A_i$ throughout the $i^\textrm{th}$ row of matrix $\mathbf{X}$, and assign $B_j$ to $A_i$ only if this IoU is greater than a predefined threshold.
+1. 행렬 $\mathbf{X}$에서 가장 큰 원소를 찾고 그 행 인덱스와 열 인덱스를 각각 $i_1$과 $j_1$로 표기합니다. 그러면 실측 바운딩 박스 $B_{j_1}$이 앵커 박스 $A_{i_1}$에 할당됩니다. 이는 $A_{i_1}$과 $B_{j_1}$이 모든 앵커 박스와 실측 바운딩 박스 쌍 중에서 가장 가깝기 때문에 매우 직관적입니다. 첫 번째 할당 후, 행렬 $\mathbf{X}$의 ${i_1}^\textrm{th}$ 행과 ${j_1}^\textrm{th}$ 열에 있는 모든 원소를 폐기합니다.
+1. 행렬 $\mathbf{X}$의 남은 원소들 중에서 가장 큰 것을 찾고 그 행 인덱스와 열 인덱스를 각각 $i_2$와 $j_2$로 표기합니다. 실측 바운딩 박스 $B_{j_2}$를 앵커 박스 $A_{i_2}$에 할당하고 행렬 $\mathbf{X}$의 ${i_2}^\textrm{th}$ 행과 ${j_2}^\textrm{th}$ 열에 있는 모든 원소를 폐기합니다.
+1. 이 시점에서, 행렬 $\mathbf{X}$의 두 행과 두 열의 원소들이 폐기되었습니다. 행렬 $\mathbf{X}$의 $n_b$ 열의 모든 원소가 폐기될 때까지 계속 진행합니다. 이때, 저희는 $n_b$개의 앵커 박스 각각에 실측 바운딩 박스를 할당하게 됩니다.
+1. 나머지 $n_a - n_b$개의 앵커 박스만 순회합니다. 예를 들어, 어떤 앵커 박스 $A_i$가 주어졌을 때, 행렬 $\mathbf{X}$의 $i^\textrm{th}$ 행 전체에서 $A_i$와 가장 큰 IoU를 갖는 실측 바운딩 박스 $B_j$를 찾고, 이 IoU가 미리 정의된 임계값보다 큰 경우에만 $B_j$를 $A_i$에 할당합니다.
 
-Let's illustrate the above algorithm using a concrete
-example.
-As shown in :numref:`fig_anchor_label` (left), assuming that the maximum value in matrix $\mathbf{X}$ is $x_{23}$, we assign the ground-truth bounding box $B_3$ to the anchor box $A_2$.
-Then, we discard all the elements in row 2 and column 3 of the matrix, find the largest $x_{71}$ in the remaining  elements (shaded area), and assign the ground-truth bounding box $B_1$ to the anchor box $A_7$. 
-Next, as shown in :numref:`fig_anchor_label` (middle), discard all the elements in row 7 and column 1 of the matrix, find the largest $x_{54}$ in the remaining  elements (shaded area), and assign the ground-truth bounding box $B_4$ to the anchor box $A_5$. 
-Finally, as shown in :numref:`fig_anchor_label` (right), discard all the elements in row 5 and column 4 of the matrix, find the largest $x_{92}$ in the remaining elements (shaded area), and assign the ground-truth bounding box $B_2$ to the anchor box $A_9$.
-After that, we only need to traverse through
-the remaining anchor boxes $A_1, A_3, A_4, A_6, A_8$ and determine whether to assign them ground-truth bounding boxes according to the threshold.
+위의 알고리즘을 구체적인 예제로 설명해 보겠습니다.
+:numref:`fig_anchor_label` (왼쪽)에 표시된 것처럼, 행렬 $\mathbf{X}$의 최댓값이 $x_{23}$이라고 가정하면, 저희는 실측 바운딩 박스 $B_3$를 앵커 박스 $A_2$에 할당합니다.
+그런 다음, 행렬의 2행과 3열의 모든 원소를 폐기하고, 남은 원소들(음영 영역) 중에서 가장 큰 $x_{71}$을 찾고, 실측 바운딩 박스 $B_1$을 앵커 박스 $A_7$에 할당합니다.
+다음으로, :numref:`fig_anchor_label` (중간)에 표시된 것처럼, 행렬의 7행과 1열의 모든 원소를 폐기하고, 남은 원소들(음영 영역) 중에서 가장 큰 $x_{54}$를 찾고, 실측 바운딩 박스 $B_4$를 앵커 박스 $A_5$에 할당합니다.
+마지막으로, :numref:`fig_anchor_label` (오른쪽)에 표시된 것처럼, 행렬의 5행과 4열의 모든 원소를 폐기하고, 남은 원소들(음영 영역) 중에서 가장 큰 $x_{92}$를 찾고, 실측 바운딩 박스 $B_2$를 앵커 박스 $A_9$에 할당합니다.
+그 후, 저희는 나머지 앵커 박스 $A_1, A_3, A_4, A_6, A_8$만 순회하고 임계값에 따라 실측 바운딩 박스를 할당할지 결정하면 됩니다.
 
-![Assigning ground-truth bounding boxes to anchor boxes.](../img/anchor-label.svg)
+![앵커 박스에 실측 바운딩 박스 할당.](../img/anchor-label.svg)
 :label:`fig_anchor_label`
 
-This algorithm is implemented in the following `assign_anchor_to_bbox` function.
+이 알고리즘은 다음 `assign_anchor_to_bbox` 함수에 구현되어 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -416,40 +365,23 @@ def assign_anchor_to_bbox(ground_truth, anchors, device, iou_threshold=0.5):
     return anchors_bbox_map
 ```
 
-### Labeling Classes and Offsets
+### 클래스와 오프셋 라벨링
 
-Now we can label the class and offset for each anchor box. Suppose that an anchor box $A$ is assigned
-a ground-truth bounding box $B$. 
-On the one hand,
-the class of the anchor box $A$ will be
-labeled as that of $B$.
-On the other hand,
-the offset of the anchor box $A$ 
-will be labeled according to the 
-relative position between
-the central coordinates of $B$ and $A$
-together with the relative size between
-these two boxes.
-Given varying
-positions and sizes of different boxes in the dataset,
-we can apply transformations
-to those relative positions and sizes
-that may lead to 
-more uniformly distributed offsets
-that are easier to fit.
-Here we describe a common transformation.
-[**Given the central coordinates of $A$ and $B$ as $(x_a, y_a)$ and $(x_b, y_b)$, 
-their widths as $w_a$ and $w_b$, 
-and their heights as $h_a$ and $h_b$, respectively. 
-We may label the offset of $A$ as
+이제 저희는 각 앵커 박스에 대해 클래스와 오프셋에 라벨을 붙일 수 있습니다. 앵커 박스 $A$가 실측 바운딩 박스 $B$에 할당되었다고 가정합니다.
+한편으로, 앵커 박스 $A$의 클래스는 $B$의 클래스로 라벨링됩니다.
+다른 한편으로, 앵커 박스 $A$의 오프셋은 $B$와 $A$의 중심 좌표 사이의 상대적 위치와 이 두 박스 사이의 상대적 크기에 따라 라벨링됩니다.
+데이터셋의 다양한 박스들이 다양한 위치와 크기를 가지므로, 저희는 이러한 상대적 위치와 크기에 변환을 적용하여 보다 균일하게 분포된, 적합시키기 더 쉬운 오프셋을 만들 수 있습니다.
+여기서는 일반적인 변환을 설명합니다.
+[**$A$와 $B$의 중심 좌표를 각각 $(x_a, y_a)$와 $(x_b, y_b)$, 너비를 $w_a$와 $w_b$, 높이를 $h_a$와 $h_b$로 두었을 때.
+저희는 $A$의 오프셋을 다음과 같이 라벨링할 수 있습니다.
 
 $$\left( \frac{ \frac{x_b - x_a}{w_a} - \mu_x }{\sigma_x},
 \frac{ \frac{y_b - y_a}{h_a} - \mu_y }{\sigma_y},
 \frac{ \log \frac{w_b}{w_a} - \mu_w }{\sigma_w},
 \frac{ \log \frac{h_b}{h_a} - \mu_h }{\sigma_h}\right),$$
 **]
-where default values of the constants are $\mu_x = \mu_y = \mu_w = \mu_h = 0, \sigma_x=\sigma_y=0.1$, and $\sigma_w=\sigma_h=0.2$.
-This transformation is implemented below in the `offset_boxes` function.
+여기서 상수들의 기본 값은 $\mu_x = \mu_y = \mu_w = \mu_h = 0, \sigma_x=\sigma_y=0.1$, $\sigma_w=\sigma_h=0.2$입니다.
+이 변환은 아래의 `offset_boxes` 함수에 구현되어 있습니다.
 
 ```{.python .input}
 #@tab all
@@ -464,12 +396,10 @@ def offset_boxes(anchors, assigned_bb, eps=1e-6):
     return offset
 ```
 
-If an anchor box is not assigned a ground-truth bounding box, we just label the class of the anchor box as "background".
-Anchor boxes whose classes are background are often referred to as *negative* anchor boxes,
-and the rest are called *positive* anchor boxes.
-We implement the following `multibox_target` function
-to [**label classes and offsets for anchor boxes**] (the `anchors` argument) using ground-truth bounding boxes (the `labels` argument).
-This function sets the background class to zero and increments the integer index of a new class by one.
+만약 앵커 박스에 실측 바운딩 박스가 할당되지 않으면, 저희는 앵커 박스의 클래스를 "배경"으로 라벨링합니다.
+배경 클래스인 앵커 박스는 종종 *음성* 앵커 박스라고 부르며, 나머지는 *양성* 앵커 박스라고 부릅니다.
+저희는 실측 바운딩 박스(`labels` 인자)를 사용해 [**앵커 박스(`anchors` 인자)에 대한 클래스와 오프셋을 라벨링**]하기 위해 다음 `multibox_target` 함수를 구현합니다.
+이 함수는 배경 클래스를 0으로 설정하고 새 클래스의 정수 인덱스를 1씩 증가시킵니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -546,22 +476,12 @@ def multibox_target(anchors, labels):
     return (bbox_offset, bbox_mask, class_labels)
 ```
 
-### An Example
+### 예제
 
-Let's illustrate anchor box labeling
-via a concrete example.
-We define ground-truth bounding boxes for the dog and cat in the loaded image,
-where the first element is the class (0 for dog and 1 for cat) and the remaining four elements are the
-$(x, y)$-axis coordinates
-at the upper-left corner and the lower-right corner
-(range is between 0 and 1). 
-We also construct five anchor boxes to be labeled
-using the coordinates of
-the upper-left corner and the lower-right corner:
-$A_0, \ldots, A_4$ (the index starts from 0).
-Then we [**plot these ground-truth bounding boxes 
-and anchor boxes 
-in the image.**]
+구체적인 예제를 통해 앵커 박스 라벨링을 설명해 보겠습니다.
+저희는 로드된 이미지에서 개와 고양이의 실측 바운딩 박스를 정의합니다. 여기서 첫 번째 요소는 클래스(개는 0, 고양이는 1)이고 나머지 네 요소는 좌상단 꼭짓점과 우하단 꼭짓점의 $(x, y)$축 좌표(범위는 0과 1 사이)입니다.
+또한 좌상단 꼭짓점과 우하단 꼭짓점의 좌표를 사용해 라벨링될 다섯 개의 앵커 박스도 구성합니다. $A_0, \ldots, A_4$ (인덱스는 0부터 시작합니다).
+그런 다음 [**이러한 실측 바운딩 박스와 앵커 박스를 이미지에 플롯합니다.**]
 
 ```{.python .input}
 #@tab all
@@ -576,14 +496,9 @@ show_bboxes(fig.axes, ground_truth[:, 1:] * bbox_scale, ['dog', 'cat'], 'k')
 show_bboxes(fig.axes, anchors * bbox_scale, ['0', '1', '2', '3', '4']);
 ```
 
-Using the `multibox_target` function defined above,
-we can [**label classes and offsets
-of these anchor boxes based on
-the ground-truth bounding boxes**] for the dog and cat.
-In this example, indices of
-the background, dog, and cat classes
-are 0, 1, and 2, respectively. 
-Below we add an dimension for examples of anchor boxes and ground-truth bounding boxes.
+위에서 정의한 `multibox_target` 함수를 사용해, 저희는 개와 고양이의 [**실측 바운딩 박스를 기반으로 이러한 앵커 박스의 클래스와 오프셋을 라벨링**]할 수 있습니다.
+이 예제에서, 배경, 개, 고양이 클래스의 인덱스는 각각 0, 1, 2입니다.
+아래에서 저희는 앵커 박스와 실측 바운딩 박스의 예제에 대한 차원을 추가합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -597,66 +512,48 @@ labels = multibox_target(anchors.unsqueeze(dim=0),
                          ground_truth.unsqueeze(dim=0))
 ```
 
-There are three items in the returned result, all of which are in the tensor format.
-The third item contains the labeled classes of the input anchor boxes.
+반환된 결과에는 세 가지 항목이 있는데, 모두 텐서 형식입니다.
+세 번째 항목은 입력 앵커 박스의 라벨링된 클래스를 포함합니다.
 
-Let's analyze the returned class labels below based on
-anchor box and ground-truth bounding box positions in the image.
-First, among all the pairs of anchor boxes
-and ground-truth bounding boxes,
-the IoU of the anchor box $A_4$ and the ground-truth bounding box of the cat is the largest. 
-Thus, the class of $A_4$ is labeled as the cat.
-Taking out 
-pairs containing $A_4$ or the ground-truth bounding box of the cat, among the rest 
-the pair of the anchor box $A_1$ and the ground-truth bounding box of the dog has the largest IoU.
-So the class of $A_1$ is labeled as the dog.
-Next, we need to traverse through the remaining three unlabeled anchor boxes: $A_0$, $A_2$, and $A_3$.
-For $A_0$,
-the class of the ground-truth bounding box with the largest IoU is the dog,
-but the IoU is below the predefined threshold (0.5),
-so the class is labeled as background;
-for $A_2$,
-the class of the ground-truth bounding box with the largest IoU is the cat and the IoU exceeds the threshold, so the class is labeled as the cat;
-for $A_3$,
-the class of the ground-truth bounding box with the largest IoU is the cat, but the value is below the threshold, so the class is labeled as background.
+이미지에서 앵커 박스와 실측 바운딩 박스의 위치를 기반으로 아래의 반환된 클래스 라벨을 분석해 보겠습니다.
+먼저, 모든 앵커 박스와 실측 바운딩 박스의 쌍 중에서, 앵커 박스 $A_4$와 고양이의 실측 바운딩 박스의 IoU가 가장 큽니다.
+따라서, $A_4$의 클래스는 고양이로 라벨링됩니다.
+$A_4$ 또는 고양이의 실측 바운딩 박스를 포함하는 쌍을 빼면, 나머지 중에서 앵커 박스 $A_1$과 개의 실측 바운딩 박스의 쌍이 가장 큰 IoU를 가집니다.
+따라서 $A_1$의 클래스는 개로 라벨링됩니다.
+다음으로, 저희는 라벨링되지 않은 나머지 세 개의 앵커 박스 $A_0$, $A_2$, $A_3$를 순회해야 합니다.
+$A_0$의 경우, IoU가 가장 큰 실측 바운딩 박스의 클래스는 개이지만, IoU가 미리 정의된 임계값(0.5) 아래이므로, 클래스는 배경으로 라벨링됩니다.
+$A_2$의 경우, IoU가 가장 큰 실측 바운딩 박스의 클래스는 고양이이고 IoU가 임계값을 초과하므로, 클래스는 고양이로 라벨링됩니다.
+$A_3$의 경우, IoU가 가장 큰 실측 바운딩 박스의 클래스는 고양이이지만, 값이 임계값 아래이므로, 클래스는 배경으로 라벨링됩니다.
 
 ```{.python .input}
 #@tab all
 labels[2]
 ```
 
-The second returned item is a mask variable of the shape (batch size, four times the number of anchor boxes).
-Every four elements in the mask variable 
-correspond to the four offset values of each anchor box.
-Since we do not care about background detection,
-offsets of this negative class should not affect the objective function.
-Through elementwise multiplications, zeros in the mask variable will filter out negative class offsets before calculating the objective function.
+두 번째 반환된 항목은 (배치 크기, 앵커 박스 수의 네 배) 형태의 마스크 변수입니다.
+마스크 변수의 매 네 개의 원소는 각 앵커 박스의 네 오프셋 값에 해당합니다.
+배경 검출에 대해서는 신경 쓰지 않으므로, 이 음성 클래스의 오프셋은 목적 함수에 영향을 미치지 않아야 합니다.
+원소별 곱셈을 통해, 마스크 변수의 0은 목적 함수를 계산하기 전에 음성 클래스 오프셋을 필터링합니다.
 
 ```{.python .input}
 #@tab all
 labels[1]
 ```
 
-The first returned item contains the four offset values labeled for each anchor box.
-Note that the offsets of negative-class anchor boxes are labeled as zeros.
+첫 번째 반환된 항목에는 각 앵커 박스에 대해 라벨링된 네 오프셋 값이 포함됩니다.
+음성 클래스 앵커 박스의 오프셋은 0으로 라벨링됨에 유의하세요.
 
 ```{.python .input}
 #@tab all
 labels[0]
 ```
 
-## Predicting Bounding Boxes with Non-Maximum Suppression
+## 비최대 억제를 사용한 바운딩 박스 예측
 :label:`subsec_predicting-bounding-boxes-nms`
 
-During prediction,
-we generate multiple anchor boxes for the image and predict classes and offsets for each of them.
-A *predicted bounding box*
-is thus obtained according to 
-an anchor box with its predicted offset.
-Below we implement the `offset_inverse` function
-that takes in anchors and
-offset predictions as inputs and [**applies inverse offset transformations to
-return the predicted bounding box coordinates**].
+예측 중에, 저희는 이미지에 대해 여러 앵커 박스를 생성하고 그 각각에 대해 클래스와 오프셋을 예측합니다.
+*예측된 바운딩 박스*는 따라서 예측된 오프셋과 함께 앵커 박스에 따라 얻어집니다.
+아래에서 저희는 앵커와 오프셋 예측을 입력으로 받아 [**역 오프셋 변환을 적용하여 예측된 바운딩 박스 좌표를 반환**]하는 `offset_inverse` 함수를 구현합니다.
 
 ```{.python .input}
 #@tab all
@@ -671,34 +568,22 @@ def offset_inverse(anchors, offset_preds):
     return predicted_bbox
 ```
 
-When there are many anchor boxes,
-many similar (with significant overlap)
-predicted bounding boxes 
-can be potentially output for surrounding the same object.
-To simplify the output,
-we can merge similar predicted bounding boxes
-that belong to the same object
-by using *non-maximum suppression* (NMS).
+많은 앵커 박스가 있을 때, 같은 객체를 둘러싸기 위해 비슷한(상당히 겹치는) 예측된 바운딩 박스가 많이 출력될 수 있습니다.
+출력을 단순화하기 위해, 저희는 *비최대 억제(non-maximum suppression, NMS)*를 사용해 같은 객체에 속하는 비슷한 예측된 바운딩 박스들을 병합할 수 있습니다.
 
-Here is how non-maximum suppression works.
-For a predicted bounding box $B$,
-the object detection model calculates the predicted likelihood
-for each class.
-Denoting by $p$ the largest predicted likelihood,
-the class corresponding to this probability is the predicted class for $B$.
-Specifically, we refer to $p$ as the *confidence* (score) of the predicted bounding box $B$.
-On the same image,
-all the predicted non-background bounding boxes 
-are sorted by confidence in descending order
-to generate a list $L$.
-Then we manipulate the sorted list $L$ in the following steps:
+비최대 억제는 다음과 같이 작동합니다.
+예측된 바운딩 박스 $B$에 대해, 객체 검출 모델은 각 클래스에 대한 예측 가능도(likelihood)를 계산합니다.
+가장 큰 예측 가능도를 $p$로 표기할 때, 이 확률에 해당하는 클래스가 $B$에 대한 예측된 클래스입니다.
+구체적으로, 저희는 $p$를 예측된 바운딩 박스 $B$의 *신뢰도*(점수)라고 부릅니다.
+같은 이미지에서, 모든 예측된 비배경 바운딩 박스는 신뢰도를 내림차순으로 정렬해 목록 $L$을 생성합니다.
+그런 다음 저희는 정렬된 목록 $L$을 다음 단계로 조작합니다.
 
-1. Select the predicted bounding box $B_1$ with the highest confidence from $L$ as a basis and remove all non-basis predicted bounding boxes whose IoU with $B_1$ exceeds a predefined threshold $\epsilon$ from $L$. At this point, $L$ keeps the predicted bounding box with the highest confidence but drops others that are too similar to it. In a nutshell, those with *non-maximum* confidence scores are *suppressed*.
-1. Select the predicted bounding box $B_2$ with the second highest confidence from $L$ as another basis and remove all non-basis predicted bounding boxes whose IoU with $B_2$ exceeds $\epsilon$ from $L$.
-1. Repeat the above process until all the predicted bounding boxes in $L$ have been used as a basis. At this time, the IoU of any pair of predicted bounding boxes in $L$ is below the threshold $\epsilon$; thus, no pair is too similar with each other. 
-1. Output all the predicted bounding boxes in the list $L$.
+1. $L$에서 신뢰도가 가장 높은 예측된 바운딩 박스 $B_1$을 기준으로 선택하고, $B_1$과의 IoU가 미리 정의된 임계값 $\epsilon$을 초과하는 모든 기준이 아닌 예측된 바운딩 박스를 $L$에서 제거합니다. 이 시점에서, $L$은 가장 높은 신뢰도의 예측된 바운딩 박스는 유지하지만 너무 비슷한 다른 것들은 버립니다. 요컨대, *비최대* 신뢰도 점수를 가진 것들이 *억제*됩니다.
+1. $L$에서 두 번째로 높은 신뢰도의 예측된 바운딩 박스 $B_2$를 또 다른 기준으로 선택하고, $B_2$와의 IoU가 $\epsilon$을 초과하는 모든 기준이 아닌 예측된 바운딩 박스를 $L$에서 제거합니다.
+1. $L$의 모든 예측된 바운딩 박스가 기준으로 사용될 때까지 위의 과정을 반복합니다. 이때, $L$의 예측된 바운딩 박스 쌍의 IoU는 임계값 $\epsilon$ 아래이므로, 어떤 쌍도 서로 너무 비슷하지 않습니다.
+1. 목록 $L$의 모든 예측된 바운딩 박스를 출력합니다.
 
-[**The following `nms` function sorts confidence scores in descending order and returns their indices.**]
+[**다음 `nms` 함수는 신뢰도 점수를 내림차순으로 정렬하고 그 인덱스를 반환합니다.**]
 
 ```{.python .input}
 #@tab mxnet
@@ -736,12 +621,8 @@ def nms(boxes, scores, iou_threshold):
     return d2l.tensor(keep, device=boxes.device)
 ```
 
-We define the following `multibox_detection`
-to [**apply non-maximum suppression
-to predicting bounding boxes**].
-Do not worry if you find the implementation
-a bit complicated: we will show how it works
-with a concrete example right after the implementation.
+[**바운딩 박스 예측에 비최대 억제를 적용**]하기 위해 다음 `multibox_detection`을 정의합니다.
+구현이 약간 복잡하다고 느껴진다면 걱정하지 마세요. 구현 바로 다음에 구체적인 예제로 어떻게 작동하는지 보여드리겠습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -815,13 +696,10 @@ def multibox_detection(cls_probs, offset_preds, anchors, nms_threshold=0.5,
     return d2l.stack(out)
 ```
 
-Now let's [**apply the above implementations
-to a concrete example with four anchor boxes**].
-For simplicity, we assume that the
-predicted offsets are all zeros.
-This means that the predicted bounding boxes are anchor boxes. 
-For each class among the background, dog, and cat,
-we also define its predicted likelihood.
+이제 [**위의 구현을 네 개의 앵커 박스가 있는 구체적인 예제에 적용**]해 보겠습니다.
+단순화를 위해, 저희는 예측된 오프셋이 모두 0이라고 가정합니다.
+이는 예측된 바운딩 박스가 앵커 박스임을 의미합니다.
+배경, 개, 고양이 각 클래스에 대한 예측 가능도도 정의합니다.
 
 ```{.python .input}
 #@tab all
@@ -833,7 +711,7 @@ cls_probs = d2l.tensor([[0] * 4,  # Predicted background likelihood
                       [0.1, 0.2, 0.3, 0.9]])  # Predicted cat likelihood
 ```
 
-We can [**plot these predicted bounding boxes with their confidence on the image.**]
+[**이러한 예측된 바운딩 박스를 이미지에 신뢰도와 함께 플롯**]할 수 있습니다.
 
 ```{.python .input}
 #@tab all
@@ -842,20 +720,14 @@ show_bboxes(fig.axes, anchors * bbox_scale,
             ['dog=0.9', 'dog=0.8', 'dog=0.7', 'cat=0.9'])
 ```
 
-Now we can invoke the `multibox_detection` function
-to perform non-maximum suppression,
-where the threshold is set to 0.5.
-Note that we add
-a dimension for examples in the tensor input.
+이제 저희는 `multibox_detection` 함수를 호출해 비최대 억제를 수행할 수 있는데, 여기서 임계값은 0.5로 설정합니다.
+텐서 입력의 예제에 대한 차원을 추가한다는 점에 유의하세요.
 
-We can see that [**the shape of the returned result**] is
-(batch size, number of anchor boxes, 6).
-The six elements in the innermost dimension
-gives the output information for the same predicted bounding box.
-The first element is the predicted class index, which starts from 0 (0 is dog and 1 is cat). The value -1 indicates background or removal in non-maximum suppression.
-The second element is the confidence of the predicted bounding box.
-The remaining four elements are the $(x, y)$-axis coordinates of the upper-left corner and 
-the lower-right corner of the predicted bounding box, respectively (range is between 0 and 1).
+[**반환된 결과의 형태**]가 (배치 크기, 앵커 박스 수, 6)임을 볼 수 있습니다.
+가장 안쪽 차원의 여섯 원소는 같은 예측된 바운딩 박스에 대한 출력 정보를 제공합니다.
+첫 번째 원소는 예측된 클래스 인덱스로, 0부터 시작합니다(0은 개이고 1은 고양이입니다). 값 -1은 배경 또는 비최대 억제에서의 제거를 나타냅니다.
+두 번째 원소는 예측된 바운딩 박스의 신뢰도입니다.
+나머지 네 원소는 각각 예측된 바운딩 박스의 좌상단 꼭짓점과 우하단 꼭짓점의 $(x, y)$축 좌표입니다(범위는 0과 1 사이).
 
 ```{.python .input}
 #@tab mxnet
@@ -875,10 +747,7 @@ output = multibox_detection(cls_probs.unsqueeze(dim=0),
 output
 ```
 
-After removing those predicted bounding boxes
-of class -1, 
-we can [**output the final predicted bounding box
-kept by non-maximum suppression**].
+클래스 -1의 예측된 바운딩 박스를 제거한 후, 저희는 [**비최대 억제에 의해 유지된 최종 예측된 바운딩 박스를 출력**]할 수 있습니다.
 
 ```{.python .input}
 #@tab all
@@ -890,27 +759,25 @@ for i in d2l.numpy(output[0]):
     show_bboxes(fig.axes, [d2l.tensor(i[2:]) * bbox_scale], label)
 ```
 
-In practice, we can remove predicted bounding boxes with lower confidence even before performing non-maximum suppression, thereby reducing computation in this algorithm.
-We may also post-process the output of non-maximum suppression, for example, by only keeping
-results with higher confidence
-in the final output.
+실제로 저희는 비최대 억제를 수행하기 전에 신뢰도가 더 낮은 예측된 바운딩 박스를 제거하여 이 알고리즘에서 계산을 줄일 수 있습니다.
+또한 비최대 억제의 출력을 후처리할 수도 있습니다. 예를 들어, 최종 출력에서 신뢰도가 더 높은 결과만 유지하는 식입니다.
 
 
-## Summary
+## 요약
 
-* We generate anchor boxes with different shapes centered on each pixel of the image.
-* Intersection over union (IoU), also known as Jaccard index, measures the similarity of two bounding boxes. It is the ratio of their intersection area to their union area.
-* In a training set, we need two types of labels for each anchor box. One is the class of the object relevant to the anchor box and the other is the offset of the ground-truth bounding box relative to the anchor box.
-* During prediction, we can use non-maximum suppression (NMS) to remove similar predicted bounding boxes, thereby simplifying the output.
+* 저희는 이미지의 각 픽셀을 중심으로 다양한 형태의 앵커 박스를 생성합니다.
+* IoU(Intersection over Union)는 자카드 지수(Jaccard index)라고도 알려져 있으며, 두 바운딩 박스의 유사성을 측정합니다. 이는 그들의 합집합 영역에 대한 교집합 영역의 비율입니다.
+* 훈련 셋에서, 저희는 각 앵커 박스에 대해 두 가지 유형의 라벨이 필요합니다. 하나는 앵커 박스와 관련된 객체의 클래스이고 다른 하나는 앵커 박스에 대한 실측 바운딩 박스의 오프셋입니다.
+* 예측 중에, 저희는 비최대 억제(NMS)를 사용해 비슷한 예측된 바운딩 박스를 제거함으로써 출력을 단순화할 수 있습니다.
 
 
-## Exercises
+## 연습문제
 
-1. Change values of `sizes` and `ratios` in the `multibox_prior` function. What are the changes to the generated anchor boxes?
-1. Construct and visualize two bounding boxes with an IoU of 0.5. How do they overlap with each other?
-1. Modify the variable `anchors` in :numref:`subsec_labeling-anchor-boxes` and :numref:`subsec_predicting-bounding-boxes-nms`. How do the results change?
-1. Non-maximum suppression is a greedy algorithm that suppresses predicted bounding boxes by *removing* them. Is it possible that some of these removed ones are actually useful? How can this algorithm be modified to suppress *softly*? You may refer to Soft-NMS :cite:`Bodla.Singh.Chellappa.ea.2017`.
-1. Rather than being hand-crafted, can non-maximum suppression be learned?
+1. `multibox_prior` 함수의 `sizes`와 `ratios` 값을 변경해 보세요. 생성된 앵커 박스에 어떤 변화가 있나요?
+1. IoU가 0.5인 두 개의 바운딩 박스를 구성하고 시각화해 보세요. 그들이 서로 어떻게 겹치나요?
+1. :numref:`subsec_labeling-anchor-boxes`와 :numref:`subsec_predicting-bounding-boxes-nms`의 변수 `anchors`를 수정해 보세요. 결과가 어떻게 바뀌나요?
+1. 비최대 억제는 예측된 바운딩 박스를 *제거*함으로써 억제하는 탐욕적 알고리즘입니다. 이러한 제거된 것들 중 일부가 실제로 유용할 가능성이 있을까요? 이 알고리즘을 *부드럽게* 억제하도록 어떻게 수정할 수 있을까요? Soft-NMS :cite:`Bodla.Singh.Chellappa.ea.2017`를 참조하세요.
+1. 비최대 억제가 수작업으로 만들어진 것이 아니라 학습될 수 있을까요?
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/370)

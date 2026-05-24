@@ -1,44 +1,44 @@
-# Random Variables
+# 확률 변수
 :label:`sec_random_variables`
 
-In :numref:`sec_prob` we saw the basics of how to work with discrete random variables, which in our case refer to those random variables which take either a finite set of possible values, or the integers.  In this section, we develop the theory of *continuous random variables*, which are random variables which  can take on any real value.
+:numref:`sec_prob`에서 저희는 이산 확률 변수로 작업하는 방법의 기초를 보았는데, 저희의 경우 그것들은 유한한 가능한 값 집합 또는 정수를 취하는 확률 변수를 가리킵니다. 이 절에서, 저희는 *연속 확률 변수*의 이론을 발전시키는데, 이는 어떤 실숫값이든 취할 수 있는 확률 변수입니다.
 
-## Continuous Random Variables
+## 연속 확률 변수
 
-Continuous random variables are a significantly more subtle topic than discrete random variables.  A fair analogy to make is that the technical jump is comparable to the jump between adding lists of numbers and integrating functions.  As such, we will need to take some time to develop the theory.
+연속 확률 변수는 이산 확률 변수보다 훨씬 더 미묘한 주제입니다. 적절한 비유는 기술적 점프가 숫자 리스트를 더하는 것과 함수를 적분하는 것 사이의 점프에 비교할 수 있다는 것입니다. 그러므로, 저희는 이론을 발전시키는 데 약간의 시간을 들여야 할 것입니다.
 
-### From Discrete to Continuous
+### 이산에서 연속으로
 
-To understand the additional technical challenges encountered when working with continuous random variables, let's perform a thought experiment.  Suppose that we are throwing a dart at the dart board, and we want to know the probability that it hits exactly $2 \textrm{cm}$ from the center of the board.
+연속 확률 변수로 작업할 때 마주치는 추가 기술적 도전을 이해하기 위해, 사고 실험을 수행해 봅시다. 다트판에 다트를 던지고 있다고 가정하고, 정확히 보드의 중심에서 $2 \textrm{cm}$ 떨어진 곳을 맞출 확률을 알고 싶다고 가정해 보십시오.
 
-To start with, we imagine measuring a single digit of accuracy, that is to say with bins for $0 \textrm{cm}$, $1 \textrm{cm}$, $2 \textrm{cm}$, and so on.  We throw say $100$ darts at the dart board, and if $20$ of them fall into the bin for $2\textrm{cm}$ we conclude that $20\%$ of the darts we throw hit the board $2 \textrm{cm}$ away from the center.
+시작하기 위해, 한 자릿수 정확도를 측정하는 것을 상상해 봅시다. 즉, $0 \textrm{cm}$, $1 \textrm{cm}$, $2 \textrm{cm}$ 등에 대한 빈을 가지고 말입니다. 다트판에 $100$개의 다트를 던졌다고 하고, 그 중 $20$개가 $2\textrm{cm}$ 빈에 들어가면, 저희가 던진 다트의 $20\%$가 중심에서 $2 \textrm{cm}$ 떨어진 곳을 맞췄다고 결론 내립니다.
 
-However, when we look closer, this does not match our question!  We wanted exact equality, whereas these bins hold all that fell between say $1.5\textrm{cm}$ and $2.5\textrm{cm}$.
+그러나, 더 자세히 살펴보면, 이는 저희의 질문과 일치하지 않습니다! 저희는 정확한 동등성을 원했지만, 이 빈은 $1.5\textrm{cm}$와 $2.5\textrm{cm}$ 사이에 떨어진 모든 것을 담고 있습니다.
 
-Undeterred, we continue further.  We measure even more precisely, say $1.9\textrm{cm}$, $2.0\textrm{cm}$, $2.1\textrm{cm}$, and now see that perhaps $3$ of the $100$ darts hit the board in the $2.0\textrm{cm}$ bucket.  Thus we conclude the probability is $3\%$.
+좌절하지 않고, 저희는 더 진행합니다. 저희는 더 정확하게 측정합니다. 예를 들어 $1.9\textrm{cm}$, $2.0\textrm{cm}$, $2.1\textrm{cm}$ 등으로 말입니다. 이제 $100$개의 다트 중 아마도 $3$개가 $2.0\textrm{cm}$ 버킷에 들어갔다고 봅니다. 따라서 저희는 확률이 $3\%$라고 결론 내립니다.
 
-However, this does not solve anything!  We have just pushed the issue down one digit further.  Let's abstract a bit. Imagine we know the probability that the first $k$ digits match with $2.00000\ldots$ and we want to know the probability it matches for the first $k+1$ digits. It is fairly reasonable to assume that the ${k+1}^{\textrm{th}}$ digit is essentially a random choice from the set $\{0, 1, 2, \ldots, 9\}$.  At least, we cannot conceive of a physically meaningful process which would force the number of micrometers away form the center to prefer to end in a $7$ vs a $3$.
+그러나, 이것은 아무것도 해결하지 않습니다! 저희는 단지 문제를 한 자릿수 더 아래로 밀어냈을 뿐입니다. 약간 추상화합시다. 첫 $k$자리가 $2.00000\ldots$와 일치할 확률을 알고 있고, 첫 $k+1$자리에 대해 일치할 확률을 알고 싶다고 상상해 보십시오. ${k+1}^{\textrm{th}}$ 자리가 본질적으로 집합 $\{0, 1, 2, \ldots, 9\}$에서의 무작위 선택이라고 가정하는 것은 꽤 합리적입니다. 적어도, 저희는 중심에서 떨어진 마이크로미터 수가 $3$보다 $7$로 끝나는 것을 선호하도록 강요할 물리적으로 의미 있는 과정을 상상할 수 없습니다.
 
-What this means is that in essence each additional digit of accuracy we require should decrease probability of matching by a factor of $10$.  Or put another way, we would expect that
+이것이 의미하는 것은 본질적으로 저희가 요구하는 정확도의 각 추가 자릿수가 일치 확률을 $10$의 인자로 감소시켜야 한다는 것입니다. 또는 다르게 말하면, 저희는 다음을 기대할 것입니다.
 
 $$
 P(\textrm{distance is}\; 2.00\ldots, \;\textrm{to}\; k \;\textrm{digits} ) \approx p\cdot10^{-k}.
 $$
 
-The value $p$ essentially encodes what happens with the first few digits, and the $10^{-k}$ handles the rest.
+값 $p$는 본질적으로 처음 몇 자릿수에서 무슨 일이 일어나는지를 인코딩하고, $10^{-k}$는 나머지를 처리합니다.
 
-Notice that if we know the position accurate to $k=4$ digits after the decimal, that means we know the value falls within the interval say $[1.99995,2.00005]$ which is an interval of length $2.00005-1.99995 = 10^{-4}$.  Thus, if we call the length of this interval $\epsilon$, we can say
+소수점 이후 $k=4$자리까지 정확한 위치를 안다면, 그것은 값이 예를 들어 길이 $2.00005-1.99995 = 10^{-4}$인 구간 $[1.99995,2.00005]$에 떨어진다는 것을 안다는 것을 의미합니다. 따라서 이 구간의 길이를 $\epsilon$이라고 부르면, 저희는 다음과 같이 말할 수 있습니다.
 
 $$
 P(\textrm{distance is in an}\; \epsilon\textrm{-sized interval around}\; 2 ) \approx \epsilon \cdot p.
 $$
 
-Let's take this one final step further.  We have been thinking about the point $2$ the entire time, but never thinking about other points.  Nothing is different there fundamentally, but it is the case that the value $p$ will likely be different.  We would at least hope that a dart thrower was more likely to hit a point near the center, like $2\textrm{cm}$ rather than $20\textrm{cm}$.  Thus, the value $p$ is not fixed, but rather should depend on the point $x$.  This tells us that we should expect
+이를 한 단계 마지막으로 더 진행해 봅시다. 저희는 내내 점 $2$에 대해 생각해 왔지만, 다른 점에 대해서는 결코 생각하지 않았습니다. 거기에는 근본적으로 다른 것이 없지만, 값 $p$는 다를 가능성이 높습니다. 저희는 적어도 다트 던지는 사람이 $20\textrm{cm}$보다 $2\textrm{cm}$와 같이 중심에 가까운 점을 맞출 가능성이 더 높기를 바랄 것입니다. 따라서, 값 $p$는 고정되어 있지 않고, 오히려 점 $x$에 의존해야 합니다. 이는 저희가 다음을 기대해야 한다고 알려줍니다.
 
 $$P(\textrm{distance is in an}\; \epsilon \textrm{-sized interval around}\; x ) \approx \epsilon \cdot p(x).$$
 :eqlabel:`eq_pdf_deriv`
 
-Indeed, :eqref:`eq_pdf_deriv` precisely defines the *probability density function*.  It is a function $p(x)$ which encodes the relative probability of hitting near one point vs. another.  Let's visualize what such a function might look like.
+사실, :eqref:`eq_pdf_deriv`는 정확히 *확률 밀도 함수*를 정의합니다. 이는 한 점 대 다른 점 근처를 맞추는 상대적 확률을 인코딩하는 함수 $p(x)$입니다. 그러한 함수가 어떻게 보일 수 있는지 시각화해 봅시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -88,50 +88,50 @@ p = 0.2*tf.exp(-(x - 3)**2 / 2)/tf.sqrt(2 * tf.constant(tf.pi)) + \
 d2l.plot(x, p, 'x', 'Density')
 ```
 
-The locations where the function value is large indicates regions where we are more likely to find the random value.  The low portions are areas where we are unlikely to find the random value.
+함수 값이 큰 위치는 저희가 무작위 값을 찾을 가능성이 더 높은 영역을 나타냅니다. 낮은 부분은 저희가 무작위 값을 찾을 가능성이 낮은 영역입니다.
 
-### Probability Density Functions
+### 확률 밀도 함수
 
-Let's now investigate this further.  We have already seen what a probability density function is intuitively for a random variable $X$, namely the density function is a function $p(x)$ so that
+이제 이를 더 조사해 봅시다. 저희는 이미 확률 변수 $X$에 대한 확률 밀도 함수가 무엇인지 직관적으로 보았습니다. 즉, 밀도 함수는 다음과 같은 함수 $p(x)$입니다.
 
 $$P(X \; \textrm{is in an}\; \epsilon \textrm{-sized interval around}\; x ) \approx \epsilon \cdot p(x).$$
 :eqlabel:`eq_pdf_def`
 
-But what does this imply for the properties of $p(x)$?
+그러나 이것이 $p(x)$의 속성에 대해 무엇을 의미합니까?
 
-First, probabilities are never negative, thus we should expect that $p(x) \ge 0$ as well.
+첫째, 확률은 결코 음수가 아니므로, 저희는 $p(x) \ge 0$도 기대해야 합니다.
 
-Second, let's imagine that we slice up the $\mathbb{R}$ into an infinite number of slices which are $\epsilon$ wide, say with slices $(\epsilon\cdot i, \epsilon \cdot (i+1)]$.  For each of these, we know from :eqref:`eq_pdf_def` the probability is approximately
+둘째, 저희가 $\mathbb{R}$을 $\epsilon$ 너비의 무한한 수의 슬라이스로 잘랐다고 상상해 봅시다. 예를 들어 슬라이스 $(\epsilon\cdot i, \epsilon \cdot (i+1)]$과 함께 말입니다. 이들 각각에 대해, :eqref:`eq_pdf_def`로부터 저희는 확률이 대략 다음과 같다는 것을 압니다.
 
 $$
 P(X \; \textrm{is in an}\; \epsilon\textrm{-sized interval around}\; x ) \approx \epsilon \cdot p(\epsilon \cdot i),
 $$
 
-so summed over all of them it should be
+따라서 그것들 모두에 대해 합산하면 다음과 같아야 합니다.
 
 $$
 P(X\in\mathbb{R}) \approx \sum_i \epsilon \cdot p(\epsilon\cdot i).
 $$
 
-This is nothing more than the approximation of an integral discussed in :numref:`sec_integral_calculus`, thus we can say that
+이는 :numref:`sec_integral_calculus`에서 논의된 적분의 근사에 불과하므로, 저희는 다음과 같이 말할 수 있습니다.
 
 $$
 P(X\in\mathbb{R}) = \int_{-\infty}^{\infty} p(x) \; dx.
 $$
 
-We know that $P(X\in\mathbb{R}) = 1$, since the random variable must take on *some* number, we can conclude that for any density
+확률 변수는 *어떤* 숫자를 취해야 하므로 $P(X\in\mathbb{R}) = 1$임을 알고 있고, 어떤 밀도에 대해서도 다음과 같이 결론 내릴 수 있습니다.
 
 $$
 \int_{-\infty}^{\infty} p(x) \; dx = 1.
 $$
 
-Indeed, digging into this further shows that for any $a$, and $b$, we see that
+사실, 이를 더 파헤치면 어떤 $a$와 $b$에 대해서도 다음을 볼 수 있습니다.
 
 $$
 P(X\in(a, b]) = \int _ {a}^{b} p(x) \; dx.
 $$
 
-We may approximate this in code by using the same discrete approximation methods as before.  In this case we can approximate the probability of falling in the blue region.
+저희는 이전과 같이 같은 이산 근사 방법을 사용하여 코드에서 이를 근사할 수 있습니다. 이 경우 저희는 파란색 영역에 떨어질 확률을 근사할 수 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -181,36 +181,36 @@ d2l.plt.show()
 f'approximate Probability: {tf.reduce_sum(epsilon*p[300:800])}'
 ```
 
-It turns out that these two properties describe exactly the space of possible probability density functions (or *p.d.f.*'s for the commonly encountered abbreviation).  They are non-negative functions $p(x) \ge 0$ such that
+이 두 속성이 가능한 확률 밀도 함수(또는 일반적으로 마주치는 약자로 *p.d.f.*)의 공간을 정확히 설명한다는 것이 밝혀집니다. 그것들은 다음과 같은 음이 아닌 함수 $p(x) \ge 0$입니다.
 
 $$\int_{-\infty}^{\infty} p(x) \; dx = 1.$$
 :eqlabel:`eq_pdf_int_one`
 
-We interpret this function by using integration to obtain the probability our random variable is in a specific interval:
+저희는 적분을 사용하여 저희의 확률 변수가 특정 구간에 있을 확률을 얻음으로써 이 함수를 해석합니다.
 
 $$P(X\in(a, b]) = \int _ {a}^{b} p(x) \; dx.$$
 :eqlabel:`eq_pdf_int_int`
 
-In :numref:`sec_distributions` we will see a number of common distributions, but let's continue working in the abstract.
+:numref:`sec_distributions`에서 저희는 많은 일반적인 분포를 볼 것이지만, 추상에서 계속 작업해 봅시다.
 
-### Cumulative Distribution Functions
+### 누적 분포 함수
 
-In the previous section, we saw the notion of the p.d.f.  In practice, this is a commonly encountered method to discuss continuous random variables, but it has one significant pitfall: that the values of the p.d.f. are not themselves probabilities, but rather a function that we must integrate to yield probabilities.  There is nothing wrong with a density being larger than $10$, as long as it is not larger than $10$ for more than an interval of length $1/10$.  This can be counter-intuitive, so people often also think in terms of the *cumulative distribution function*, or c.d.f., which *is* a probability.
+이전 절에서, 저희는 p.d.f.의 개념을 보았습니다. 실제로, 이는 연속 확률 변수를 논의하는 일반적으로 마주치는 방법이지만, 한 가지 중요한 함정이 있습니다. p.d.f.의 값 자체가 확률이 아니라, 확률을 산출하기 위해 적분해야 하는 함수라는 것입니다. 밀도가 길이 $1/10$의 구간보다 더 많이 $10$보다 크지 않는 한, 밀도가 $10$보다 큰 것에는 잘못된 것이 없습니다. 이는 반직관적일 수 있으므로, 사람들은 종종 *누적 분포 함수* 또는 c.d.f.의 관점에서도 생각하는데, 이는 확률*입니다*.
 
-In particular, by using :eqref:`eq_pdf_int_int`, we define the c.d.f. for a random variable $X$ with density $p(x)$ by
+특히, :eqref:`eq_pdf_int_int`를 사용하여, 저희는 밀도 $p(x)$를 가진 확률 변수 $X$에 대한 c.d.f.를 다음과 같이 정의합니다.
 
 $$
 F(x) = \int _ {-\infty}^{x} p(x) \; dx = P(X \le x).
 $$
 
-Let's observe a few properties.
+몇 가지 속성을 관찰해 봅시다.
 
-* $F(x) \rightarrow 0$ as $x\rightarrow -\infty$.
-* $F(x) \rightarrow 1$ as $x\rightarrow \infty$.
-* $F(x)$ is non-decreasing ($y > x \implies F(y) \ge F(x)$).
-* $F(x)$ is continuous (has no jumps) if $X$ is a continuous random variable.
+* $x\rightarrow -\infty$일 때 $F(x) \rightarrow 0$.
+* $x\rightarrow \infty$일 때 $F(x) \rightarrow 1$.
+* $F(x)$는 비감소($y > x \implies F(y) \ge F(x)$)입니다.
+* $X$가 연속 확률 변수라면 $F(x)$는 연속(점프가 없음)입니다.
 
-With the fourth bullet point, note that this would not be true if $X$ were discrete, say taking the values $0$ and $1$ both with probability $1/2$.  In that case
+네 번째 글머리표와 함께, 만약 $X$가 이산이라면, 예를 들어 모두 확률 $1/2$로 값 $0$과 $1$을 취한다면 이것이 참이 아닐 것이라는 점에 유의하십시오. 그 경우
 
 $$
 F(x) = \begin{cases}
@@ -220,101 +220,101 @@ F(x) = \begin{cases}
 \end{cases}
 $$
 
-In this example, we see one of the benefits of working with the c.d.f., the ability to deal with continuous or discrete random variables in the same framework, or indeed mixtures of the two (flip a coin: if heads return the roll of a die, if tails return the distance of a dart throw from the center of a dart board).
+이 예제에서, 저희는 c.d.f.로 작업하는 이점 중 하나, 즉 같은 프레임워크에서 연속 또는 이산 확률 변수를 다룰 수 있는 능력, 또는 실제로 둘의 혼합(동전 던지기: 앞면이면 주사위 굴림을 반환, 뒷면이면 다트판 중심에서 다트 던지기 거리를 반환)을 봅니다.
 
-### Means
+### 평균
 
-Suppose that we are dealing with a random variables $X$.  The distribution itself can be hard to interpret.  It is often useful to be able to summarize the behavior of a random variable concisely.  Numbers that help us capture the behavior of a random variable are called *summary statistics*.  The most commonly encountered ones are the *mean*, the *variance*, and the *standard deviation*.
+확률 변수 $X$를 다루고 있다고 가정해 보십시오. 분포 자체는 해석하기 어려울 수 있습니다. 종종 확률 변수의 동작을 간결하게 요약할 수 있는 것이 유용합니다. 확률 변수의 동작을 포착하는 데 도움이 되는 숫자를 *요약 통계*라고 합니다. 가장 일반적으로 마주치는 것들은 *평균*, *분산*, 그리고 *표준 편차*입니다.
 
-The *mean* encodes the average value of a random variable.  If we have a discrete random variable $X$, which takes the values $x_i$ with probabilities $p_i$, then the mean is given by the weighted average: sum the values times the probability that the random variable takes on that value:
+*평균*은 확률 변수의 평균값을 인코딩합니다. 만약 확률 $p_i$로 값 $x_i$를 취하는 이산 확률 변수 $X$가 있다면, 평균은 가중 평균에 의해 주어집니다. 값에 그 값을 취할 확률 변수의 확률을 곱한 것을 합산합니다.
 
 $$\mu_X = E[X] = \sum_i x_i p_i.$$
 :eqlabel:`eq_exp_def`
 
-The way we should interpret the mean (albeit with caution) is that it tells us essentially where the random variable tends to be located.
+평균을 해석해야 하는 방법은(주의가 필요하지만) 본질적으로 확률 변수가 어디에 위치하는 경향이 있는지 알려준다는 것입니다.
 
-As a minimalistic example that we will examine throughout this section, let's take $X$ to be the random variable which takes the value $a-2$ with probability $p$, $a+2$ with probability $p$ and $a$ with probability $1-2p$.  We can compute using :eqref:`eq_exp_def` that, for any possible choice of $a$ and $p$, the mean is
+이 절 전반에 걸쳐 검토할 최소한의 예로, $X$를 확률 $p$로 값 $a-2$, 확률 $p$로 $a+2$, 그리고 확률 $1-2p$로 $a$를 취하는 확률 변수라고 합시다. $a$와 $p$의 어떤 가능한 선택에 대해서도, :eqref:`eq_exp_def`를 사용하여 평균이 다음과 같음을 계산할 수 있습니다.
 
 $$
 \mu_X = E[X] = \sum_i x_i p_i = (a-2)p + a(1-2p) + (a+2)p = a.
 $$
 
-Thus we see that the mean is $a$.  This matches the intuition since $a$ is the location around which we centered our random variable.
+따라서 평균이 $a$임을 봅니다. 이는 $a$가 저희가 확률 변수를 중심에 둔 위치이기 때문에 직관과 일치합니다.
 
-Because they are helpful, let's summarize a few properties.
+도움이 되므로, 몇 가지 속성을 요약합시다.
 
-* For any random variable $X$ and numbers $a$ and $b$, we have that $\mu_{aX+b} = a\mu_X + b$.
-* If we have two random variables $X$ and $Y$, we have $\mu_{X+Y} = \mu_X+\mu_Y$.
+* 어떤 확률 변수 $X$와 숫자 $a$와 $b$에 대해, 저희는 $\mu_{aX+b} = a\mu_X + b$를 가집니다.
+* 만약 두 확률 변수 $X$와 $Y$가 있다면, 저희는 $\mu_{X+Y} = \mu_X+\mu_Y$를 가집니다.
 
-Means are useful for understanding the average behavior of a random variable, however the mean is not sufficient to even have a full intuitive understanding.  Making a profit of $\$10 \pm \$1$ per sale is very different from making $\$10 \pm \$15$ per sale despite having the same average value.  The second one has a much larger degree of fluctuation, and thus represents a much larger risk.  Thus, to understand the behavior of a random variable, we will need at minimum one more measure: some measure of how widely a random variable fluctuates.
+평균은 확률 변수의 평균 동작을 이해하는 데 유용하지만, 평균만으로는 완전한 직관적 이해를 갖기에 충분하지 않습니다. 판매당 $\$10 \pm \$1$의 이익을 내는 것은 같은 평균값을 가지지만 판매당 $\$10 \pm \$15$를 내는 것과 매우 다릅니다. 두 번째 것은 변동의 정도가 훨씬 더 크며, 따라서 훨씬 더 큰 위험을 나타냅니다. 따라서, 확률 변수의 동작을 이해하기 위해, 저희는 최소한 하나의 추가 측정값, 즉 확률 변수가 얼마나 광범위하게 변동하는지에 대한 어떤 측정값이 필요할 것입니다.
 
-### Variances
+### 분산
 
-This leads us to consider the *variance* of a random variable.  This is a quantitative measure of how far a random variable deviates from the mean.  Consider the expression $X - \mu_X$.  This is the deviation of the random variable from its mean.  This value can be positive or negative, so we need to do something to make it positive so that we are measuring the magnitude of the deviation.
+이는 저희를 확률 변수의 *분산*을 고려하도록 이끕니다. 이는 확률 변수가 평균에서 얼마나 멀리 벗어나는지에 대한 정량적 측정값입니다. 식 $X - \mu_X$를 고려해 보십시오. 이는 확률 변수의 평균에서의 편차입니다. 이 값은 양수 또는 음수일 수 있으므로, 편차의 크기를 측정하기 위해 양수로 만들기 위해 무언가를 해야 합니다.
 
-A reasonable thing to try is to look at $\left|X-\mu_X\right|$, and indeed this leads to a useful quantity called the *mean absolute deviation*, however due to connections with other areas of mathematics and statistics, people often use a different solution.
+시도할 합리적인 것은 $\left|X-\mu_X\right|$를 보는 것이며, 실제로 이는 *평균 절대 편차*라고 불리는 유용한 양으로 이어집니다. 그러나 수학과 통계의 다른 영역과의 연결로 인해, 사람들은 종종 다른 해결책을 사용합니다.
 
-In particular, they look at $(X-\mu_X)^2.$  If we look at the typical size of this quantity by taking the mean, we arrive at the variance
+특히, 그들은 $(X-\mu_X)^2$을 봅니다. 평균을 취함으로써 이 양의 일반적인 크기를 보면, 저희는 분산에 도달합니다.
 
 $$\sigma_X^2 = \textrm{Var}(X) = E\left[(X-\mu_X)^2\right] = E[X^2] - \mu_X^2.$$
 :eqlabel:`eq_var_def`
 
-The last equality in :eqref:`eq_var_def` holds by expanding out the definition in the middle, and applying the properties of expectation.
+:eqref:`eq_var_def`의 마지막 등식은 중간의 정의를 확장하고 기댓값의 속성을 적용함으로써 성립합니다.
 
-Let's look at our example where $X$ is the random variable which takes the value $a-2$ with probability $p$, $a+2$ with probability $p$ and $a$ with probability $1-2p$.  In this case $\mu_X = a$, so all we need to compute is $E\left[X^2\right]$.  This can readily be done:
+$X$가 확률 $p$로 값 $a-2$, 확률 $p$로 $a+2$, 그리고 확률 $1-2p$로 $a$를 취하는 확률 변수인 저희의 예제를 봅시다. 이 경우 $\mu_X = a$이므로, 계산해야 할 모든 것은 $E\left[X^2\right]$입니다. 이는 쉽게 수행될 수 있습니다.
 
 $$
 E\left[X^2\right] = (a-2)^2p + a^2(1-2p) + (a+2)^2p = a^2 + 8p.
 $$
 
-Thus, we see that by :eqref:`eq_var_def` our variance is
+따라서, 저희는 :eqref:`eq_var_def`에 의해 저희의 분산이 다음과 같음을 봅니다.
 
 $$
 \sigma_X^2 = \textrm{Var}(X) = E[X^2] - \mu_X^2 = a^2 + 8p - a^2 = 8p.
 $$
 
-This result again makes sense.  The largest $p$ can be is $1/2$ which corresponds to picking $a-2$ or $a+2$ with a coin flip.  The variance of this being $4$ corresponds to the fact that both $a-2$ and $a+2$ are $2$ units away from the mean, and $2^2 = 4$.  On the other end of the spectrum, if $p=0$, this random variable always takes the value $0$ and so it has no variance at all.
+이 결과도 의미가 있습니다. $p$가 될 수 있는 가장 큰 것은 $1/2$이며, 이는 동전 던지기로 $a-2$ 또는 $a+2$를 선택하는 것에 해당합니다. 이것이 $4$인 분산은 $a-2$와 $a+2$ 둘 다 평균에서 $2$ 단위 떨어져 있고 $2^2 = 4$라는 사실에 해당합니다. 스펙트럼의 다른 쪽 끝에서, 만약 $p=0$이라면, 이 확률 변수는 항상 값 $0$을 취하므로 전혀 분산이 없습니다.
 
-We will list a few properties of variance below:
+분산의 몇 가지 속성을 아래에 나열하겠습니다.
 
-* For any random variable $X$, $\textrm{Var}(X) \ge 0$, with $\textrm{Var}(X) = 0$ if and only if $X$ is a constant.
-* For any random variable $X$ and numbers $a$ and $b$, we have that $\textrm{Var}(aX+b) = a^2\textrm{Var}(X)$.
-* If we have two *independent* random variables $X$ and $Y$, we have $\textrm{Var}(X+Y) = \textrm{Var}(X) + \textrm{Var}(Y)$.
+* 어떤 확률 변수 $X$에 대해, $\textrm{Var}(X) \ge 0$이고, $X$가 상수인 경우에 그리고 오직 그 경우에만 $\textrm{Var}(X) = 0$.
+* 어떤 확률 변수 $X$와 숫자 $a$와 $b$에 대해, 저희는 $\textrm{Var}(aX+b) = a^2\textrm{Var}(X)$를 가집니다.
+* 만약 두 *독립* 확률 변수 $X$와 $Y$가 있다면, 저희는 $\textrm{Var}(X+Y) = \textrm{Var}(X) + \textrm{Var}(Y)$를 가집니다.
 
-When interpreting these values, there can be a bit of a hiccup.  In particular, let's try imagining what happens if we keep track of units through this computation.  Suppose that we are working with the star rating assigned to a product on the web page.  Then $a$, $a-2$, and $a+2$ are all measured in units of stars.  Similarly, the mean $\mu_X$ is then also measured in stars (being a weighted average).  However, if we get to the variance, we immediately encounter an issue, which is we want to look at $(X-\mu_X)^2$, which is in units of *squared stars*.  This means that the variance itself is not comparable to the original measurements.  To make it interpretable, we will need to return to our original units.
+이러한 값을 해석할 때, 약간의 딸꾹질이 있을 수 있습니다. 특히, 이 계산을 통해 단위를 추적한다면 무슨 일이 일어나는지 상상해 봅시다. 저희가 웹페이지의 제품에 할당된 별점으로 작업하고 있다고 가정해 봅시다. 그러면 $a$, $a-2$, 그리고 $a+2$는 모두 별 단위로 측정됩니다. 유사하게, 평균 $\mu_X$도 별 단위로 측정됩니다(가중 평균이므로). 그러나, 분산에 도달하면, 즉시 문제에 직면하는데, 그것은 저희가 *제곱된 별* 단위인 $(X-\mu_X)^2$를 보고 싶다는 것입니다. 이는 분산 자체가 원래 측정값과 비교할 수 없음을 의미합니다. 그것을 해석 가능하게 만들기 위해서는, 저희는 원래 단위로 돌아가야 할 것입니다.
 
-### Standard Deviations
+### 표준 편차
 
-This summary statistics can always be deduced from the variance by taking the square root!  Thus we define the *standard deviation* to be
+이 요약 통계는 제곱근을 취함으로써 항상 분산에서 추론될 수 있습니다! 따라서 저희는 *표준 편차*를 다음과 같이 정의합니다.
 
 $$
 \sigma_X = \sqrt{\textrm{Var}(X)}.
 $$
 
-In our example, this means we now have the standard deviation is $\sigma_X = 2\sqrt{2p}$.  If we are dealing with units of stars for our review example, $\sigma_X$ is again in units of stars.
+저희의 예제에서, 이는 이제 표준 편차가 $\sigma_X = 2\sqrt{2p}$임을 의미합니다. 만약 저희가 리뷰 예제에 대해 별 단위로 다루고 있다면, $\sigma_X$도 별 단위입니다.
 
-The properties we had for the variance can be restated for the standard deviation.
+저희가 분산에 대해 가졌던 속성은 표준 편차에 대해 다시 진술될 수 있습니다.
 
-* For any random variable $X$, $\sigma_{X} \ge 0$.
-* For any random variable $X$ and numbers $a$ and $b$, we have that $\sigma_{aX+b} = |a|\sigma_{X}$
-* If we have two *independent* random variables $X$ and $Y$, we have $\sigma_{X+Y} = \sqrt{\sigma_{X}^2 + \sigma_{Y}^2}$.
+* 어떤 확률 변수 $X$에 대해, $\sigma_{X} \ge 0$.
+* 어떤 확률 변수 $X$와 숫자 $a$와 $b$에 대해, 저희는 $\sigma_{aX+b} = |a|\sigma_{X}$를 가집니다.
+* 만약 두 *독립* 확률 변수 $X$와 $Y$가 있다면, 저희는 $\sigma_{X+Y} = \sqrt{\sigma_{X}^2 + \sigma_{Y}^2}$를 가집니다.
 
-It is natural at this moment to ask, "If the standard deviation is in the units of our original random variable, does it represent something we can draw with regards to that random variable?"  The answer is a resounding yes!  Indeed much like the mean told us the typical location of our random variable, the standard deviation gives the typical range of variation of that random variable.  We can make this rigorous with what is known as Chebyshev's inequality:
+이 시점에서 "만약 표준 편차가 우리 원래 확률 변수의 단위라면, 그것이 그 확률 변수와 관련해서 우리가 그릴 수 있는 무언가를 나타냅니까?"라고 묻는 것은 자연스럽습니다. 답은 단호한 그렇다입니다! 사실 평균이 저희의 확률 변수의 일반적인 위치를 알려준 것처럼, 표준 편차는 그 확률 변수의 일반적인 변동 범위를 제공합니다. 저희는 체비셰프의 부등식으로 알려진 것으로 이를 엄격하게 만들 수 있습니다.
 
 $$P\left(X \not\in [\mu_X - \alpha\sigma_X, \mu_X + \alpha\sigma_X]\right) \le \frac{1}{\alpha^2}.$$
 :eqlabel:`eq_chebyshev`
 
-Or to state it verbally in the case of $\alpha=10$, $99\%$ of the samples from any random variable fall within $10$ standard deviations of the mean.  This gives an immediate interpretation to our standard summary statistics.
+또는 $\alpha=10$의 경우 구두로 말하자면, 어떤 확률 변수의 샘플 중 $99\%$가 평균의 $10$ 표준 편차 내에 떨어집니다. 이는 저희의 표준 요약 통계에 즉각적인 해석을 제공합니다.
 
-To see how this statement is rather subtle, let's take a look at our running example again where  $X$ is the random variable which takes the value $a-2$ with probability $p$, $a+2$ with probability $p$ and $a$ with probability $1-2p$.  We saw that the mean was $a$ and the standard deviation was $2\sqrt{2p}$.  This means, if we take Chebyshev's inequality :eqref:`eq_chebyshev` with $\alpha = 2$, we see that the expression is
+이 진술이 얼마나 미묘한지 보기 위해, $X$가 확률 $p$로 값 $a-2$, 확률 $p$로 $a+2$, 그리고 확률 $1-2p$로 $a$를 취하는 확률 변수인 저희의 진행 중인 예제를 다시 살펴봅시다. 저희는 평균이 $a$이고 표준 편차가 $2\sqrt{2p}$임을 보았습니다. 이는 $\alpha = 2$로 체비셰프의 부등식 :eqref:`eq_chebyshev`를 취하면, 식이 다음과 같음을 봄을 의미합니다.
 
 $$
 P\left(X \not\in [a - 4\sqrt{2p}, a + 4\sqrt{2p}]\right) \le \frac{1}{4}.
 $$
 
-This means that $75\%$ of the time, this random variable will fall within this interval for any value of $p$.  Now, notice that as $p \rightarrow 0$, this interval also converges to the single point $a$.  But we know that our random variable takes the values $a-2, a$, and $a+2$ only so eventually we can be certain $a-2$ and $a+2$ will fall outside the interval!  The question is, at what $p$ does that happen.  So we want to solve: for what $p$ does $a+4\sqrt{2p} = a+2$, which is solved when $p=1/8$, which is *exactly* the first $p$ where it could possibly happen without violating our claim that no more than $1/4$ of samples from the distribution would fall outside the interval ($1/8$ to the left, and $1/8$ to the right).
+이는 $p$의 어떤 값에 대해서도 시간의 $75\%$, 이 확률 변수가 이 구간 내에 떨어질 것임을 의미합니다. 이제, $p \rightarrow 0$일 때, 이 구간도 단일 점 $a$로 수렴한다는 점에 유의하십시오. 그러나 저희는 저희의 확률 변수가 $a-2, a$, 그리고 $a+2$만의 값을 취한다는 것을 알고 있으므로, 결국 $a-2$와 $a+2$가 구간 밖에 떨어질 것이라고 확신할 수 있습니다! 질문은 어떤 $p$에서 그런 일이 일어나는가입니다. 그래서 저희는 풀고 싶습니다. 어떤 $p$에 대해 $a+4\sqrt{2p} = a+2$인가, 이는 $p=1/8$일 때 풀리며, 이는 분포의 샘플의 $1/4$ 이상이 구간 밖에 떨어지지 않을 것이라는 저희의 주장을 위반하지 않고 가능하게 일어날 수 있는 *정확히* 첫 번째 $p$입니다(왼쪽으로 $1/8$, 오른쪽으로 $1/8$).
 
-Let's visualize this.  We will show the probability of getting the three values as three vertical bars with height proportional to the probability.  The interval will be drawn as a horizontal line in the middle.  The first plot shows what happens for $p > 1/8$ where the interval safely contains all points.
+이를 시각화해 봅시다. 저희는 세 값을 얻을 확률을 확률에 비례하는 높이의 세 개의 수직 막대로 표시할 것입니다. 구간은 중간에 수평선으로 그려질 것입니다. 첫 번째 플롯은 $p > 1/8$일 때 구간이 모든 점을 안전하게 포함하는 것을 보여줍니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -382,7 +382,7 @@ def plot_chebyshev(a, p):
 plot_chebyshev(0.0, tf.constant(0.2))
 ```
 
-The second shows that at $p = 1/8$, the interval exactly touches the two points.  This shows that the inequality is *sharp*, since no smaller interval could be taken while keeping the inequality true.
+두 번째는 $p = 1/8$에서 구간이 정확히 두 점을 만진다는 것을 보여줍니다. 이는 부등식이 *날카로운* 것임을 보여주는데, 왜냐하면 부등식이 참인 채로 유지하면서 더 작은 구간을 취할 수 없기 때문입니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -402,7 +402,7 @@ plot_chebyshev(0.0, torch.tensor(0.125))
 plot_chebyshev(0.0, tf.constant(0.125))
 ```
 
-The third shows that for $p < 1/8$ the interval only contains the center.  This does not invalidate the inequality since we only needed to ensure that no more than $1/4$ of the probability falls outside the interval, which means that once $p < 1/8$, the two points at $a-2$ and $a+2$ can be discarded.
+세 번째는 $p < 1/8$의 경우 구간이 중심만 포함한다는 것을 보여줍니다. 이는 부등식을 무효화하지 않습니다. 저희는 단지 확률의 $1/4$ 이하가 구간 밖에 떨어지도록 보장해야 했기 때문이며, 이는 일단 $p < 1/8$이면, $a-2$와 $a+2$의 두 점이 버려질 수 있음을 의미합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -422,9 +422,9 @@ plot_chebyshev(0.0, torch.tensor(0.05))
 plot_chebyshev(0.0, tf.constant(0.05))
 ```
 
-### Means and Variances in the Continuum
+### 연속에서의 평균과 분산
 
-This has all been in terms of discrete random variables, but the case of continuous random variables is similar.  To intuitively understand how this works, imagine that we split the real number line into intervals of length $\epsilon$ given by $(\epsilon i, \epsilon (i+1)]$.  Once we do this, our continuous random variable has been made discrete and we can use :eqref:`eq_exp_def` say that
+이 모든 것은 이산 확률 변수의 관점에서였지만, 연속 확률 변수의 경우도 유사합니다. 이것이 어떻게 작동하는지 직관적으로 이해하기 위해, 저희가 실수 직선을 $(\epsilon i, \epsilon (i+1)]$로 주어진 길이 $\epsilon$의 구간으로 나눈다고 상상해 보십시오. 일단 이렇게 하면, 저희의 연속 확률 변수가 이산화되었고 :eqref:`eq_exp_def`를 사용하여 다음과 같이 말할 수 있습니다.
 
 $$
 \begin{aligned}
@@ -433,19 +433,19 @@ $$
 \end{aligned}
 $$
 
-where $p_X$ is the density of $X$.  This is an approximation to the integral of $xp_X(x)$, so we can conclude that
+여기서 $p_X$는 $X$의 밀도입니다. 이는 $xp_X(x)$의 적분에 대한 근사이므로, 저희는 다음과 같이 결론 내릴 수 있습니다.
 
 $$
 \mu_X = \int_{-\infty}^\infty xp_X(x) \; dx.
 $$
 
-Similarly, using :eqref:`eq_var_def` the variance can be written as
+유사하게, :eqref:`eq_var_def`를 사용하여 분산은 다음과 같이 작성될 수 있습니다.
 
 $$
 \sigma^2_X = E[X^2] - \mu_X^2 = \int_{-\infty}^\infty x^2p_X(x) \; dx - \left(\int_{-\infty}^\infty xp_X(x) \; dx\right)^2.
 $$
 
-Everything stated above about the mean, the variance, and the standard deviation still applies in this case.  For instance, if we consider the random variable with density
+평균, 분산, 그리고 표준 편차에 대해 위에서 진술된 모든 것은 이 경우에도 여전히 적용됩니다. 예를 들어, 만약 다음 밀도를 가진 확률 변수를 고려한다면
 
 $$
 p(x) = \begin{cases}
@@ -454,19 +454,19 @@ p(x) = \begin{cases}
 \end{cases}
 $$
 
-we can compute
+저희는 다음을 계산할 수 있습니다.
 
 $$
 \mu_X = \int_{-\infty}^\infty xp(x) \; dx = \int_0^1 x \; dx = \frac{1}{2}.
 $$
 
-and
+그리고
 
 $$
 \sigma_X^2 = \int_{-\infty}^\infty x^2p(x) \; dx - \left(\frac{1}{2}\right)^2 = \frac{1}{3} - \frac{1}{4} = \frac{1}{12}.
 $$
 
-As a warning, let's examine one more example, known as the *Cauchy distribution*.  This is the distribution with p.d.f. given by
+경고로, *코시 분포*로 알려진 한 가지 더 예를 검토해 봅시다. 이는 다음과 같이 주어진 p.d.f.를 가진 분포입니다.
 
 $$
 p(x) = \frac{1}{1+x^2}.
@@ -499,15 +499,15 @@ p = 1 / (1 + x**2)
 d2l.plot(x, p, 'x', 'p.d.f.')
 ```
 
-This function looks innocent, and indeed consulting a table of integrals will show it has area one under it, and thus it defines a continuous random variable.
+이 함수는 무해해 보이며, 실제로 적분 테이블을 참조하면 그 아래에 면적 1을 가진다는 것을 보여주므로, 연속 확률 변수를 정의합니다.
 
-To see what goes astray, let's try to compute the variance of this.  This would involve using :eqref:`eq_var_def` computing
+무엇이 잘못되는지 보기 위해, 이것의 분산을 계산해 봅시다. 이는 :eqref:`eq_var_def`를 사용하여 다음을 계산하는 것을 포함할 것입니다.
 
 $$
 \int_{-\infty}^\infty \frac{x^2}{1+x^2}\; dx.
 $$
 
-The function on the inside looks like this:
+내부의 함수는 다음과 같이 보입니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -536,66 +536,66 @@ p = x**2 / (1 + x**2)
 d2l.plot(x, p, 'x', 'integrand')
 ```
 
-This function clearly has infinite area under it since it is essentially the constant one with a small dip near zero, and indeed we could show that
+이 함수는 본질적으로 0 근처에 작은 함몰이 있는 상수 1이므로 그 아래에 분명히 무한한 면적을 가지며, 실제로 저희는 다음을 보일 수 있습니다.
 
 $$
 \int_{-\infty}^\infty \frac{x^2}{1+x^2}\; dx = \infty.
 $$
 
-This means it does not have a well-defined finite variance.
+이는 그것이 잘 정의된 유한 분산을 가지지 않음을 의미합니다.
 
-However, looking deeper shows an even more disturbing result.  Let's try to compute the mean using :eqref:`eq_exp_def`.  Using the change of variables formula, we see
+그러나, 더 깊이 보면 훨씬 더 불안한 결과를 보여줍니다. :eqref:`eq_exp_def`를 사용하여 평균을 계산해 봅시다. 변수 변환 공식을 사용하면, 저희는 다음을 봅니다.
 
 $$
 \mu_X = \int_{-\infty}^{\infty} \frac{x}{1+x^2} \; dx = \frac{1}{2}\int_1^\infty \frac{1}{u} \; du.
 $$
 
-The integral inside is the definition of the logarithm, so this is in essence $\log(\infty) = \infty$, so there is no well-defined average value either!
+내부의 적분은 로그의 정의이므로, 이는 본질적으로 $\log(\infty) = \infty$이므로, 잘 정의된 평균값도 없습니다!
 
-Machine learning scientists define their models so that we most often do not need to deal with these issues, and will in the vast majority of cases deal with random variables with well-defined means and variances.  However, every so often random variables with *heavy tails* (that is those random variables where the probabilities of getting large values are large enough to make things like the mean or variance undefined) are helpful in modeling physical systems, thus it is worth knowing that they exist.
+머신러닝 과학자들은 그들의 모델을 정의하므로 저희가 가장 자주 이러한 문제를 다룰 필요가 없고, 대다수의 경우 잘 정의된 평균과 분산을 가진 확률 변수를 다룰 것입니다. 그러나, 가끔씩 *두꺼운 꼬리*를 가진 확률 변수(즉, 큰 값을 얻을 확률이 평균이나 분산과 같은 것을 정의되지 않게 만들 만큼 충분히 큰 확률 변수)가 물리적 시스템을 모델링하는 데 도움이 되므로, 그것들이 존재한다는 것을 아는 것은 가치가 있습니다.
 
-### Joint Density Functions
+### 결합 밀도 함수
 
-The above work all assumes we are working with a single real valued random variable.  But what if we are dealing with two or more potentially highly correlated random variables?  This circumstance is the norm in machine learning: imagine random variables like $R_{i, j}$ which encode the red value of the pixel at the $(i, j)$ coordinate in an image, or $P_t$ which is a random variable given by a stock price at time $t$.  Nearby pixels tend to have similar color, and nearby times tend to have similar prices.  We cannot treat them as separate random variables, and expect to create a successful model (we will see in :numref:`sec_naive_bayes` a model that under-performs due to such an assumption).  We need to develop the mathematical language to handle these correlated continuous random variables.
+위 작업 모두는 저희가 단일 실숫값 확률 변수로 작업하고 있다고 가정합니다. 그러나 만약 잠재적으로 매우 상관된 두 개 이상의 확률 변수를 다루고 있다면 어떨까요? 이 상황은 머신러닝의 표준입니다. 이미지에서 $(i, j)$ 좌표의 픽셀의 빨간색 값을 인코딩하는 $R_{i, j}$ 또는 시간 $t$에 주가에 의해 주어진 확률 변수인 $P_t$와 같은 확률 변수를 상상해 보십시오. 가까운 픽셀은 비슷한 색을 가지는 경향이 있고, 가까운 시간은 비슷한 가격을 가지는 경향이 있습니다. 저희는 그것들을 별도의 확률 변수로 취급할 수 없고 성공적인 모델을 만들 것이라고 기대할 수 없습니다(:numref:`sec_naive_bayes`에서 그러한 가정으로 인해 성능이 떨어지는 모델을 볼 것입니다). 저희는 이러한 상관된 연속 확률 변수를 다루기 위한 수학적 언어를 발전시켜야 합니다.
 
-Thankfully, with the multiple integrals in :numref:`sec_integral_calculus` we can develop such a language.  Suppose that we have, for simplicity, two random variables $X, Y$ which can be correlated.  Then, similar to the case of a single variable, we can ask the question:
+다행스럽게도, :numref:`sec_integral_calculus`의 다중 적분으로 저희는 그러한 언어를 발전시킬 수 있습니다. 단순함을 위해, 상관될 수 있는 두 확률 변수 $X, Y$가 있다고 가정해 보십시오. 그러면, 단일 변수의 경우와 유사하게, 저희는 질문을 할 수 있습니다.
 
 $$
 P(X \;\textrm{is in an}\; \epsilon \textrm{-sized interval around}\; x \; \textrm{and} \;Y \;\textrm{is in an}\; \epsilon \textrm{-sized interval around}\; y ).
 $$
 
-Similar reasoning to the single variable case shows that this should be approximately
+단일 변수 경우와 유사한 추론은 이것이 대략 다음과 같아야 한다는 것을 보여줍니다.
 
 $$
 P(X \;\textrm{is in an}\; \epsilon \textrm{-sized interval around}\; x \; \textrm{and} \;Y \;\textrm{is in an}\; \epsilon \textrm{-sized interval around}\; y ) \approx \epsilon^{2}p(x, y),
 $$
 
-for some function $p(x, y)$.  This is referred to as the joint density of $X$ and $Y$.  Similar properties are true for this as we saw in the single variable case. Namely:
+어떤 함수 $p(x, y)$에 대해서 말입니다. 이는 $X$와 $Y$의 결합 밀도라고 합니다. 저희가 단일 변수 경우에 본 것처럼 이에 대해서도 유사한 속성이 참입니다. 즉:
 
 * $p(x, y) \ge 0$;
 * $\int _ {\mathbb{R}^2} p(x, y) \;dx \;dy = 1$;
 * $P((X, Y) \in \mathcal{D}) = \int _ {\mathcal{D}} p(x, y) \;dx \;dy$.
 
-In this way, we can deal with multiple, potentially correlated random variables.  If we wish to work with more than two random variables, we can extend the multivariate density to as many coordinates as desired by considering $p(\mathbf{x}) = p(x_1, \ldots, x_n)$.  The same properties of being non-negative, and having total integral of one still hold.
+이런 식으로, 저희는 여러 개의 잠재적으로 상관된 확률 변수를 다룰 수 있습니다. 만약 두 개 이상의 확률 변수로 작업하고 싶다면, 저희는 $p(\mathbf{x}) = p(x_1, \ldots, x_n)$를 고려함으로써 다변량 밀도를 원하는 만큼의 좌표로 확장할 수 있습니다. 음이 아니고 총 적분이 1인 같은 속성이 여전히 성립합니다.
 
-### Marginal Distributions
-When dealing with multiple variables, we oftentimes want to be able to ignore the relationships and ask, "how is this one variable distributed?"  Such a distribution is called a *marginal distribution*.
+### 주변 분포
+여러 변수를 다룰 때, 저희는 종종 관계를 무시하고 "이 한 변수는 어떻게 분포되어 있는가?"라고 묻고 싶습니다. 그러한 분포는 *주변 분포*라고 합니다.
 
-To be concrete, let's suppose that we have two random variables $X, Y$ with joint density given by $p _ {X, Y}(x, y)$.  We will be using the subscript to indicate what random variables the density is for.  The question of finding the marginal distribution is taking this function, and using it to find $p _ X(x)$.
+구체적으로 말하면, $p _ {X, Y}(x, y)$로 주어진 결합 밀도를 가진 두 확률 변수 $X, Y$가 있다고 가정해 봅시다. 저희는 밀도가 어떤 확률 변수에 대한 것인지를 나타내기 위해 첨자를 사용할 것입니다. 주변 분포를 찾는 질문은 이 함수를 가져다가 $p _ X(x)$를 찾는 데 사용하는 것입니다.
 
-As with most things, it is best to return to the intuitive picture to figure out what should be true.  Recall that the density is the function $p _ X$ so that
+대부분의 것과 마찬가지로, 무엇이 참이어야 하는지 알아내기 위해 직관적인 그림으로 돌아가는 것이 가장 좋습니다. 밀도가 다음과 같은 함수 $p _ X$라는 것을 떠올리십시오.
 
 $$
 P(X \in [x, x+\epsilon]) \approx \epsilon \cdot p _ X(x).
 $$
 
-There is no mention of $Y$, but if all we are given is $p _{X, Y}$, we need to include $Y$ somehow. We can first observe that this is the same as
+$Y$에 대한 언급이 없지만, 만약 저희에게 주어진 모든 것이 $p _{X, Y}$라면, 저희는 어떻게든 $Y$를 포함해야 합니다. 저희는 먼저 이것이 다음과 같다는 것을 관찰할 수 있습니다.
 
 $$
 P(X \in [x, x+\epsilon] \textrm{, and } Y \in \mathbb{R}) \approx \epsilon \cdot p _ X(x).
 $$
 
-Our density does not directly tell us about what happens in this case, we need to split into small intervals in $y$ as well, so we can write this as
+저희의 밀도는 이 경우 무슨 일이 일어나는지 직접 알려주지 않으므로, 저희는 또한 $y$에서 작은 구간으로 분할해야 합니다. 그래서 저희는 이를 다음과 같이 쓸 수 있습니다.
 
 $$
 \begin{aligned}
@@ -604,10 +604,10 @@ $$
 \end{aligned}
 $$
 
-![By summing along the columns of our array of probabilities, we are able to obtain the marginal distribution for just the random variable represented along the $\mathit{x}$-axis.](../img/marginal.svg)
+![저희의 확률 배열의 열을 따라 합산함으로써, 저희는 $\mathit{x}$축을 따라 표현된 확률 변수만에 대한 주변 분포를 얻을 수 있습니다.](../img/marginal.svg)
 :label:`fig_marginal`
 
-This tells us to add up the value of the density along a series of squares in a line as is shown in :numref:`fig_marginal`.  Indeed, after canceling one factor of epsilon from both sides, and recognizing the sum on the right is the integral over $y$, we can conclude that
+이는 :numref:`fig_marginal`에서 보여지는 것처럼 일렬로 있는 일련의 정사각형을 따라 밀도의 값을 더하라고 알려줍니다. 사실, 양변에서 엡실론의 한 인자를 소거하고, 오른쪽의 합이 $y$에 대한 적분임을 인식한 후, 저희는 다음과 같이 결론 내릴 수 있습니다.
 
 $$
 \begin{aligned}
@@ -616,24 +616,24 @@ $$
 \end{aligned}
 $$
 
-Thus we see
+따라서 저희는 다음을 봅니다.
 
 $$
 p _ X(x) = \int_{-\infty}^\infty p_{X, Y}(x, y) \; dy.
 $$
 
-This tells us that to get a marginal distribution, we integrate over the variables we do not care about.  This process is often referred to as *integrating out* or *marginalized out* the unneeded variables.
+이는 저희에게 주변 분포를 얻기 위해서는 신경 쓰지 않는 변수에 대해 적분한다고 알려줍니다. 이 과정은 종종 불필요한 변수를 *적분으로 제거하기* 또는 *주변화하기*라고 합니다.
 
-### Covariance
+### 공분산
 
-When dealing with multiple random variables, there is one additional summary statistic which is helpful to know: the *covariance*.  This measures the degree that two random variable fluctuate together.
+여러 확률 변수를 다룰 때, 알아두면 유용한 추가 요약 통계가 하나 있습니다. *공분산*입니다. 이는 두 확률 변수가 함께 변동하는 정도를 측정합니다.
 
-Suppose that we have two random variables $X$ and $Y$, to begin with, let's suppose they are discrete, taking on values $(x_i, y_j)$ with probability $p_{ij}$.  In this case, the covariance is defined as
+두 확률 변수 $X$와 $Y$가 있다고 가정하고, 시작하기 위해 그들이 이산이고 확률 $p_{ij}$로 값 $(x_i, y_j)$를 취한다고 가정해 봅시다. 이 경우, 공분산은 다음과 같이 정의됩니다.
 
 $$\sigma_{XY} = \textrm{Cov}(X, Y) = \sum_{i, j} (x_i - \mu_X) (y_j-\mu_Y) p_{ij}. = E[XY] - E[X]E[Y].$$
 :eqlabel:`eq_cov_def`
 
-To think about this intuitively: consider the following pair of random variables.  Suppose that $X$ takes the values $1$ and $3$, and $Y$ takes the values $-1$ and $3$.  Suppose that we have the following probabilities
+이에 대해 직관적으로 생각하기 위해, 다음 쌍의 확률 변수를 고려해 보십시오. $X$가 값 $1$과 $3$을 취하고, $Y$가 값 $-1$과 $3$을 취한다고 가정해 봅시다. 다음 확률을 가진다고 가정해 봅시다.
 
 $$
 \begin{aligned}
@@ -644,7 +644,7 @@ P(X = 3 \; \textrm{and} \; Y = 3) & = \frac{p}{2},
 \end{aligned}
 $$
 
-where $p$ is a parameter in $[0,1]$ we get to pick.  Notice that if $p=1$ then they are both always their minimum or maximum values simultaneously, and if $p=0$ they are guaranteed to take their flipped values simultaneously (one is large when the other is small and vice versa).  If $p=1/2$, then the four possibilities are all equally likely, and neither should be related.  Let's compute the covariance.  First, note $\mu_X = 2$ and $\mu_Y = 1$, so we may compute using :eqref:`eq_cov_def`:
+여기서 $p$는 저희가 선택할 수 있는 $[0,1]$의 매개변수입니다. 만약 $p=1$이면 그들은 둘 다 항상 동시에 최솟값 또는 최댓값이고, 만약 $p=0$이면 그들은 보장된 채로 동시에 뒤집힌 값을 취하는 것임에 유의하십시오(하나는 다른 것이 작을 때 크고 그 반대도). 만약 $p=1/2$이면, 네 가지 가능성이 모두 동등하게 가능성이 있고, 어느 쪽도 관련되지 않아야 합니다. 공분산을 계산해 봅시다. 먼저, $\mu_X = 2$이고 $\mu_Y = 1$임에 유의하십시오. 따라서 저희는 :eqref:`eq_cov_def`를 사용하여 계산할 수 있습니다.
 
 $$
 \begin{aligned}
@@ -654,17 +654,17 @@ $$
 \end{aligned}
 $$
 
-When $p=1$ (the case where they are both maximally positive or negative at the same time) has a covariance of $2$. When $p=0$ (the case where they are flipped) the covariance is $-2$.  Finally, when $p=1/2$ (the case where they are unrelated), the covariance is $0$.  Thus we see that the covariance measures how these two random variables are related.
+$p=1$일 때(둘 다 동시에 최대로 양수 또는 음수인 경우) 공분산은 $2$입니다. $p=0$일 때(그들이 뒤집힌 경우) 공분산은 $-2$입니다. 마지막으로, $p=1/2$일 때(그들이 관련되지 않은 경우), 공분산은 $0$입니다. 따라서 저희는 공분산이 이 두 확률 변수가 어떻게 관련되어 있는지를 측정한다는 것을 봅니다.
 
-A quick note on the covariance is that it only measures these linear relationships.  More complex relationships like $X = Y^2$ where $Y$ is randomly chosen from $\{-2, -1, 0, 1, 2\}$ with equal probability can be missed.  Indeed a quick computation shows that these random variables have covariance zero, despite one being a deterministic function of the other.
+공분산에 대한 빠른 메모는 그것이 이러한 선형 관계만 측정한다는 것입니다. $Y$가 동등한 확률로 $\{-2, -1, 0, 1, 2\}$에서 무작위로 선택될 때 $X = Y^2$와 같은 더 복잡한 관계는 놓칠 수 있습니다. 사실 빠른 계산은 이러한 확률 변수가 하나가 다른 것의 결정적 함수임에도 불구하고 공분산이 0임을 보여줍니다.
 
-For continuous random variables, much the same story holds.  At this point, we are pretty comfortable with doing the transition between discrete and continuous, so we will provide the continuous analogue of :eqref:`eq_cov_def` without any derivation.
+연속 확률 변수의 경우, 거의 같은 이야기가 성립합니다. 이 시점에서, 저희는 이산과 연속 사이의 전환을 하는 데 꽤 편안하므로, 어떤 유도 없이 :eqref:`eq_cov_def`의 연속 유사물을 제공할 것입니다.
 
 $$
 \sigma_{XY} = \int_{\mathbb{R}^2} (x-\mu_X)(y-\mu_Y)p(x, y) \;dx \;dy.
 $$
 
-For visualization, let's take a look at a collection of random variables with tunable covariance.
+시각화를 위해, 조정 가능한 공분산을 가진 확률 변수의 모음을 살펴봅시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -717,60 +717,60 @@ for i in range(3):
 d2l.plt.show()
 ```
 
-Let's see some properties of covariances:
+공분산의 몇 가지 속성을 봅시다.
 
-* For any random variable $X$, $\textrm{Cov}(X, X) = \textrm{Var}(X)$.
-* For any random variables $X, Y$ and numbers $a$ and $b$, $\textrm{Cov}(aX+b, Y) = \textrm{Cov}(X, aY+b) = a\textrm{Cov}(X, Y)$.
-* If $X$ and $Y$ are independent then $\textrm{Cov}(X, Y) = 0$.
+* 어떤 확률 변수 $X$에 대해, $\textrm{Cov}(X, X) = \textrm{Var}(X)$.
+* 어떤 확률 변수 $X, Y$와 숫자 $a$와 $b$에 대해, $\textrm{Cov}(aX+b, Y) = \textrm{Cov}(X, aY+b) = a\textrm{Cov}(X, Y)$.
+* 만약 $X$와 $Y$가 독립이라면 $\textrm{Cov}(X, Y) = 0$.
 
-In addition, we can use the covariance to expand a relationship we saw before.  Recall that is $X$ and $Y$ are two independent random variables then
+추가로, 저희는 공분산을 사용하여 이전에 본 관계를 확장할 수 있습니다. $X$와 $Y$가 두 독립 확률 변수라면 다음을 떠올리십시오.
 
 $$
 \textrm{Var}(X+Y) = \textrm{Var}(X) + \textrm{Var}(Y).
 $$
 
-With knowledge of covariances, we can expand this relationship.  Indeed, some algebra can show that in general,
+공분산의 지식으로, 저희는 이 관계를 확장할 수 있습니다. 사실, 약간의 대수는 일반적으로 다음을 보일 수 있습니다.
 
 $$
 \textrm{Var}(X+Y) = \textrm{Var}(X) + \textrm{Var}(Y) + 2\textrm{Cov}(X, Y).
 $$
 
-This allows us to generalize the variance summation rule for correlated random variables.
+이는 상관된 확률 변수에 대한 분산 합산 규칙을 일반화할 수 있게 해줍니다.
 
-### Correlation
+### 상관
 
-As we did in the case of means and variances, let's now consider units.  If $X$ is measured in one unit (say inches), and $Y$ is measured in another (say dollars), the covariance is measured in the product of these two units $\textrm{inches} \times \textrm{dollars}$.  These units can be hard to interpret.  What we will often want in this case is a unit-less measurement of relatedness.  Indeed, often we do not care about exact quantitative correlation, but rather ask if the correlation is in the same direction, and how strong the relationship is.
+저희가 평균과 분산의 경우 했던 것처럼, 이제 단위를 고려해 봅시다. 만약 $X$가 한 단위(예: 인치)로 측정되고 $Y$가 다른 단위(예: 달러)로 측정된다면, 공분산은 이 두 단위의 곱 $\textrm{inches} \times \textrm{dollars}$로 측정됩니다. 이러한 단위는 해석하기 어려울 수 있습니다. 이 경우 저희가 종종 원하는 것은 관련성의 단위 없는 측정입니다. 사실, 종종 저희는 정확한 정량적 상관에 대해 신경 쓰지 않고, 오히려 상관이 같은 방향인지, 그리고 관계가 얼마나 강한지 묻습니다.
 
-To see what makes sense, let's perform a thought experiment.  Suppose that we convert our random variables in inches and dollars to be in inches and cents.  In this case the random variable $Y$ is multiplied by $100$.  If we work through the definition, this means that $\textrm{Cov}(X, Y)$ will be multiplied by $100$.  Thus we see that in this case a change of units change the covariance by a factor of $100$.  Thus, to find our unit-invariant measure of correlation, we will need to divide by something else that also gets scaled by $100$.  Indeed we have a clear candidate, the standard deviation!  Indeed if we define the *correlation coefficient* to be
+무엇이 의미가 있는지 보기 위해, 사고 실험을 수행해 봅시다. 인치와 달러로 된 저희의 확률 변수를 인치와 센트로 변환한다고 가정해 봅시다. 이 경우 확률 변수 $Y$는 $100$이 곱해집니다. 만약 정의를 통해 작업하면, 이는 $\textrm{Cov}(X, Y)$가 $100$이 곱해질 것임을 의미합니다. 따라서 저희는 이 경우 단위의 변경이 공분산을 $100$의 인자로 변경한다는 것을 봅니다. 따라서, 상관의 단위 불변 측정값을 찾기 위해서는, 저희는 $100$으로도 스케일링되는 다른 것으로 나눠야 할 것입니다. 사실 저희는 명확한 후보, 즉 표준 편차를 가지고 있습니다! 사실 저희가 *상관 계수*를 다음과 같이 정의한다면
 
 $$\rho(X, Y) = \frac{\textrm{Cov}(X, Y)}{\sigma_{X}\sigma_{Y}},$$
 :eqlabel:`eq_cor_def`
 
-we see that this is a unit-less value.  A little mathematics can show that this number is between $-1$ and $1$ with $1$ meaning maximally positively correlated, whereas $-1$ means maximally negatively correlated.
+이것이 단위 없는 값임을 봅니다. 약간의 수학은 이 숫자가 $-1$과 $1$ 사이임을 보일 수 있는데, $1$은 최대로 양의 상관, 반면 $-1$은 최대로 음의 상관을 의미합니다.
 
-Returning to our explicit discrete example above, we can see that $\sigma_X = 1$ and $\sigma_Y = 2$, so we can compute the correlation between the two random variables using :eqref:`eq_cor_def` to see that
+위의 저희의 명시적인 이산 예제로 돌아가서, $\sigma_X = 1$이고 $\sigma_Y = 2$임을 볼 수 있으므로, :eqref:`eq_cor_def`를 사용하여 두 확률 변수 사이의 상관을 계산하여 다음을 볼 수 있습니다.
 
 $$
 \rho(X, Y) = \frac{4p-2}{1\cdot 2} = 2p-1.
 $$
 
-This now ranges between $-1$ and $1$ with the expected behavior of $1$ meaning most correlated, and $-1$ meaning minimally correlated.
+이는 이제 가장 상관됨을 의미하는 $1$과 최소로 상관됨을 의미하는 $-1$의 예상되는 동작과 함께 $-1$과 $1$ 사이의 범위입니다.
 
-As another example, consider $X$ as any random variable, and $Y=aX+b$ as any linear deterministic function of $X$.  Then, one can compute that
+또 다른 예로, $X$를 어떤 확률 변수로, $Y=aX+b$를 $X$의 어떤 선형 결정적 함수로 고려해 보십시오. 그러면, 다음을 계산할 수 있습니다.
 
 $$\sigma_{Y} = \sigma_{aX+b} = |a|\sigma_{X},$$
 
 $$\textrm{Cov}(X, Y) = \textrm{Cov}(X, aX+b) = a\textrm{Cov}(X, X) = a\textrm{Var}(X),$$
 
-and thus by :eqref:`eq_cor_def` that
+따라서 :eqref:`eq_cor_def`에 의해 다음을 얻습니다.
 
 $$
 \rho(X, Y) = \frac{a\textrm{Var}(X)}{|a|\sigma_{X}^2} = \frac{a}{|a|} = \textrm{sign}(a).
 $$
 
-Thus we see that the correlation is $+1$ for any $a > 0$, and $-1$ for any $a < 0$ illustrating that correlation measures the degree and directionality the two random variables are related, not the scale that the variation takes.
+따라서 저희는 상관이 어떤 $a > 0$에 대해서도 $+1$이고, 어떤 $a < 0$에 대해서도 $-1$임을 보는데, 이는 상관이 변동이 취하는 스케일이 아니라 두 확률 변수가 관련되어 있는 정도와 방향성을 측정함을 보여줍니다.
 
-Let's again plot a collection of random variables with tunable correlation.
+조정 가능한 상관을 가진 확률 변수의 모음을 다시 플롯해 봅시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -825,42 +825,42 @@ for i in range(3):
 d2l.plt.show()
 ```
 
-Let's list a few properties of the correlation below.
+상관의 몇 가지 속성을 아래에 나열해 봅시다.
 
-* For any random variable $X$, $\rho(X, X) = 1$.
-* For any random variables $X, Y$ and numbers $a$ and $b$, $\rho(aX+b, Y) = \rho(X, aY+b) = \rho(X, Y)$.
-* If $X$ and $Y$ are independent with non-zero variance then $\rho(X, Y) = 0$.
+* 어떤 확률 변수 $X$에 대해, $\rho(X, X) = 1$.
+* 어떤 확률 변수 $X, Y$와 숫자 $a$와 $b$에 대해, $\rho(aX+b, Y) = \rho(X, aY+b) = \rho(X, Y)$.
+* 만약 $X$와 $Y$가 0이 아닌 분산을 가지고 독립이라면 $\rho(X, Y) = 0$.
 
-As a final note, you may feel like some of these formulae are familiar.  Indeed, if we expand everything out assuming that $\mu_X = \mu_Y = 0$, we see that this is
+마지막 메모로, 이러한 공식들 중 일부가 친숙하게 느껴질 수 있습니다. 사실, $\mu_X = \mu_Y = 0$이라고 가정하고 모든 것을 확장하면, 저희는 이것이 다음과 같음을 봅니다.
 
 $$
 \rho(X, Y) = \frac{\sum_{i, j} x_iy_ip_{ij}}{\sqrt{\sum_{i, j}x_i^2 p_{ij}}\sqrt{\sum_{i, j}y_j^2 p_{ij}}}.
 $$
 
-This looks like a sum of a product of terms divided by the square root of sums of terms.  This is exactly the formula for the cosine of the angle between two vectors $\mathbf{v}, \mathbf{w}$ with the different coordinates weighted by $p_{ij}$:
+이는 항의 곱의 합을 항의 합의 제곱근으로 나눈 것처럼 보입니다. 이는 다른 좌표가 $p_{ij}$에 의해 가중된 두 벡터 $\mathbf{v}, \mathbf{w}$ 사이의 각도의 코사인에 대한 정확한 공식입니다.
 
 $$
 \cos(\theta) = \frac{\mathbf{v}\cdot \mathbf{w}}{\|\mathbf{v}\|\|\mathbf{w}\|} = \frac{\sum_{i} v_iw_i}{\sqrt{\sum_{i}v_i^2}\sqrt{\sum_{i}w_i^2}}.
 $$
 
-Indeed if we think of norms as being related to standard deviations, and correlations as being cosines of angles, much of the intuition we have from geometry can be applied to thinking about random variables.
+사실 만약 저희가 노름을 표준 편차와 관련된 것으로, 그리고 상관을 각도의 코사인으로 생각한다면, 기하학에서 저희가 가진 직관의 많은 부분이 확률 변수에 대해 생각하는 데 적용될 수 있습니다.
 
-## Summary
-* Continuous random variables are random variables that can take on a continuum of values.  They have some technical difficulties that make them more challenging to work with compared to discrete random variables.
-* The probability density function allows us to work with continuous random variables by giving a function where the area under the curve on some interval gives the probability of finding a sample point in that interval.
-* The cumulative distribution function is the probability of observing the random variable to be less than a given threshold.  It can provide a useful alternate viewpoint which unifies discrete and continuous variables.
-* The mean is the average value of a random variable.
-* The variance is the expected square of the difference between the random variable and its mean.
-* The standard deviation is the square root of the variance.  It can be thought of as measuring the range of values the random variable may take.
-* Chebyshev's inequality allows us to make this intuition rigorous by giving an explicit interval that contains the random variable most of the time.
-* Joint densities allow us to work with correlated random variables.  We may marginalize joint densities by integrating over unwanted random variables to get the distribution of the desired random variable.
-* The covariance and correlation coefficient provide a way to measure any linear relationship between two correlated random variables.
+## 요약
+* 연속 확률 변수는 값의 연속체를 취할 수 있는 확률 변수입니다. 그들은 이산 확률 변수와 비교하여 작업하기 더 도전적으로 만드는 몇 가지 기술적 어려움을 가지고 있습니다.
+* 확률 밀도 함수는 곡선 아래의 면적이 어떤 구간에서 그 구간에서 샘플 점을 찾을 확률을 제공하는 함수를 제공함으로써 연속 확률 변수로 작업할 수 있게 해줍니다.
+* 누적 분포 함수는 확률 변수가 주어진 임계값보다 작음을 관찰할 확률입니다. 이는 이산과 연속 변수를 통합하는 유용한 대안 관점을 제공할 수 있습니다.
+* 평균은 확률 변수의 평균값입니다.
+* 분산은 확률 변수와 그 평균의 차이의 기대 제곱입니다.
+* 표준 편차는 분산의 제곱근입니다. 이는 확률 변수가 취할 수 있는 값의 범위를 측정하는 것으로 생각될 수 있습니다.
+* 체비셰프의 부등식은 대부분의 시간 동안 확률 변수를 포함하는 명시적 구간을 제공함으로써 이 직관을 엄격하게 만들 수 있게 해줍니다.
+* 결합 밀도는 상관된 확률 변수로 작업할 수 있게 해줍니다. 저희는 원하는 확률 변수의 분포를 얻기 위해 원치 않는 확률 변수에 대해 적분함으로써 결합 밀도를 주변화할 수 있습니다.
+* 공분산과 상관 계수는 두 상관된 확률 변수 사이의 어떤 선형 관계를 측정하는 방법을 제공합니다.
 
-## Exercises
-1. Suppose that we have the random variable with density given by $p(x) = \frac{1}{x^2}$ for $x \ge 1$ and $p(x) = 0$ otherwise.  What is $P(X > 2)$?
-2. The Laplace distribution is a random variable whose density is given by $p(x = \frac{1}{2}e^{-|x|}$.  What is the mean and the standard deviation of this function?  As a hint, $\int_0^\infty xe^{-x} \; dx = 1$ and $\int_0^\infty x^2e^{-x} \; dx = 2$.
-3. I walk up to you on the street and say "I have a random variable with mean $1$, standard deviation $2$, and I observed $25\%$ of my samples taking a value larger than $9$."  Do you believe me?  Why or why not?
-4. Suppose that you have two random variables $X, Y$, with joint density given by $p_{XY}(x, y) = 4xy$ for $x, y \in [0,1]$ and $p_{XY}(x, y) = 0$ otherwise.  What is the covariance of $X$ and $Y$?
+## 연습문제
+1. $x \ge 1$에 대해 $p(x) = \frac{1}{x^2}$로 주어진 밀도와 그렇지 않으면 $p(x) = 0$을 가진 확률 변수가 있다고 가정해 보십시오. $P(X > 2)$는 무엇입니까?
+2. 라플라스 분포는 밀도가 $p(x = \frac{1}{2}e^{-|x|}$로 주어진 확률 변수입니다. 이 함수의 평균과 표준 편차는 무엇입니까? 힌트로, $\int_0^\infty xe^{-x} \; dx = 1$이고 $\int_0^\infty x^2e^{-x} \; dx = 2$.
+3. 저는 거리에서 당신에게 다가가 "저는 평균 $1$, 표준 편차 $2$인 확률 변수가 있고, 저는 제 샘플의 $25\%$가 $9$보다 큰 값을 취하는 것을 관찰했습니다."라고 말합니다. 저를 믿습니까? 왜 또는 왜 아닙니까?
+4. $x, y \in [0,1]$에 대해 $p_{XY}(x, y) = 4xy$로 주어진 결합 밀도와 그렇지 않으면 $p_{XY}(x, y) = 0$을 가진 두 확률 변수 $X, Y$가 있다고 가정해 보십시오. $X$와 $Y$의 공분산은 무엇입니까?
 
 
 :begin_tab:`mxnet`

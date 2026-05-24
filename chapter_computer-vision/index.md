@@ -1,27 +1,17 @@
-# Computer Vision
+# 컴퓨터 비전
 :label:`chap_cv`
 
-Whether it is medical diagnosis, self-driving vehicles, camera monitoring, or smart filters, many applications in the field of computer vision are closely related to our current and future lives. 
-In recent years, deep learning has been
-the transformative power for advancing the performance of computer vision systems.
-It can be said that the most advanced computer vision applications are almost inseparable from deep learning.
-In view of this, this chapter will focus on the field of computer vision, and investigate methods and applications that have recently been influential in academia and industry.
+의료 진단, 자율 주행 차량, 카메라 모니터링, 스마트 필터에 이르기까지 컴퓨터 비전 분야의 많은 응용은 저희의 현재와 미래의 삶과 밀접하게 관련되어 있습니다.
+최근 몇 년 동안 딥러닝은 컴퓨터 비전 시스템의 성능을 발전시키는 변혁적인 힘이 되었습니다.
+가장 진보된 컴퓨터 비전 응용은 딥러닝과 거의 분리할 수 없다고 말할 수 있습니다.
+이러한 관점에서 이 장에서는 컴퓨터 비전 분야에 초점을 맞추어 최근 학계와 산업계에서 영향력이 큰 방법들과 응용을 살펴보겠습니다.
 
 
-In :numref:`chap_cnn` and :numref:`chap_modern_cnn`, we studied various convolutional neural networks that are
-commonly used in computer vision, and applied them
-to simple image classification tasks. 
-At the beginning of this chapter, we will describe
-two methods that 
-may improve model generalization, namely *image augmentation* and *fine-tuning*,
-and apply them to image classification. 
-Since deep neural networks can effectively represent images in multiple levels, 
-such layerwise representations have been successfully 
-used in various computer vision tasks such as *object detection*, *semantic segmentation*, and *style transfer*. 
-Following the key idea of leveraging layerwise representations in computer vision,
-we will begin with major components and techniques for object detection. Next, we will show how to use *fully convolutional networks* for semantic segmentation of images. Then we will explain how to use style transfer techniques to generate images like the cover of this book.
-In the end, we conclude this chapter
-by applying the materials of this chapter and several previous chapters on two popular computer vision benchmark datasets.
+:numref:`chap_cnn`과 :numref:`chap_modern_cnn`에서 저희는 컴퓨터 비전에서 일반적으로 사용되는 다양한 합성곱 신경망들을 공부했고, 이를 간단한 이미지 분류 작업에 적용했습니다.
+이 장의 시작 부분에서는 모델의 일반화를 개선할 수 있는 두 가지 방법인 *이미지 증강*과 *파인튜닝*을 설명하고 이를 이미지 분류에 적용합니다.
+심층 신경망은 여러 수준에서 이미지를 효과적으로 표현할 수 있기 때문에, 이러한 계층별 표현은 *객체 검출*, *시맨틱 분할*, *스타일 전이*와 같은 다양한 컴퓨터 비전 작업에 성공적으로 사용되었습니다.
+컴퓨터 비전에서 계층별 표현을 활용한다는 핵심 아이디어를 따라, 먼저 객체 검출의 주요 구성 요소와 기법부터 시작하겠습니다. 다음으로 *완전 합성곱 신경망*을 이미지의 시맨틱 분할에 사용하는 방법을 보여드리겠습니다. 그런 다음 이 책의 표지와 같은 이미지를 생성하기 위해 스타일 전이 기법을 사용하는 방법을 설명합니다.
+마지막으로, 이 장과 이전 몇몇 장의 내용을 두 가지 인기 있는 컴퓨터 비전 벤치마크 데이터셋에 적용하면서 이 장을 마무리합니다.
 
 ```toc
 :maxdepth: 2

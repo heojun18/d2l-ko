@@ -1,25 +1,23 @@
-# Matrix Factorization
+# 행렬 분해
 
-Matrix Factorization :cite:`Koren.Bell.Volinsky.2009` is a well-established algorithm in the recommender systems literature. The first version of matrix factorization model is proposed by Simon Funk in a famous [blog
-post](https://sifter.org/%7Esimon/journal/20061211.html) in which he described the idea of factorizing the interaction matrix. It then became widely known due to the Netflix contest which was held in 2006. At that time, Netflix, a media-streaming and video-rental company, announced a contest to improve its recommender system performance. The best team that can improve on the Netflix baseline, i.e., Cinematch), by 10 percent would win a one million USD prize.  As such, this contest attracted
-a lot of attention to the field of recommender system research. Subsequently, the grand prize was won by the BellKor's Pragmatic Chaos team, a combined team of BellKor, Pragmatic Theory, and BigChaos (you do not need to worry about these algorithms now). Although the final score was the result of an ensemble solution (i.e., a combination of many algorithms), the matrix factorization algorithm played a critical role in the final blend. The technical report of the Netflix Grand Prize solution :cite:`Toscher.Jahrer.Bell.2009` provides a detailed introduction to the adopted model. In this section, we will dive into the details of the matrix factorization model and its implementation.
+행렬 분해 :cite:`Koren.Bell.Volinsky.2009`는 추천 시스템 문헌에서 잘 확립된 알고리즘입니다. 행렬 분해 모델의 첫 번째 버전은 Simon Funk가 유명한 [블로그 게시물](https://sifter.org/%7Esimon/journal/20061211.html)에서 제안했으며, 그는 그 게시물에서 상호작용 행렬을 분해하는 아이디어를 설명했습니다. 그 후 2006년에 개최된 Netflix 콘테스트로 인해 널리 알려지게 되었습니다. 당시 미디어 스트리밍과 비디오 대여 회사인 Netflix는 자사의 추천 시스템 성능을 향상시키기 위한 콘테스트를 발표했습니다. Netflix의 기준선(즉, Cinematch)을 10% 개선할 수 있는 최고의 팀에게 100만 달러의 상금을 수여한다는 내용이었습니다. 이렇게, 이 콘테스트는 추천 시스템 연구 분야에 많은 관심을 끌었습니다. 결과적으로 대상은 BellKor, Pragmatic Theory, BigChaos의 합동 팀인 BellKor's Pragmatic Chaos 팀이 수상했습니다(이러한 알고리즘에 대해 지금 걱정할 필요는 없습니다). 비록 최종 점수는 앙상블 솔루션(즉, 많은 알고리즘의 조합)의 결과였지만, 행렬 분해 알고리즘은 최종 조합에서 중요한 역할을 했습니다. Netflix 대상 솔루션의 기술 보고서 :cite:`Toscher.Jahrer.Bell.2009`는 채택된 모델에 대한 상세한 소개를 제공합니다. 이 절에서는 행렬 분해 모델의 세부 사항과 그 구현에 대해 자세히 살펴보겠습니다.
 
 
-## The Matrix Factorization Model
+## 행렬 분해 모델
 
-Matrix factorization is a class of collaborative filtering models. Specifically, the model factorizes the user-item interaction matrix (e.g., rating matrix) into the product of two lower-rank matrices, capturing the low-rank structure of the user-item interactions.
+행렬 분해는 협업 필터링 모델의 한 부류입니다. 구체적으로, 이 모델은 사용자-아이템 상호작용 행렬(예: 평점 행렬)을 두 개의 낮은 랭크의 행렬의 곱으로 분해하여 사용자-아이템 상호작용의 낮은 랭크 구조를 포착합니다.
 
-Let $\mathbf{R} \in \mathbb{R}^{m \times n}$ denote the interaction matrix with $m$ users and $n$ items, and the values of $\mathbf{R}$ represent explicit ratings. The user-item interaction will be factorized into a user latent matrix $\mathbf{P} \in \mathbb{R}^{m \times k}$ and an item latent matrix $\mathbf{Q} \in \mathbb{R}^{n \times k}$, where $k \ll m, n$, is the latent factor size. Let $\mathbf{p}_u$ denote the $u^\textrm{th}$ row of $\mathbf{P}$ and $\mathbf{q}_i$ denote the $i^\textrm{th}$ row of $\mathbf{Q}$.  For a given item $i$, the elements of $\mathbf{q}_i$ measure the extent to which the item possesses those characteristics such as the genres and languages of a movie. For a given user $u$, the elements of $\mathbf{p}_u$ measure the extent of interest the user has in items' corresponding characteristics. These latent factors might measure obvious dimensions as mentioned in those examples or are completely uninterpretable. The predicted ratings can be estimated by
+$\mathbf{R} \in \mathbb{R}^{m \times n}$이 $m$명의 사용자와 $n$개의 아이템을 가진 상호작용 행렬을 나타내며, $\mathbf{R}$의 값들이 명시적 평점을 나타낸다고 합시다. 사용자-아이템 상호작용은 사용자 잠재 행렬 $\mathbf{P} \in \mathbb{R}^{m \times k}$와 아이템 잠재 행렬 $\mathbf{Q} \in \mathbb{R}^{n \times k}$로 분해될 것이며, 여기서 $k \ll m, n$은 잠재 요인 크기입니다. $\mathbf{p}_u$가 $\mathbf{P}$의 $u^\textrm{th}$ 행을 나타내고 $\mathbf{q}_i$가 $\mathbf{Q}$의 $i^\textrm{th}$ 행을 나타낸다고 합시다. 주어진 아이템 $i$에 대해, $\mathbf{q}_i$의 요소들은 그 아이템이 영화의 장르나 언어와 같은 특성을 어느 정도 갖고 있는지를 측정합니다. 주어진 사용자 $u$에 대해, $\mathbf{p}_u$의 요소들은 사용자가 아이템의 해당 특성에 얼마나 관심이 있는지를 측정합니다. 이러한 잠재 요인은 그러한 예시에서 언급된 명백한 차원을 측정할 수도 있고 완전히 해석 불가능할 수도 있습니다. 예측된 평점은 다음과 같이 추정될 수 있습니다.
 
 $$\hat{\mathbf{R}} = \mathbf{PQ}^\top$$
 
-where $\hat{\mathbf{R}}\in \mathbb{R}^{m \times n}$ is the predicted rating matrix which has the same shape as $\mathbf{R}$. One major problem of this prediction rule is that users/items biases can not be modeled. For example, some users tend to give higher ratings or some items always get lower ratings due to poorer quality. These biases are commonplace in real-world applications. To capture these biases, user specific and item specific bias terms are introduced. Specifically, the predicted rating user $u$ gives to item $i$ is calculated by
+여기서 $\hat{\mathbf{R}}\in \mathbb{R}^{m \times n}$은 $\mathbf{R}$과 동일한 형태를 가진 예측된 평점 행렬입니다. 이 예측 규칙의 한 가지 주요 문제는 사용자/아이템 편향을 모델링할 수 없다는 점입니다. 예를 들어 일부 사용자는 더 높은 평점을 주는 경향이 있거나, 일부 아이템은 품질이 떨어져서 항상 더 낮은 평점을 받습니다. 이러한 편향은 실세계 응용 분야에서 흔히 발생합니다. 이러한 편향을 포착하기 위해 사용자별 그리고 아이템별 편향 항이 도입됩니다. 구체적으로 사용자 $u$가 아이템 $i$에게 부여하는 예측 평점은 다음과 같이 계산됩니다.
 
 $$
 \hat{\mathbf{R}}_{ui} = \mathbf{p}_u\mathbf{q}^\top_i + b_u + b_i
 $$
 
-Then, we train the matrix factorization model by minimizing the mean squared error between predicted rating scores and real rating scores.  The objective function is defined as follows:
+그런 다음 저희는 예측 평점 점수와 실제 평점 점수 간의 평균 제곱 오차를 최소화하여 행렬 분해 모델을 훈련합니다. 목적 함수는 다음과 같이 정의됩니다.
 
 $$
 \underset{\mathbf{P}, \mathbf{Q}, b}{\mathrm{argmin}} \sum_{(u, i) \in \mathcal{K}} \| \mathbf{R}_{ui} -
@@ -27,15 +25,14 @@ $$
 \|^2_F + b_u^2 + b_i^2 )
 $$
 
-where $\lambda$ denotes the regularization rate. The regularizing term $\lambda (\| \mathbf{P} \|^2_F + \| \mathbf{Q}
-\|^2_F + b_u^2 + b_i^2 )$ is used to avoid over-fitting by penalizing the magnitude of the parameters. The $(u, i)$ pairs for which $\mathbf{R}_{ui}$ is known are stored in the set
-$\mathcal{K}=\{(u, i) \mid \mathbf{R}_{ui} \textrm{ is known}\}$. The model parameters can be learned with an optimization algorithm, such as Stochastic Gradient Descent and Adam.
+여기서 $\lambda$는 정규화율을 나타냅니다. 정규화 항 $\lambda (\| \mathbf{P} \|^2_F + \| \mathbf{Q}
+\|^2_F + b_u^2 + b_i^2 )$는 파라미터의 크기에 페널티를 주어 과적합을 방지하는 데 사용됩니다. $\mathbf{R}_{ui}$가 알려진 $(u, i)$ 쌍은 집합 $\mathcal{K}=\{(u, i) \mid \mathbf{R}_{ui} \textrm{ is known}\}$에 저장됩니다. 모델 파라미터는 확률적 경사 하강법과 Adam과 같은 최적화 알고리즘으로 학습될 수 있습니다.
 
-An intuitive illustration of the matrix factorization model is shown below:
+행렬 분해 모델의 직관적인 그림은 아래에 표시되어 있습니다.
 
-![Illustration of matrix factorization model](../img/rec-mf.svg)
+![행렬 분해 모델의 예시](../img/rec-mf.svg)
 
-In the rest of this section, we will explain the implementation of matrix factorization and train the model on the MovieLens dataset.
+이 절의 나머지 부분에서는 행렬 분해의 구현을 설명하고 MovieLens 데이터셋에서 모델을 훈련할 것입니다.
 
 ```{.python .input  n=2}
 #@tab mxnet
@@ -46,9 +43,9 @@ import mxnet as mx
 npx.set_np()
 ```
 
-## Model Implementation
+## 모델 구현
 
-First, we implement the matrix factorization model described above. The user and item latent factors can be created with the `nn.Embedding`. The `input_dim` is the number of items/users and the `output_dim` is the dimension of the latent factors $k$.  We can also use `nn.Embedding` to create the user/item biases by setting the `output_dim` to one. In the `forward` function, user and item ids are used to look up the embeddings.
+먼저, 저희는 위에서 설명한 행렬 분해 모델을 구현합니다. 사용자와 아이템 잠재 요인은 `nn.Embedding`으로 생성될 수 있습니다. `input_dim`은 아이템/사용자의 수이며 `output_dim`은 잠재 요인 $k$의 차원입니다. 저희는 또한 `output_dim`을 1로 설정하여 사용자/아이템 편향을 생성하기 위해 `nn.Embedding`을 사용할 수 있습니다. `forward` 함수에서 사용자와 아이템 ID는 임베딩을 조회하는 데 사용됩니다.
 
 ```{.python .input  n=4}
 #@tab mxnet
@@ -69,15 +66,15 @@ class MF(nn.Block):
         return outputs.flatten()
 ```
 
-## Evaluation Measures
+## 평가 측정 방법
 
-We then implement the RMSE (root-mean-square error) measure, which is commonly used to measure the differences between rating scores predicted by the model and the actually observed ratings (ground truth) :cite:`Gunawardana.Shani.2015`. RMSE is defined as:
+그런 다음 저희는 RMSE(Root-Mean-Square Error, 평균 제곱근 오차) 측도를 구현하며, 이는 모델이 예측한 평점 점수와 실제로 관찰된 평점(정답) 간의 차이를 측정하는 데 일반적으로 사용됩니다 :cite:`Gunawardana.Shani.2015`. RMSE는 다음과 같이 정의됩니다.
 
 $$
 \textrm{RMSE} = \sqrt{\frac{1}{|\mathcal{T}|}\sum_{(u, i) \in \mathcal{T}}(\mathbf{R}_{ui} -\hat{\mathbf{R}}_{ui})^2}
 $$
 
-where $\mathcal{T}$ is the set consisting of pairs of users and items that you want to evaluate on. $|\mathcal{T}|$ is the size of this set. We can use the RMSE function provided by `mx.metric`.
+여기서 $\mathcal{T}$는 평가하고자 하는 사용자와 아이템 쌍으로 구성된 집합입니다. $|\mathcal{T}|$는 이 집합의 크기입니다. 저희는 `mx.metric`에서 제공하는 RMSE 함수를 사용할 수 있습니다.
 
 ```{.python .input  n=3}
 #@tab mxnet
@@ -94,10 +91,10 @@ def evaluator(net, test_iter, devices):
     return float(np.mean(np.array(rmse_list)))
 ```
 
-## Training and Evaluating the Model
+## 모델 훈련 및 평가
 
 
-In the training function, we adopt the $\ell_2$ loss with weight decay. The weight decay mechanism has the same effect as the $\ell_2$ regularization.
+훈련 함수에서 저희는 가중치 감쇠를 사용한 $\ell_2$ 손실을 채택합니다. 가중치 감쇠 메커니즘은 $\ell_2$ 정규화와 동일한 효과를 갖습니다.
 
 ```{.python .input  n=4}
 #@tab mxnet
@@ -139,7 +136,7 @@ def train_recsys_rating(net, train_iter, test_iter, loss, trainer, num_epochs,
           f'on {str(devices)}')
 ```
 
-Finally, let's put all things together and train the model. Here, we set the latent factor dimension to 30.
+마지막으로 모든 것을 모아 모델을 훈련합시다. 여기서는 잠재 요인 차원을 30으로 설정합니다.
 
 ```{.python .input  n=5}
 #@tab mxnet
@@ -156,7 +153,7 @@ train_recsys_rating(net, train_iter, test_iter, loss, trainer, num_epochs,
                     devices, evaluator)
 ```
 
-Below, we use the trained model to predict the rating that a user (ID 20) might give to an item (ID 30).
+아래에서 저희는 훈련된 모델을 사용하여 사용자(ID 20)가 아이템(ID 30)에 부여할 수 있는 평점을 예측합니다.
 
 ```{.python .input  n=6}
 #@tab mxnet
@@ -165,19 +162,19 @@ scores = net(np.array([20], dtype='int', ctx=devices[0]),
 scores
 ```
 
-## Summary
+## 요약
 
-* The matrix factorization model is widely used in recommender systems.  It can be used to predict ratings that a user might give to an item.
-* We can implement and train matrix factorization for recommender systems.
+* 행렬 분해 모델은 추천 시스템에서 널리 사용됩니다. 사용자가 아이템에 부여할 수 있는 평점을 예측하는 데 사용될 수 있습니다.
+* 저희는 추천 시스템을 위한 행렬 분해를 구현하고 훈련할 수 있습니다.
 
 
-## Exercises
+## 연습문제
 
-* Vary the size of latent factors. How does the size of latent factors influence the model performance?
-* Try different optimizers, learning rates, and weight decay rates.
-* Check the predicted rating scores of other users for a specific movie.
+* 잠재 요인의 크기를 변화시켜 보십시오. 잠재 요인의 크기는 모델 성능에 어떻게 영향을 미칩니까?
+* 서로 다른 최적화기, 학습률, 가중치 감쇠율을 시도해 보십시오.
+* 특정 영화에 대한 다른 사용자의 예측 평점 점수를 확인해 보십시오.
 
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/400)
+[토론](https://discuss.d2l.ai/t/400)
 :end_tab:

@@ -1,119 +1,119 @@
-# Parameter Servers
+# 파라미터 서버
 :label:`sec_parameterserver`
 
-As we move from a single GPU to multiple GPUs and then to multiple servers containing multiple GPUs, possibly all spread out across multiple racks and network switches,
-our algorithms for distributed and parallel training need to become much more sophisticated. Details matter since different interconnects have very different bandwidth (e.g., NVLink can offer up to 100 GB/s across 6 links in an appropriate setting, PCIe 4.0 (16-lane) offers 32 GB/s, while even high speed 100GbE Ethernet only amounts to 10 GB/s). At the same time it is unreasonable to expect that a statistical modeler be an expert in networking and systems.
+저희가 단일 GPU에서 여러 GPU로, 그리고 다시 여러 GPU를 포함하는 여러 서버로, 아마도 모두 여러 랙과 네트워크 스위치에 걸쳐 분산되어 있는 곳으로 옮겨감에 따라,
+분산 및 병렬 학습을 위한 저희의 알고리즘은 훨씬 더 정교해져야 합니다. 서로 다른 인터커넥트가 매우 다른 대역폭을 가지기 때문에(예: NVLink는 적절한 설정에서 6개의 링크에 걸쳐 최대 100 GB/s를 제공할 수 있고, PCIe 4.0(16레인)은 32 GB/s를 제공하는 반면, 심지어 고속 100GbE 이더넷도 단지 10 GB/s에 달합니다) 세부 사항이 중요합니다. 동시에 통계 모델러가 네트워킹과 시스템의 전문가일 것이라고 기대하는 것은 합리적이지 않습니다.
 
-The core idea of the parameter server was introduced in :citet:`Smola.Narayanamurthy.2010` in the context of distributed latent variable models. A description of the push and pull semantics then followed in :citet:`Ahmed.Aly.Gonzalez.ea.2012` and a description of the system and an open source library followed in :citet:`Li.Andersen.Park.ea.2014`. In the following we will motivate the components needed for efficiency.
+파라미터 서버의 핵심 아이디어는 분산 잠재 변수 모델의 맥락에서 :citet:`Smola.Narayanamurthy.2010`에서 소개되었습니다. 푸시와 풀 시맨틱에 대한 설명은 그 다음 :citet:`Ahmed.Aly.Gonzalez.ea.2012`에서 뒤따랐고, 시스템에 대한 설명과 오픈 소스 라이브러리는 :citet:`Li.Andersen.Park.ea.2014`에서 뒤따랐습니다. 다음에서 저희는 효율성에 필요한 구성 요소를 동기 부여하겠습니다.
 
 
-## Data-Parallel Training
+## 데이터 병렬 학습
 
-Let's review the data parallel training approach to distributed training. We will use this to the exclusion of all others in this section since it is significantly simpler to implement in practice. There are virtually no use cases (besides deep learning on graphs) where any other strategy for parallelism is preferred since GPUs have plenty of memory nowadays. :numref:`fig_parameterserver` describes the variant of data parallelism that we implemented in :numref:`sec_multi_gpu`. The key aspect in it is that the aggregation of gradients occurs on one single GPU (GPU 0) before the updated parameters are rebroadcast to all GPUs.
+분산 학습에 대한 데이터 병렬 학습 접근법을 검토해 봅시다. 실제로 구현하기 상당히 더 단순하기 때문에 저희는 이 절에서 다른 모든 것을 배제하고 이를 사용할 것입니다. 요즘 GPU가 충분한 메모리를 가지고 있기 때문에 (그래프에 대한 딥러닝을 제외하고는) 다른 어떤 병렬화 전략이 선호되는 사용 사례는 사실상 없습니다. :numref:`fig_parameterserver`는 :numref:`sec_multi_gpu`에서 저희가 구현한 데이터 병렬화의 변형을 설명합니다. 그것의 핵심 측면은 그레이디언트의 집계가 업데이트된 파라미터가 모든 GPU로 다시 브로드캐스트되기 전에 단일 GPU(GPU 0)에서 일어난다는 것입니다.
 
-![Left: single GPU training. Right: a variant of multi-GPU training: (1) we compute loss and gradient, (2) all gradients are aggregated on one GPU, (3) parameter update happens and the parameters are re-distributed to all GPUs.](../img/ps.svg)
+![왼쪽: 단일 GPU 학습. 오른쪽: 다중 GPU 학습의 변형. (1) 저희는 손실과 그레이디언트를 계산합니다, (2) 모든 그레이디언트는 하나의 GPU에서 집계됩니다, (3) 파라미터 업데이트가 일어나고 파라미터가 모든 GPU로 재분배됩니다.](../img/ps.svg)
 :label:`fig_parameterserver`
 
-In retrospect, the decision to aggregate on GPU 0 seems rather ad-hoc. After all, we might just as well aggregate on the CPU. In fact, we could even decide to aggregate some of the parameters on one GPU and some others on another. Provided that the optimization algorithm supports this, there is no real reason for why we could not. For instance, if we have four parameter vectors with associated gradients $\mathbf{g}_1, \ldots, \mathbf{g}_4$ we could aggregate the gradients on one GPU for each $\mathbf{g}_i$ ($i = 1, \ldots, 4$).
+돌이켜보면, GPU 0에서 집계하기로 한 결정은 다소 임의적으로 보입니다. 결국, 저희는 마찬가지로 CPU에서 집계할 수도 있습니다. 사실, 저희는 일부 파라미터는 한 GPU에서, 일부 다른 파라미터는 다른 GPU에서 집계하기로 결정할 수도 있습니다. 최적화 알고리즘이 이를 지원한다면, 저희가 그러지 못할 진정한 이유는 없습니다. 예를 들어 저희가 관련 그레이디언트 $\mathbf{g}_1, \ldots, \mathbf{g}_4$를 가진 네 개의 파라미터 벡터를 가진다면, 저희는 각 $\mathbf{g}_i$($i = 1, \ldots, 4$)에 대해 하나의 GPU에서 그레이디언트를 집계할 수 있습니다.
 
 
-This reasoning seems arbitrary and frivolous. After all, the mathematics is the same throughout. However, we are dealing with real physical hardware where different buses have different bandwidth as discussed in :numref:`sec_hardware`.
-Consider a real 4-way GPU server as described in :numref:`fig_bw_hierarchy`. If it is particularly well connected, it might have a 100 GbE network card. More typical numbers are in the 1--10 GbE range with an effective bandwidth of 100 MB/s to 1 GB/s.
-Since the CPUs have too few PCIe lanes to connect to all GPUs directly (e.g., consumer-grade Intel CPUs have 24 lanes) we need a [multiplexer](https://www.broadcom.com/products/pcie-switches-bridges/pcie-switches). The bandwidth from the CPU on a 16x Gen3 link is 16 GB/s. This is also the speed at which *each* of the GPUs is connected to the switch. This means that it is more effective to communicate between the devices.
+이러한 추론은 자의적이고 경솔해 보입니다. 결국, 수학은 처음부터 끝까지 동일합니다. 그러나 저희는 :numref:`sec_hardware`에서 논의된 것처럼 서로 다른 버스가 서로 다른 대역폭을 가지는 실제 물리적 하드웨어를 다루고 있습니다.
+:numref:`fig_bw_hierarchy`에 설명된 실제 4-way GPU 서버를 고려해 보십시오. 특히 잘 연결되어 있다면, 100 GbE 네트워크 카드를 가질 수도 있습니다. 더 일반적인 수치는 100 MB/s에서 1 GB/s의 유효 대역폭을 가진 1--10 GbE 범위입니다.
+CPU가 모든 GPU에 직접 연결하기에는 너무 적은 PCIe 레인을 가지고 있으므로(예: 컨슈머급 Intel CPU는 24 레인을 가집니다) 저희는 [멀티플렉서](https://www.broadcom.com/products/pcie-switches-bridges/pcie-switches)가 필요합니다. 16x Gen3 링크에서 CPU로부터의 대역폭은 16 GB/s입니다. 이는 또한 *각* GPU가 스위치에 연결되는 속도이기도 합니다. 이는 디바이스 사이에서 통신하는 것이 더 효과적이라는 의미입니다.
 
-![A 4-way GPU server.](../img/bw-hierarchy.svg)
+![4-way GPU 서버.](../img/bw-hierarchy.svg)
 :label:`fig_bw_hierarchy`
 
-For the sake of the argument let's assume that the gradients are of 160 MB. In this case it takes 30 ms to send the gradients from all 3 remaining GPUs to the fourth one (each transfer takes 10 ms = 160 MB / 16 GB/s). Adding another 30 ms to transmit the weight vectors back we arrive at a total of 60 ms.
-If we send all data to the CPU we incur a penalty of 40 ms since *each* of the four GPUs needs to send the data to the CPU, yielding a total of 80 ms. Lastly assume that we are able to split the gradients into 4 parts of 40 MB each. Now we can aggregate each of the parts on a different GPU *simultaneously* since the PCIe switch offers a full-bandwidth operation between all links. Instead of 30 ms this takes 7.5 ms, yielding a total of 15 ms for a synchronization operation. In short, depending on how we synchronize parameters the same operation can take anywhere from 15 ms to 80 ms. :numref:`fig_ps_distributed` depicts the different strategies for exchanging parameters.
+논의를 위해 그레이디언트가 160 MB라고 가정해 봅시다. 이 경우 나머지 3개의 GPU에서 네 번째 GPU로 그레이디언트를 보내는 데 30 ms가 걸립니다(각 전송에는 10 ms = 160 MB / 16 GB/s가 걸립니다). 가중치 벡터를 다시 전송하는 데 또 다른 30 ms를 추가하면 총 60 ms에 도달합니다.
+모든 데이터를 CPU로 보내면 네 GPU *각각*이 데이터를 CPU로 보내야 하므로 40 ms의 페널티를 발생시켜, 총 80 ms에 이릅니다. 마지막으로 저희가 그레이디언트를 각 40 MB의 4개 부분으로 분할할 수 있다고 가정해 봅시다. 이제 PCIe 스위치가 모든 링크 사이에서 풀-대역폭 연산을 제공하므로 저희는 *동시에* 서로 다른 GPU에서 각 부분을 집계할 수 있습니다. 30 ms 대신 이는 7.5 ms가 걸려, 동기화 연산에 대해 총 15 ms에 이릅니다. 요컨대, 저희가 파라미터를 어떻게 동기화하느냐에 따라 같은 연산이 15 ms에서 80 ms 사이의 어떤 시간이든 걸릴 수 있습니다. :numref:`fig_ps_distributed`는 파라미터 교환을 위한 서로 다른 전략을 묘사합니다.
 
-![Parameter synchronization strategies.](../img/ps-distributed.svg)
+![파라미터 동기화 전략.](../img/ps-distributed.svg)
 :label:`fig_ps_distributed`
 
-Note that we have yet another tool at our disposal when it comes to improving performance: in a deep network it takes some time to compute all gradients from the top to the bottom. We can begin synchronizing gradients for some parameter groups even while we are still busy computing them for others. See e.g., :citet:`Sergeev.Del-Balso.2018` for details on how to do this in [Horovod](https://github.com/horovod/horovod).
+성능을 향상시키는 것에 관해서 저희가 사용할 수 있는 또 다른 도구가 있다는 점에 유의하십시오. 심층 네트워크에서는 위에서 아래까지 모든 그레이디언트를 계산하는 데 어느 정도 시간이 걸립니다. 저희가 다른 것들에 대해 여전히 계산에 바쁜 동안에도 어떤 파라미터 그룹에 대한 그레이디언트의 동기화를 시작할 수 있습니다. [Horovod](https://github.com/horovod/horovod)에서 이를 어떻게 수행하는지에 대한 세부 사항은 예를 들어 :citet:`Sergeev.Del-Balso.2018`을 참조하십시오.
 
-## Ring Synchronization
+## 링 동기화
 
-When it comes to synchronization on modern deep learning hardware we often encounter significantly bespoke network connectivity. For instance, the AWS p3.16xlarge and NVIDIA DGX-2 instances share the connectivity structure of :numref:`fig_nvlink`. Each GPU connects to a host CPU via a PCIe link which operates at best at 16 GB/s. Additionally each GPU also has 6 NVLink connections, each of which is capable of transferring 300 Gbit/s bidirectionally. This amounts to around 18 GB/s per link per direction. In short, the aggregate NVLink bandwidth is significantly higher than the PCIe bandwidth. The question is how to use it most efficiently.
+현대 딥러닝 하드웨어에서 동기화에 관해서 저희는 종종 상당히 맞춤화된 네트워크 연결을 만납니다. 예를 들어 AWS p3.16xlarge와 NVIDIA DGX-2 인스턴스는 :numref:`fig_nvlink`의 연결 구조를 공유합니다. 각 GPU는 최대 16 GB/s에서 동작하는 PCIe 링크를 통해 호스트 CPU에 연결됩니다. 추가로 각 GPU는 또한 6개의 NVLink 연결을 가지며, 각각은 양방향으로 300 Gbit/s를 전송할 수 있습니다. 이는 방향당 링크당 약 18 GB/s에 달합니다. 요컨대, 집계된 NVLink 대역폭은 PCIe 대역폭보다 상당히 더 높습니다. 질문은 이를 어떻게 가장 효율적으로 사용하는가입니다.
 
-![NVLink connectivity on 8  V100 GPU servers (image courtesy of NVIDIA).](../img/nvlink.svg)
+![8개의 V100 GPU 서버에서의 NVLink 연결 (이미지 제공: NVIDIA).](../img/nvlink.svg)
 :label:`fig_nvlink`
 
-It turns out that the optimal synchronization strategy is to decompose the network into two rings and to use them to synchronize data directly :cite:`Wang.Li.Liberty.ea.2018`. :numref:`fig_nvlink_twoloop` illustrates that the network can be decomposed into one ring (1-2-3-4-5-6-7-8-1) with double NVLink bandwidth and into one (1-4-6-3-5-8-2-7-1) with regular bandwidth. Designing an efficient synchronization protocol in this case is nontrivial.
+최적의 동기화 전략은 네트워크를 두 개의 링으로 분해하고 이를 사용하여 데이터를 직접 동기화하는 것으로 밝혀졌습니다 :cite:`Wang.Li.Liberty.ea.2018`. :numref:`fig_nvlink_twoloop`는 네트워크가 두 배의 NVLink 대역폭을 가진 하나의 링(1-2-3-4-5-6-7-8-1)과 일반 대역폭을 가진 하나(1-4-6-3-5-8-2-7-1)로 분해될 수 있음을 보여줍니다. 이 경우 효율적인 동기화 프로토콜을 설계하는 것은 사소하지 않습니다.
 
-![Decomposition of the NVLink network into two rings.](../img/nvlink-twoloop.svg)
+![NVLink 네트워크를 두 개의 링으로 분해.](../img/nvlink-twoloop.svg)
 :label:`fig_nvlink_twoloop`
 
 
-Consider the following thought experiment: given a ring of $n$ computing nodes (or GPUs) we can send gradients from the first to the second node. There it is added to the local gradient and sent on to the third node, and so on. After $n-1$ steps the aggregate gradient can be found in the last-visited node. That is, the time to aggregate gradients grows linearly with the number of nodes. But if we do this the algorithm is quite inefficient. After all, at any time there is only one of the nodes communicating. What if we broke the gradients into $n$ chunks and started synchronizing chunk $i$ starting at node $i$?
-Since each chunk is of size $1/n$ the total time is now $(n-1)/n \approx 1$. In other words, the time spent to aggregate gradients *does not grow* as we increase the size of the ring. This is quite an astonishing result. :numref:`fig_ringsync` illustrates the sequence of steps on $n=4$ nodes.
+다음의 사고 실험을 고려해 보십시오. $n$개의 컴퓨팅 노드(또는 GPU)의 링이 주어지면 저희는 첫 번째 노드에서 두 번째 노드로 그레이디언트를 보낼 수 있습니다. 거기서 이는 지역 그레이디언트에 더해지고 세 번째 노드로 보내지며, 이런 식으로 계속됩니다. $n-1$ 단계 후에 집계된 그레이디언트는 마지막으로 방문된 노드에서 찾을 수 있습니다. 즉, 그레이디언트를 집계하는 시간은 노드의 수에 따라 선형으로 증가합니다. 그러나 저희가 이를 한다면 알고리즘은 상당히 비효율적입니다. 결국, 어떤 시간이든 노드 중 단지 하나만 통신하고 있습니다. 저희가 그레이디언트를 $n$개의 청크로 쪼개고 노드 $i$에서 시작하여 청크 $i$의 동기화를 시작하면 어떨까요?
+각 청크가 $1/n$ 크기이므로 이제 총 시간은 $(n-1)/n \approx 1$입니다. 다시 말해, 그레이디언트를 집계하는 데 소비되는 시간은 저희가 링의 크기를 증가시켜도 *증가하지 않습니다*. 이는 상당히 놀라운 결과입니다. :numref:`fig_ringsync`는 $n=4$ 노드에서의 단계의 시퀀스를 보여줍니다.
 
-![Ring synchronization across 4 nodes. Each node starts transmitting parts of gradients to its left neighbor until the assembled gradient can be found in its right neighbor.](../img/ringsync.svg)
+![4개 노드에 걸친 링 동기화. 각 노드는 조립된 그레이디언트가 오른쪽 이웃에서 발견될 수 있을 때까지 그레이디언트의 일부를 왼쪽 이웃으로 전송하기 시작합니다.](../img/ringsync.svg)
 :label:`fig_ringsync`
 
-If we use the same example of synchronizing 160 MB across 8 V100 GPUs we arrive at approximately $2 \cdot 160 \textrm{MB} / (3 \cdot 18 \textrm{GB/s}) \approx 6 \textrm{ms}$. This is better than using the PCIe bus, even though we are now using 8 GPUs. Note that in practice these numbers are a bit worse, since deep learning frameworks often fail to assemble communication into large burst transfers.
+저희가 8개의 V100 GPU에 걸쳐 160 MB를 동기화하는 같은 예제를 사용한다면 저희는 대략 $2 \cdot 160 \textrm{MB} / (3 \cdot 18 \textrm{GB/s}) \approx 6 \textrm{ms}$에 도달합니다. 이는 저희가 이제 8개의 GPU를 사용함에도 PCIe 버스를 사용하는 것보다 낫습니다. 실제로는 딥러닝 프레임워크가 종종 통신을 큰 버스트 전송으로 조립하는 데 실패하기 때문에 이 수치들은 약간 더 나쁘다는 점에 유의하십시오.
 
-Note that there is a common misconception that ring synchronization is fundamentally different from other synchronization algorithms. The only difference is that the synchronization path is somewhat more elaborate when compared with a simple tree.
+링 동기화가 다른 동기화 알고리즘과 근본적으로 다르다는 흔한 오해가 있다는 점에 유의하십시오. 유일한 차이는 단순한 트리와 비교했을 때 동기화 경로가 다소 더 정교하다는 것입니다.
 
-## Multi-Machine Training
+## 다중 머신 학습
 
-Distributed training on multiple machines adds a further challenge: we need to communicate with servers that are only connected across a comparatively lower bandwidth fabric that can be over an order of magnitude slower in some cases.
-Synchronization across devices is tricky. After all, different machines running training code will have subtly different speed. Hence we need to *synchronize* them if we want to use synchronous distributed optimization. :numref:`fig_ps_multimachine` illustrates how distributed parallel training occurs.
+여러 머신에서의 분산 학습은 추가적인 도전을 더합니다. 저희는 일부 경우 한 자릿수 이상 더 느릴 수 있는 상대적으로 낮은 대역폭 패브릭에 걸쳐서만 연결된 서버와 통신해야 합니다.
+디바이스 간 동기화는 까다롭습니다. 결국, 학습 코드를 실행하는 서로 다른 머신은 미묘하게 다른 속도를 가질 것입니다. 따라서 저희가 동기 분산 최적화를 사용하고자 한다면 그것들을 *동기화*해야 합니다. :numref:`fig_ps_multimachine`는 분산 병렬 학습이 어떻게 일어나는지 보여줍니다.
 
-1. A (different) batch of data is read on each machine, split across multiple GPUs and transferred to GPU memory. There predictions and gradients are computed on each GPU batch separately.
-2. The gradients from all local GPUs are aggregated on one GPU (or parts of it are aggregated over different GPUs).
-3. The gradients are sent to the CPUs.
-4. The CPUs send the gradients to a central parameter server which aggregates all the gradients.
-5. The aggregate gradients are then used to update the parameters and the updated parameters are broadcast back to the individual CPUs.
-6. The information is sent to one (or multiple) GPUs.
-7. The updated parameters are spread across all GPUs.
+1. (서로 다른) 데이터 배치가 각 머신에서 읽혀지고, 여러 GPU에 걸쳐 나뉘며, GPU 메모리로 전송됩니다. 거기서 예측과 그레이디언트가 각 GPU 배치에 대해 별도로 계산됩니다.
+2. 모든 로컬 GPU에서의 그레이디언트가 하나의 GPU에서 집계됩니다(또는 그것의 일부가 서로 다른 GPU에 걸쳐 집계됩니다).
+3. 그레이디언트는 CPU로 보내집니다.
+4. CPU는 모든 그레이디언트를 집계하는 중앙 파라미터 서버로 그레이디언트를 보냅니다.
+5. 그 다음 집계된 그레이디언트는 파라미터를 업데이트하는 데 사용되고 업데이트된 파라미터는 개별 CPU로 다시 브로드캐스트됩니다.
+6. 정보는 하나의(또는 여러) GPU로 보내집니다.
+7. 업데이트된 파라미터는 모든 GPU에 걸쳐 퍼집니다.
 
-![Multi-machine multi-GPU distributed parallel training.](../img/ps-multimachine.svg)
+![다중 머신 다중 GPU 분산 병렬 학습.](../img/ps-multimachine.svg)
 :label:`fig_ps_multimachine`
 
-Each of these operations seems rather straightforward. And, indeed, they can be carried out efficiently *within* a single machine. Once we look at multiple machines, though, we can see that the central parameter server becomes the bottleneck. After all, the bandwidth per server is limited, hence for $m$ workers the time it takes to send all gradients to the server is $\mathcal{O}(m)$. We can break through this barrier by increasing the number of servers to $n$. At this point each server only needs to store $\mathcal{O}(1/n)$ of the parameters, hence the total time for updates and optimization becomes $\mathcal{O}(m/n)$.
-Matching both numbers yields constant scaling regardless of how many workers we are dealing with. In practice we use the *same* machines both as workers and as servers. :numref:`fig_ps_multips` illustrates the design (see also :cite:`Li.Andersen.Park.ea.2014` for details).
-In particular, ensuring that multiple machines work without unreasonable delays is nontrivial. 
+이러한 각 연산은 다소 직관적으로 보입니다. 그리고, 사실, 그것들은 단일 머신 *내에서* 효율적으로 수행될 수 있습니다. 하지만 일단 저희가 여러 머신을 본다면, 중앙 파라미터 서버가 병목이 됨을 볼 수 있습니다. 결국, 서버당 대역폭은 제한되어 있으므로, $m$개의 워커에 대해 모든 그레이디언트를 서버로 보내는 데 걸리는 시간은 $\mathcal{O}(m)$입니다. 저희는 서버의 수를 $n$으로 증가시킴으로써 이 장벽을 돌파할 수 있습니다. 이 시점에서 각 서버는 단지 파라미터의 $\mathcal{O}(1/n)$만 저장하면 되므로, 업데이트와 최적화에 대한 총 시간은 $\mathcal{O}(m/n)$이 됩니다.
+두 숫자를 일치시키면 저희가 얼마나 많은 워커를 다루고 있는지에 관계없이 상수 스케일링이 나옵니다. 실제로 저희는 워커와 서버 모두로 *같은* 머신을 사용합니다. :numref:`fig_ps_multips`는 그 설계를 보여줍니다(세부 사항은 :cite:`Li.Andersen.Park.ea.2014`도 참조하십시오).
+특히, 여러 머신이 비합리적인 지연 없이 동작하도록 보장하는 것은 사소하지 않습니다. 
 
-![Top: a single parameter server is a bottleneck since its bandwidth is finite. Bottom: multiple parameter servers store parts of the parameters with aggregate bandwidth.](../img/ps-multips.svg)
+![위: 대역폭이 유한하기 때문에 단일 파라미터 서버는 병목입니다. 아래: 여러 파라미터 서버가 집계된 대역폭으로 파라미터의 일부를 저장합니다.](../img/ps-multips.svg)
 :label:`fig_ps_multips`
 
-## Key--Value Stores
+## 키-값 저장소
 
-Implementing the steps required for distributed multi-GPU training in practice is nontrivial.
-This is why it pays to use a common abstraction, namely that of a *key--value store* with redefined update semantics.
+실제로 분산 다중 GPU 학습에 필요한 단계를 구현하는 것은 사소하지 않습니다.
+이것이 흔한 추상화, 즉 재정의된 업데이트 시맨틱을 가진 *키-값 저장소*를 사용하는 것이 가치 있는 이유입니다.
 
 
-Across many workers and many GPUs the computation for gradient $i$ can be defined as
+많은 워커와 많은 GPU에 걸쳐 그레이디언트 $i$에 대한 계산은 다음과 같이 정의될 수 있습니다.
 
 $$\mathbf{g}_{i} = \sum_{k \in \textrm{workers}} \sum_{j \in \textrm{GPUs}} \mathbf{g}_{ijk},$$
 
-where $\mathbf{g}_{ijk}$ is part of gradient $i$ split on GPU $j$ of worker $k$.
-The key aspect in this operation is that it is a *commutative reduction*, that is, it turns many vectors into one and the order in which the operation is applied does not matter. This is great for our purposes since we do not (need to) have fine grained control over when which gradient is received. Besides, note that this operation is independent among different $i$.
+여기서 $\mathbf{g}_{ijk}$는 워커 $k$의 GPU $j$에서 분할된 그레이디언트 $i$의 일부입니다.
+이 연산의 핵심 측면은 그것이 *교환적 환원*이라는 것입니다, 즉, 많은 벡터를 하나로 바꾸고 연산이 적용되는 순서는 중요하지 않습니다. 저희가 어떤 그레이디언트가 언제 수신되는지에 대한 세분화된 제어를 (가질 필요가) 없기 때문에 이는 저희의 목적에 훌륭합니다. 또한 이 연산은 서로 다른 $i$ 사이에 독립적이라는 점에 유의하십시오.
 
-This allows us to define the following two operations: *push*, which accumulates gradients, and *pull*, which retrieves aggregate gradients. Since we have many different sets of gradients (after all, we have many layers), we need to index the gradients with a key $i$. This similarity to key--value stores, such as the one introduced in Dynamo
-:cite:`DeCandia.Hastorun.Jampani.ea.2007` is not by coincidence. They, too, satisfy many similar characteristics, in particular when it comes to distributing the parameters across multiple servers.
-
-
-The push and pull operations for key-value stores are described as follows:
-
-* **push(key, value)** sends a particular gradient (the value) from a worker to a common storage. There the value is aggregated, e.g., by summing it up.
-* **pull(key, value)** retrieves an aggregate value from common storage, e.g., after combining the gradients from all workers.
-
-By hiding all the complexity about synchronization behind a simple push and pull operation we can decouple the concerns of statistical modelers who want to be able to express optimization in simple terms and the system engineers who need to deal with the complexity inherent in distributed synchronization.
-
-## Summary
-
-* Synchronization needs to be highly adaptive to specific network infrastructure and connectivity within a server. This can make a significant difference to the time it takes to synchronize.
-* Ring-synchronization can be optimal for p3 and DGX-2 servers. For others possibly not so much.
-* A hierarchical synchronization strategy works well when adding multiple parameter servers for increased bandwidth.
+이는 저희가 다음의 두 연산을 정의할 수 있게 해줍니다. *push*는 그레이디언트를 누적하고, *pull*은 집계된 그레이디언트를 검색합니다. 저희가 (결국 많은 층을 가지므로) 많은 서로 다른 그레이디언트 집합을 가지고 있기 때문에, 저희는 키 $i$로 그레이디언트를 인덱싱해야 합니다. Dynamo
+:cite:`DeCandia.Hastorun.Jampani.ea.2007`에서 소개된 것 같은 키-값 저장소와의 이러한 유사성은 우연이 아닙니다. 그것들 또한, 특히 여러 서버에 걸쳐 파라미터를 분산시키는 것에 관해서, 많은 비슷한 특성을 만족합니다.
 
 
-## Exercises
+키-값 저장소에 대한 푸시와 풀 연산은 다음과 같이 설명됩니다.
 
-1. Can you increase the ring synchronization even further? Hint: you can send messages in both directions.
-1. Is it possible to allow asynchronous communication (while computation is still ongoing)? How does it affect performance?
-1. What if we lost a server during a long-running computation? How can we design a *fault tolerance* mechanism to avoid restarting the computation fully?
+* **push(key, value)**는 워커에서 공통 저장소로 특정 그레이디언트(값)를 보냅니다. 거기서 값은 예를 들어 합산함으로써 집계됩니다.
+* **pull(key, value)**는 예를 들어 모든 워커에서 그레이디언트를 결합한 후에 공통 저장소에서 집계된 값을 검색합니다.
+
+단순한 푸시와 풀 연산 뒤에 동기화에 대한 모든 복잡성을 숨김으로써 저희는 최적화를 단순한 용어로 표현할 수 있고자 하는 통계 모델러의 관심사와 분산 동기화에 내재된 복잡성을 다뤄야 하는 시스템 엔지니어의 관심사를 분리할 수 있습니다.
+
+## 요약
+
+* 동기화는 특정 네트워크 인프라와 서버 내 연결에 매우 적응적이어야 합니다. 이는 동기화에 걸리는 시간에 상당한 차이를 만들 수 있습니다.
+* 링 동기화는 p3와 DGX-2 서버에 최적일 수 있습니다. 다른 것들에는 아마도 그렇게 좋지는 않을 것입니다.
+* 계층적 동기화 전략은 대역폭 증가를 위해 여러 파라미터 서버를 추가할 때 잘 동작합니다.
 
 
-[Discussions](https://discuss.d2l.ai/t/366)
+## 연습문제
+
+1. 링 동기화를 더 증가시킬 수 있습니까? 힌트: 양방향으로 메시지를 보낼 수 있습니다.
+1. (계산이 여전히 진행 중인 동안) 비동기 통신을 허용하는 것이 가능합니까? 이는 성능에 어떻게 영향을 미칩니까?
+1. 오래 실행되는 계산 중에 서버를 잃으면 어떻게 됩니까? 계산을 완전히 다시 시작하는 것을 피하기 위해 *내결함성* 메커니즘을 어떻게 설계할 수 있습니까?
+
+
+[토론](https://discuss.d2l.ai/t/366)

@@ -1,94 +1,29 @@
-# Deep Recurrent Neural Networks
+# 심층 순환 신경망 (Deep Recurrent Neural Networks)
 
 :label:`sec_deep_rnn`
 
-Up until now, we have focused on defining networks 
-consisting of a sequence input, 
-a single hidden RNN layer,
-and an output layer. 
-Despite having just one hidden layer 
-between the input at any time step
-and the corresponding output,
-there is a sense in which these networks are deep.
-Inputs from the first time step can influence
-the outputs at the final time step $T$ 
-(often 100s or 1000s of steps later).
-These inputs pass through $T$ applications
-of the recurrent layer before reaching 
-the final output. 
-However, we often also wish to retain the ability
-to express complex relationships 
-between the inputs at a given time step
-and the outputs at that same time step.
-Thus we often construct RNNs that are deep
-not only in the time direction 
-but also in the input-to-output direction.
-This is precisely the notion of depth
-that we have already encountered 
-in our development of MLPs
-and deep CNNs.
+지금까지 저희는 시퀀스 입력, 단일 은닉 RNN 레이어, 그리고 출력 레이어로 구성된 신경망을 정의하는 데 초점을 맞춰왔습니다. 어떤 시간 단계에서의 입력과 해당 출력 사이에 은닉층이 단 하나만 있음에도 불구하고, 이러한 신경망이 깊다고 볼 수 있는 측면이 있습니다. 첫 번째 시간 단계의 입력은 최종 시간 단계 $T$ (종종 수백 또는 수천 단계 이후)에서의 출력에 영향을 미칠 수 있습니다. 이러한 입력은 최종 출력에 도달하기 전에 순환 레이어의 $T$번 적용을 거쳐 전달됩니다. 그러나, 저희는 주어진 시간 단계의 입력과 같은 시간 단계의 출력 사이의 복잡한 관계를 표현하는 능력도 종종 유지하기를 원합니다. 따라서, 저희는 종종 시간 방향뿐만 아니라 입력에서 출력으로의 방향으로도 깊은 RNN을 구성합니다. 이는 정확히 저희가 MLP와 심층 CNN을 발전시키면서 이미 마주했던 깊이의 개념입니다.
 
 
-The standard method for building this sort of deep RNN 
-is strikingly simple: we stack the RNNs on top of each other. 
-Given a sequence of length $T$, the first RNN produces 
-a sequence of outputs, also of length $T$.
-These, in turn, constitute the inputs to the next RNN layer. 
-In this short section, we illustrate this design pattern
-and present a simple example for how to code up such stacked RNNs.
-Below, in :numref:`fig_deep_rnn`, we illustrate
-a deep RNN with $L$ hidden layers.
-Each hidden state operates on a sequential input
-and produces a sequential output.
-Moreover, any RNN cell (white box in :numref:`fig_deep_rnn`) at each time step
-depends on both the same layer's 
-value at the previous time step
-and the previous layer's value 
-at the same time step. 
+이런 종류의 심층 RNN을 구축하기 위한 표준 방법은 놀랍도록 간단합니다. RNN을 서로 위에 쌓는 것입니다. 길이 $T$의 시퀀스가 주어지면, 첫 번째 RNN은 길이 $T$의 출력 시퀀스를 생성합니다. 이는 차례로 다음 RNN 레이어의 입력을 구성합니다. 이 짧은 절에서는 이 설계 패턴을 보여주고, 그러한 누적된(stacked) RNN을 어떻게 코드로 작성하는지에 대한 간단한 예시를 제시합니다. 아래의 :numref:`fig_deep_rnn`에서는 $L$개의 은닉층을 가진 심층 RNN을 보여줍니다. 각 은닉 상태는 순차적 입력에 대해 작동하고 순차적 출력을 생성합니다. 또한, 각 시간 단계에서 어떤 RNN 셀(:numref:`fig_deep_rnn`의 흰색 상자)이든 이전 시간 단계에서의 같은 레이어의 값과 같은 시간 단계에서의 이전 레이어의 값 모두에 의존합니다.
 
-![Architecture of a deep RNN.](../img/deep-rnn.svg)
+![심층 RNN의 아키텍처.](../img/deep-rnn.svg)
 :label:`fig_deep_rnn`
 
-Formally, suppose that we have a minibatch input
-$\mathbf{X}_t \in \mathbb{R}^{n \times d}$ 
-(number of examples $=n$; number of inputs in each example $=d$) at time step $t$.
-At the same time step, 
-let the hidden state of the $l^\textrm{th}$ hidden layer ($l=1,\ldots,L$) be $\mathbf{H}_t^{(l)} \in \mathbb{R}^{n \times h}$ 
-(number of hidden units $=h$)
-and the output layer variable be 
-$\mathbf{O}_t \in \mathbb{R}^{n \times q}$ 
-(number of outputs: $q$).
-Setting $\mathbf{H}_t^{(0)} = \mathbf{X}_t$,
-the hidden state of
-the $l^\textrm{th}$ hidden layer
-that uses the activation function $\phi_l$
-is calculated as follows:
+형식적으로, 시간 단계 $t$에서 미니배치 입력 $\mathbf{X}_t \in \mathbb{R}^{n \times d}$ (예제의 수 $=n$; 각 예제의 입력 수 $=d$)를 가지고 있다고 가정합시다. 같은 시간 단계에서, $l^\textrm{번째}$ 은닉층($l=1,\ldots,L$)의 은닉 상태를 $\mathbf{H}_t^{(l)} \in \mathbb{R}^{n \times h}$ (은닉 유닛의 수 $=h$)로, 그리고 출력 레이어 변수를 $\mathbf{O}_t \in \mathbb{R}^{n \times q}$ (출력의 수: $q$)로 둡니다. $\mathbf{H}_t^{(0)} = \mathbf{X}_t$로 설정하면, 활성화 함수 $\phi_l$을 사용하는 $l^\textrm{번째}$ 은닉층의 은닉 상태는 다음과 같이 계산됩니다.
 
 $$\mathbf{H}_t^{(l)} = \phi_l(\mathbf{H}_t^{(l-1)} \mathbf{W}_{\textrm{xh}}^{(l)} + \mathbf{H}_{t-1}^{(l)} \mathbf{W}_{\textrm{hh}}^{(l)}  + \mathbf{b}_\textrm{h}^{(l)}),$$
 :eqlabel:`eq_deep_rnn_H`
 
-where the weights $\mathbf{W}_{\textrm{xh}}^{(l)} \in \mathbb{R}^{h \times h}$ and $\mathbf{W}_{\textrm{hh}}^{(l)} \in \mathbb{R}^{h \times h}$, together with
-the bias $\mathbf{b}_\textrm{h}^{(l)} \in \mathbb{R}^{1 \times h}$, 
-are the model parameters of the $l^\textrm{th}$ hidden layer.
+여기서 가중치 $\mathbf{W}_{\textrm{xh}}^{(l)} \in \mathbb{R}^{h \times h}$와 $\mathbf{W}_{\textrm{hh}}^{(l)} \in \mathbb{R}^{h \times h}$, 그리고 편향 $\mathbf{b}_\textrm{h}^{(l)} \in \mathbb{R}^{1 \times h}$는 $l^\textrm{번째}$ 은닉층의 모델 매개변수입니다.
 
-At the end, the calculation of the output layer 
-is only based on the hidden state 
-of the final $L^\textrm{th}$ hidden layer:
+마지막으로, 출력 레이어의 계산은 최종 $L^\textrm{번째}$ 은닉층의 은닉 상태에만 기반합니다.
 
 $$\mathbf{O}_t = \mathbf{H}_t^{(L)} \mathbf{W}_{\textrm{hq}} + \mathbf{b}_\textrm{q},$$
 
-where the weight $\mathbf{W}_{\textrm{hq}} \in \mathbb{R}^{h \times q}$ 
-and the bias $\mathbf{b}_\textrm{q} \in \mathbb{R}^{1 \times q}$ 
-are the model parameters of the output layer.
+여기서 가중치 $\mathbf{W}_{\textrm{hq}} \in \mathbb{R}^{h \times q}$와 편향 $\mathbf{b}_\textrm{q} \in \mathbb{R}^{1 \times q}$는 출력 레이어의 모델 매개변수입니다.
 
-Just as with MLPs, the number of hidden layers $L$ 
-and the number of hidden units $h$ are hyperparameters
-that we can tune.
-Common RNN layer widths ($h$) are in the range $(64, 2056)$,
-and common depths ($L$) are in the range $(1, 8)$. 
-In addition, we can easily get a deep-gated RNN
-by replacing the hidden state computation in :eqref:`eq_deep_rnn_H`
-with that from an LSTM or a GRU.
+MLP에서처럼, 은닉층의 수 $L$과 은닉 유닛의 수 $h$는 저희가 조정할 수 있는 하이퍼파라미터입니다. 일반적인 RNN 레이어 폭($h$)은 $(64, 2056)$ 범위에 있고, 일반적인 깊이($L$)는 $(1, 8)$ 범위에 있습니다. 또한, :eqref:`eq_deep_rnn_H`의 은닉 상태 계산을 LSTM이나 GRU의 것으로 대체함으로써 쉽게 심층 게이트가 있는 RNN을 얻을 수 있습니다.
 
 ```{.python .input}
 %load_ext d2lbook.tab
@@ -124,11 +59,9 @@ import jax
 from jax import numpy as jnp
 ```
 
-## Implementation from Scratch
+## 처음부터 구현하기 (Implementation from Scratch)
 
-To implement a multilayer RNN from scratch,
-we can treat each layer as an `RNNScratch` instance
-with its own learnable parameters.
+다층 RNN을 처음부터 구현하기 위해, 각 레이어를 자체적인 학습 가능한 매개변수를 가진 `RNNScratch` 인스턴스로 다룰 수 있습니다.
 
 ```{.python .input}
 %%tab mxnet, tensorflow
@@ -166,9 +99,7 @@ class StackedRNNScratch(d2l.Module):
                      for i in range(self.num_layers)]
 ```
 
-The multilayer forward computation
-simply performs forward computation
-layer by layer.
+다층 순방향 계산은 단순히 레이어별로 순방향 계산을 수행합니다.
 
 ```{.python .input}
 %%tab all
@@ -182,9 +113,7 @@ def forward(self, inputs, Hs=None):
     return outputs, Hs
 ```
 
-As an example, we train a deep GRU model on
-*The Time Machine* dataset (same as in :numref:`sec_rnn-scratch`).
-To keep things simple we set the number of layers to 2.
+예시로, 저희는 *The Time Machine* 데이터셋(:numref:`sec_rnn-scratch`와 같은)에 대해 심층 GRU 모델을 훈련합니다. 단순하게 유지하기 위해 레이어 수를 2로 설정합니다.
 
 ```{.python .input}
 %%tab all
@@ -203,27 +132,14 @@ if tab.selected('tensorflow'):
 trainer.fit(model, data)
 ```
 
-## Concise Implementation
+## 간결한 구현 (Concise Implementation)
 
 :begin_tab:`pytorch, mxnet, tensorflow`
-Fortunately many of the logistical details required
-to implement multiple layers of an RNN 
-are readily available in high-level APIs.
-Our concise implementation will use such built-in functionalities.
-The code generalizes the one we used previously in :numref:`sec_gru`,
-letting us specify the number of layers explicitly 
-rather than picking the default of only one layer.
+다행스럽게도 RNN의 여러 레이어를 구현하는 데 필요한 많은 실무적 세부 사항들이 고수준 API에서 쉽게 사용 가능합니다. 저희의 간결한 구현은 이러한 내장된 기능을 사용할 것입니다. 이 코드는 :numref:`sec_gru`에서 이전에 사용했던 것을 일반화하여, 단 한 개의 레이어라는 기본값을 선택하는 대신 레이어의 수를 명시적으로 지정할 수 있게 합니다.
 :end_tab:
 
 :begin_tab:`jax`
-Flax takes a minimalistic approach while implementing
-RNNs. Defining the number of layers in an RNN or combining it with dropout
-is not available out of the box.
-Our concise implementation will use all built-in functionalities and
-add `num_layers` and `dropout` features on top.
-The code generalizes the one we used previously in :numref:`sec_gru`,
-allowing specification of the number of layers explicitly
-rather than picking the default of a single layer.
+Flax는 RNN을 구현하는 데 미니멀리스트적 접근 방식을 취합니다. RNN의 레이어 수를 정의하거나 그것을 드롭아웃과 결합하는 것은 기본적으로 사용 가능하지 않습니다. 저희의 간결한 구현은 모든 내장된 기능을 사용하고 그 위에 `num_layers`와 `dropout` 기능을 추가할 것입니다. 이 코드는 :numref:`sec_gru`에서 이전에 사용했던 것을 일반화하여, 단일 레이어라는 기본값을 선택하는 대신 레이어의 수를 명시적으로 지정할 수 있게 합니다.
 :end_tab:
 
 ```{.python .input}
@@ -296,14 +212,7 @@ class GRU(d2l.RNN):  #@save
         return X, jnp.array(new_state)
 ```
 
-The architectural decisions such as choosing hyperparameters 
-are very similar to those of :numref:`sec_gru`.
-We pick the same number of inputs and outputs 
-as we have distinct tokens, i.e., `vocab_size`.
-The number of hidden units is still 32.
-The only difference is that we now 
-(**select a nontrivial number of hidden layers 
-by specifying the value of `num_layers`.**)
+하이퍼파라미터 선택과 같은 아키텍처적 결정은 :numref:`sec_gru`의 것과 매우 유사합니다. 저희는 구별되는 토큰의 수, 즉 `vocab_size`만큼의 동일한 수의 입력과 출력을 선택합니다. 은닉 유닛의 수는 여전히 32입니다. 유일한 차이점은 이제 (**`num_layers`의 값을 지정함으로써 자명하지 않은 수의 은닉층을 선택한다**)는 것입니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -344,37 +253,28 @@ model.predict('it has', 20, data.vocab)
 model.predict('it has', 20, data.vocab, trainer.state.params)
 ```
 
-## Summary
+## 요약
 
-In deep RNNs, the hidden state information is passed 
-to the next time step of the current layer 
-and the current time step of the next layer.
-There exist many different flavors of deep RNNs, such as LSTMs, GRUs, or vanilla RNNs. 
-Conveniently, these models are all available 
-as parts of the high-level APIs of deep learning frameworks.
-Initialization of models requires care. 
-Overall, deep RNNs require considerable amount of work 
-(such as learning rate and clipping) 
-to ensure proper convergence.
+심층 RNN에서, 은닉 상태 정보는 현재 레이어의 다음 시간 단계와 다음 레이어의 현재 시간 단계로 전달됩니다. LSTM, GRU, 또는 기본 RNN 등 심층 RNN의 다양한 종류가 존재합니다. 편리하게도, 이러한 모델들은 모두 딥러닝 프레임워크의 고수준 API의 일부로 사용 가능합니다. 모델의 초기화는 주의를 요합니다. 전반적으로, 심층 RNN은 적절한 수렴을 보장하기 위해 (학습률 및 클리핑과 같은) 상당한 양의 작업을 요구합니다.
 
-## Exercises
+## 연습문제
 
-1. Replace the GRU by an LSTM and compare the accuracy and training speed.
-1. Increase the training data to include multiple books. How low can you go on the perplexity scale?
-1. Would you want to combine sources of different authors when modeling text? Why is this a good idea? What could go wrong?
+1. GRU를 LSTM으로 교체하고 정확도와 훈련 속도를 비교하십시오.
+1. 여러 책을 포함하도록 훈련 데이터를 늘리십시오. 퍼플렉시티 척도에서 얼마나 낮출 수 있습니까?
+1. 텍스트를 모델링할 때 서로 다른 저자의 출처를 결합하기를 원하시겠습니까? 왜 이것이 좋은 아이디어입니까? 무엇이 잘못될 수 있습니까?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/340)
+[토론](https://discuss.d2l.ai/t/340)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1058)
+[토론](https://discuss.d2l.ai/t/1058)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/3862)
+[토론](https://discuss.d2l.ai/t/3862)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18018)
+[토론](https://discuss.d2l.ai/t/18018)
 :end_tab:

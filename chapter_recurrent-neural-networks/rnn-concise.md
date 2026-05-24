@@ -1,22 +1,20 @@
-# Concise Implementation of Recurrent Neural Networks
+# 순환 신경망의 간결한 구현
 :label:`sec_rnn-concise`
 
-Like most of our from-scratch implementations,
-:numref:`sec_rnn-scratch` was designed 
-to provide insight into how each component works.
-But when you are using RNNs every day 
-or writing production code,
-you will want to rely more on libraries
-that cut down on both implementation time 
-(by supplying library code for common models and functions)
-and computation time 
-(by optimizing the heck out of these library implementations).
-This section will show you how to implement 
-the same language model more efficiently
-using the high-level API provided 
-by your deep learning framework.
-We begin, as before, by loading 
-*The Time Machine* dataset.
+저희의 대부분의 처음부터 구현과 마찬가지로,
+:numref:`sec_rnn-scratch`는 각 구성요소가 어떻게 작동하는지에 대한
+통찰을 제공하기 위해 설계되었습니다.
+그러나 RNN을 매일 사용하거나
+프로덕션 코드를 작성할 때는,
+구현 시간을 줄이고(흔한 모델과 함수를 위한 라이브러리 코드를 제공함으로써)
+계산 시간도 줄이는(이러한 라이브러리 구현을 극도로 최적화함으로써)
+라이브러리에 더 의존하고 싶을 것입니다.
+이 절에서는 여러분의 딥러닝 프레임워크가 제공하는
+고수준 API를 사용하여
+같은 언어 모델을 더 효율적으로 구현하는 방법을
+보여드릴 것입니다.
+이전과 마찬가지로, 저희는
+*The Time Machine* 데이터셋을 로드하는 것으로 시작합니다.
 
 ```{.python .input}
 %load_ext d2lbook.tab
@@ -52,29 +50,27 @@ from flax import linen as nn
 from jax import numpy as jnp
 ```
 
-## [**Defining the Model**]
+## [**모델 정의하기**]
 
-We define the following class
-using the RNN implemented
-by high-level APIs.
+저희는 고수준 API에 의해 구현된 RNN을 사용하여
+다음 클래스를 정의합니다.
 
 :begin_tab:`mxnet`
-Specifically, to initialize the hidden state,
-we invoke the member method `begin_state`.
-This returns a list that contains
-an initial hidden state
-for each example in the minibatch,
-whose shape is
-(number of hidden layers, batch size, number of hidden units).
-For some models to be introduced later
-(e.g., long short-term memory),
-this list will also contain other information.
+구체적으로, 은닉 상태를 초기화하기 위해,
+저희는 멤버 메서드 `begin_state`를 호출합니다.
+이는 미니배치의 각 예시에 대한 초기 은닉 상태를
+포함하는 리스트를 반환하며,
+그 모양은
+(은닉 층의 수, 배치 크기, 은닉 유닛의 수)입니다.
+이후에 소개될 일부 모델
+(예: 장단기 메모리(long short-term memory))의 경우,
+이 리스트에는 다른 정보도 포함될 것입니다.
 :end_tab:
 
 :begin_tab:`jax`
-Flax does not provide an RNNCell for concise implementation of Vanilla RNNs
-as of today. There are more advanced variants of RNNs like LSTMs and GRUs
-which are available in the Flax `linen` API.
+Flax는 오늘 기준으로 Vanilla RNN의 간결한 구현을 위한 RNNCell을
+제공하지 않습니다. Flax `linen` API에서 사용 가능한 LSTM과 GRU 같은
+RNN의 더 고급 변형들이 있습니다.
 :end_tab:
 
 ```{.python .input}
@@ -133,9 +129,9 @@ class RNN(nn.Module):  #@save
         raise NotImplementedError
 ```
 
-Inheriting from the `RNNLMScratch` class in :numref:`sec_rnn-scratch`, 
-the following `RNNLM` class defines a complete RNN-based language model.
-Note that we need to create a separate fully connected output layer.
+:numref:`sec_rnn-scratch`의 `RNNLMScratch` 클래스로부터 상속받아,
+다음 `RNNLM` 클래스는 완전한 RNN 기반 언어 모델을 정의합니다.
+저희가 별도의 완전 연결 출력 층을 만들어야 한다는 점에 유의하세요.
 
 ```{.python .input}
 %%tab pytorch
@@ -184,12 +180,12 @@ class RNNLM(d2l.RNNLMScratch):  #@save
         return self.output_layer(rnn_outputs)
 ```
 
-## Training and Predicting
+## 학습과 예측
 
-Before training the model, let's [**make a prediction 
-with a model initialized with random weights.**]
-Given that we have not trained the network, 
-it will generate nonsensical predictions.
+모델을 학습시키기 전에, [**무작위 가중치로 초기화된 모델로
+예측을 해 봅시다.**]
+저희가 신경망을 학습시키지 않았으므로,
+그것은 무의미한 예측을 생성할 것입니다.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -202,7 +198,7 @@ model = RNNLM(rnn, vocab_size=len(data.vocab), lr=1)
 model.predict('it has', 20, data.vocab)
 ```
 
-Next, we [**train our model, leveraging the high-level API**].
+다음으로, 저희는 [**고수준 API를 활용하여, 모델을 학습시킵니다**].
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -214,11 +210,11 @@ if tab.selected('tensorflow'):
 trainer.fit(model, data)
 ```
 
-Compared with :numref:`sec_rnn-scratch`,
-this model achieves comparable perplexity,
-but runs faster due to the optimized implementations.
-As before, we can generate predicted tokens 
-following the specified prefix string.
+:numref:`sec_rnn-scratch`와 비교하면,
+이 모델은 비슷한 펄플렉서티를 달성하지만,
+최적화된 구현으로 인해 더 빠르게 실행됩니다.
+이전과 마찬가지로, 저희는 지정된 접두사 문자열을 따라
+예측된 토큰을 생성할 수 있습니다.
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -230,19 +226,19 @@ model.predict('it has', 20, data.vocab, d2l.try_gpu())
 model.predict('it has', 20, data.vocab)
 ```
 
-## Summary
+## 요약
 
-High-level APIs in deep learning frameworks provide implementations of standard RNNs.
-These libraries help you to avoid wasting time reimplementing standard models.
-Moreover,
-framework implementations are often highly optimized, 
-  leading to significant (computational) performance gains 
-  when compared with implementations from scratch.
+딥러닝 프레임워크의 고수준 API는 표준 RNN의 구현을 제공합니다.
+이러한 라이브러리는 표준 모델을 다시 구현하는 데 시간을 낭비하지 않게 도와줍니다.
+더욱이,
+프레임워크 구현은 종종 고도로 최적화되어 있어,
+처음부터 구현한 것과 비교했을 때
+상당한 (계산적) 성능 향상으로 이어집니다.
 
-## Exercises
+## 연습문제
 
-1. Can you make the RNN model overfit using the high-level APIs?
-1. Implement the autoregressive model of :numref:`sec_sequence` using an RNN.
+1. 고수준 API를 사용하여 RNN 모델을 과대적합시킬 수 있나요?
+1. RNN을 사용하여 :numref:`sec_sequence`의 자기회귀 모델을 구현하세요.
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/335)

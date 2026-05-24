@@ -6,30 +6,30 @@ tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 # Network in Network (NiN)
 :label:`sec_nin`
 
-LeNet, AlexNet, and VGG all share a common design pattern:
-extract features exploiting *spatial* structure
-via a sequence of convolutions and pooling layers
-and post-process the representations via fully connected layers.
-The improvements upon LeNet by AlexNet and VGG mainly lie
-in how these later networks widen and deepen these two modules.
+LeNet, AlexNet, VGG는 모두 공통의 설계 패턴을 공유합니다:
+합성곱과 풀링 층의 시퀀스를 통해
+*공간* 구조를 활용하여 특성을 추출하고
+완전 연결 층을 통해 표현을 후처리합니다.
+AlexNet과 VGG가 LeNet에 가한 개선은 주로
+이러한 후자의 네트워크가 이 두 모듈을 어떻게 넓히고 깊게 만드는지에 있습니다.
 
-This design poses two major challenges.
-First, the fully connected layers at the end
-of the architecture consume tremendous numbers of parameters. For instance, even a simple
-model such as VGG-11 requires a monstrous matrix, occupying almost
-400MB of RAM in single precision (FP32). This is a significant impediment to computation, in particular on
-mobile and embedded devices. After all, even high-end mobile phones sport no more than 8GB of RAM. At the time VGG was invented, this was an order of magnitude less (the iPhone 4S had 512MB). As such, it would have been difficult to justify spending the majority of memory on an image classifier. 
+이 설계는 두 가지 주요 도전 과제를 제기합니다.
+첫째, 아키텍처 끝부분의 완전 연결 층은
+엄청난 수의 파라미터를 소비합니다. 예를 들어,
+VGG-11과 같은 단순한 모델조차도 단정밀도(FP32)에서 거의 400MB의 RAM을 차지하는
+괴물 같은 행렬을 필요로 합니다. 이는 특히 모바일 및 임베디드 장치에서
+계산에 상당한 장애입니다. 결국, 하이엔드 휴대폰조차도 8GB 이상의 RAM을 갖추지 않습니다. VGG가 발명되었을 때, 이는 한 자릿수 더 적었습니다(iPhone 4S는 512MB였습니다). 이와 같이, 이미지 분류기에 메모리의 대부분을 소비하는 것을 정당화하기는 어려웠을 것입니다.
 
-Second, it is equally impossible to add fully connected layers
-earlier in the network to increase the degree of nonlinearity: doing so would destroy the
-spatial structure and require potentially even more memory.
+둘째, 비선형성의 정도를 증가시키기 위해 네트워크의 더 일찍
+완전 연결 층을 추가하는 것도 마찬가지로 불가능합니다: 그렇게 하면 공간 구조를
+파괴하고 잠재적으로 훨씬 더 많은 메모리를 필요로 합니다.
 
-The *network in network* (*NiN*) blocks :cite:`Lin.Chen.Yan.2013` offer an alternative,
-capable of solving both problems in one simple strategy.
-They were proposed based on a very simple insight: (i) use $1 \times 1$ convolutions to add
-local nonlinearities across the channel activations and (ii) use global average pooling to integrate
-across all locations in the last representation layer. Note that global average pooling would not
-be effective, were it not for the added nonlinearities. Let's dive into this in detail.
+*network in network*(*NiN*) 블록 :cite:`Lin.Chen.Yan.2013`은 하나의 간단한 전략으로
+두 문제를 모두 해결할 수 있는 대안을 제공합니다.
+이들은 매우 간단한 통찰을 기반으로 제안되었습니다: (i) 채널 활성화 전반에 걸쳐 국소적
+비선형성을 추가하기 위해 $1 \times 1$ 합성곱을 사용하고 (ii) 마지막 표현 층의
+모든 위치에 걸쳐 통합하기 위해 전역 평균 풀링을 사용합니다. 추가된 비선형성이 없다면 전역 평균 풀링이
+효과적이지 않을 것이라는 점을 참고하세요. 이를 자세히 알아봅시다.
 
 ```{.python .input}
 %%tab mxnet
@@ -60,23 +60,23 @@ import jax
 from jax import numpy as jnp
 ```
 
-## (**NiN Blocks**)
+## (**NiN 블록**)
 
-Recall :numref:`subsec_1x1`. In it we said that the inputs and outputs of convolutional layers
-consist of four-dimensional tensors with axes
-corresponding to the example, channel, height, and width.
-Also recall that the inputs and outputs of fully connected layers
-are typically two-dimensional tensors corresponding to the example and feature.
-The idea behind NiN is to apply a fully connected layer
-at each pixel location (for each height and width).
-The resulting $1 \times 1$ convolution can be thought of as
-a fully connected layer acting independently on each pixel location.
+:numref:`subsec_1x1`을 떠올려 보세요. 그 안에서 합성곱 층의 입력과 출력은
+예제, 채널, 높이, 너비에 해당하는 축을 가진 4차원 텐서로 구성된다고 했습니다.
+또한 완전 연결 층의 입력과 출력은
+일반적으로 예제와 특성에 해당하는 2차원 텐서임을 떠올려 보세요.
+NiN 뒤의 아이디어는 각 픽셀 위치에서(각 높이와 너비에 대해)
+완전 연결 층을 적용하는 것입니다.
+결과로 나오는 $1 \times 1$ 합성곱은
+각 픽셀 위치에서 독립적으로 작동하는
+완전 연결 층으로 생각할 수 있습니다.
 
-:numref:`fig_nin` illustrates the main structural
-differences between VGG and NiN, and their blocks.
-Note both the difference in the NiN blocks (the initial convolution is followed by $1 \times 1$ convolutions, whereas VGG retains $3 \times 3$ convolutions) and at the end where we no longer require a giant fully connected layer.
+:numref:`fig_nin`은 VGG와 NiN, 그리고 그들의 블록 간의 주요 구조적
+차이를 보여줍니다.
+NiN 블록의 차이(초기 합성곱 다음에 $1 \times 1$ 합성곱이 오고, VGG는 $3 \times 3$ 합성곱을 유지함)와 더 이상 거대한 완전 연결 층이 필요하지 않은 끝부분의 차이 모두에 주목하세요.
 
-![Comparing the architectures of VGG and NiN, and of their blocks.](../img/nin.svg)
+![VGG와 NiN, 그리고 그들의 블록의 아키텍처 비교.](../img/nin.svg)
 :width:`600px`
 :label:`fig_nin`
 
@@ -123,18 +123,18 @@ def nin_block(out_channels, kernel_size, strides, padding):
         nn.Conv(out_channels, kernel_size=(1, 1)), nn.relu])
 ```
 
-## [**NiN Model**]
+## [**NiN 모델**]
 
-NiN uses the same initial convolution sizes as AlexNet (it was proposed shortly thereafter).
-The kernel sizes are $11\times 11$, $5\times 5$, and $3\times 3$, respectively,
-and the numbers of output channels match those of AlexNet. Each NiN block is followed by a max-pooling layer
-with a stride of 2 and a window shape of $3\times 3$.
+NiN은 AlexNet과 동일한 초기 합성곱 크기를 사용합니다(이는 AlexNet 직후에 제안되었습니다).
+커널 크기는 각각 $11\times 11$, $5\times 5$, $3\times 3$이며,
+출력 채널의 수는 AlexNet의 것과 일치합니다. 각 NiN 블록 뒤에는
+스트라이드가 2이고 윈도우 모양이 $3\times 3$인 최대 풀링 층이 옵니다.
 
-The second significant difference between NiN and both AlexNet and VGG
-is that NiN avoids fully connected layers altogether.
-Instead, NiN uses a NiN block with a number of output channels equal to the number of label classes, followed by a *global* average pooling layer,
-yielding a vector of logits.
-This design significantly reduces the number of required model parameters, albeit at the expense of a potential increase in training time.
+NiN과 AlexNet 및 VGG 사이의 두 번째 중요한 차이점은
+NiN이 완전 연결 층을 완전히 피한다는 것입니다.
+대신, NiN은 레이블 클래스의 수와 같은 수의 출력 채널을 가진 NiN 블록을 사용하고, 그 뒤에 *전역* 평균 풀링 층이 오며,
+로짓의 벡터를 산출합니다.
+이 설계는 잠재적인 학습 시간 증가의 대가로, 필요한 모델 파라미터의 수를 크게 줄입니다.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -205,7 +205,7 @@ class NiN(d2l.Classifier):
         ])
 ```
 
-We create a data example to see [**the output shape of each block**].
+[**각 블록의 출력 모양을 보기 위해**] 데이터 예제를 만듭니다.
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -222,10 +222,10 @@ NiN().layer_summary((1, 224, 224, 1))
 NiN(training=False).layer_summary((1, 224, 224, 1))
 ```
 
-## [**Training**]
+## [**학습**]
 
-As before we use Fashion-MNIST to train the model using the same 
-optimizer that we used for AlexNet and VGG.
+이전과 마찬가지로 AlexNet과 VGG에 사용한 것과 동일한 옵티마이저를 사용하여 Fashion-MNIST를 사용해
+모델을 학습합니다.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -246,24 +246,24 @@ with d2l.try_gpu():
     trainer.fit(model, data)
 ```
 
-## Summary
+## 요약
 
-NiN has dramatically fewer parameters than AlexNet and VGG. This stems primarily from the fact that it needs no giant fully connected layers. Instead, it uses global average pooling to aggregate across all image locations after the last stage of the network body. This obviates the need for expensive (learned) reduction operations and replaces them by a simple average. What surprised researchers at the time was the fact that this averaging operation did not harm accuracy. Note that averaging across a low-resolution representation (with many channels) also adds to the amount of translation invariance that the network can handle. 
+NiN은 AlexNet과 VGG보다 극적으로 적은 파라미터를 가지고 있습니다. 이는 주로 거대한 완전 연결 층이 필요하지 않다는 사실에서 비롯됩니다. 대신, 네트워크 본체의 마지막 단계 이후 모든 이미지 위치에 걸쳐 통합하기 위해 전역 평균 풀링을 사용합니다. 이는 비싼 (학습된) 축소 연산의 필요성을 없애고 간단한 평균으로 대체합니다. 당시 연구자들을 놀라게 한 것은 이 평균화 연산이 정확도를 해치지 않는다는 사실이었습니다. 저해상도 표현(많은 채널이 있는)에 걸쳐 평균화하는 것은 또한 네트워크가 처리할 수 있는 이동 불변성의 양에 추가됨에 주목하세요.
 
-Choosing fewer convolutions with wide kernels and replacing them by $1 \times 1$ convolutions aids the quest for fewer parameters further. It can cater for a significant amount of nonlinearity across channels within any given location. Both $1 \times 1$ convolutions and global average pooling significantly influenced subsequent CNN designs. 
+넓은 커널을 가진 더 적은 합성곱을 선택하고 이를 $1 \times 1$ 합성곱으로 대체하는 것은 더 적은 파라미터에 대한 탐구를 추가로 돕습니다. 이는 주어진 어떤 위치 내에서도 채널 간 상당한 양의 비선형성을 제공할 수 있습니다. $1 \times 1$ 합성곱과 전역 평균 풀링 모두 후속 CNN 설계에 상당한 영향을 미쳤습니다.
 
-## Exercises
+## 연습문제
 
-1. Why are there two $1\times 1$ convolutional layers per NiN block? Increase their number to three. Reduce their number to one. What changes?
-1. What changes if you replace the $1 \times 1$ convolutions by $3 \times 3$ convolutions? 
-1. What happens if you replace the global average pooling by a fully connected layer (speed, accuracy, number of parameters)?
-1. Calculate the resource usage for NiN.
-    1. What is the number of parameters?
-    1. What is the amount of computation?
-    1. What is the amount of memory needed during training?
-    1. What is the amount of memory needed during prediction?
-1. What are possible problems with reducing the $384 \times 5 \times 5$ representation to a $10 \times 5 \times 5$ representation in one step?
-1. Use the structural design decisions in VGG that led to VGG-11, VGG-16, and VGG-19 to design a family of NiN-like networks.
+1. NiN 블록당 두 개의 $1\times 1$ 합성곱 층이 있는 이유는 무엇인가요? 그 수를 세 개로 늘리세요. 그 수를 하나로 줄이세요. 무엇이 변하나요?
+1. $1 \times 1$ 합성곱을 $3 \times 3$ 합성곱으로 대체하면 무엇이 변하나요?
+1. 전역 평균 풀링을 완전 연결 층으로 대체하면 어떻게 되나요(속도, 정확도, 파라미터 수)?
+1. NiN의 자원 사용량을 계산하세요.
+    1. 파라미터의 수는 얼마인가요?
+    1. 계산량은 얼마인가요?
+    1. 학습 중에 필요한 메모리 양은 얼마인가요?
+    1. 예측 중에 필요한 메모리 양은 얼마인가요?
+1. $384 \times 5 \times 5$ 표현을 한 번에 $10 \times 5 \times 5$ 표현으로 축소하는 것의 가능한 문제는 무엇인가요?
+1. VGG-11, VGG-16, VGG-19로 이어진 VGG의 구조적 설계 결정을 사용하여 NiN과 유사한 네트워크 패밀리를 설계하세요.
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/79)

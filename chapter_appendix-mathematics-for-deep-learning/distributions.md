@@ -1,7 +1,7 @@
-# Distributions
+# 분포
 :label:`sec_distributions`
 
-Now that we have learned how to work with probability in both the discrete and the continuous setting, let's get to know some of the common distributions encountered.  Depending on the area of machine learning, we may need to be familiar with vastly more of these, or for some areas of deep learning potentially none at all.  This is, however, a good basic list to be familiar with.  Let's first import some common libraries.
+이제 이산과 연속 환경 모두에서 확률로 작업하는 방법을 배웠으므로, 마주치는 몇 가지 일반적인 분포에 대해 알아보겠습니다. 머신러닝의 영역에 따라, 저희는 이것들 중 훨씬 더 많은 것에 친숙해져야 할 수도 있고, 딥러닝의 일부 영역에 대해서는 잠재적으로 전혀 친숙해질 필요가 없을 수도 있습니다. 그러나, 이것은 친숙해질 좋은 기본 리스트입니다. 먼저 몇 가지 일반적인 라이브러리를 임포트해 봅시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -35,20 +35,20 @@ import tensorflow_probability as tfp
 tf.pi = tf.acos(tf.zeros(1)) * 2  # Define pi in TensorFlow
 ```
 
-## Bernoulli
+## 베르누이
 
-This is the simplest random variable usually encountered.  This random variable encodes a coin flip which comes up $1$ with probability $p$ and $0$ with probability $1-p$.  If we have a random variable $X$ with this distribution, we will write
+이는 보통 마주치는 가장 단순한 확률 변수입니다. 이 확률 변수는 확률 $p$로 $1$이 나오고 확률 $1-p$로 $0$이 나오는 동전 던지기를 인코딩합니다. 만약 이 분포를 가진 확률 변수 $X$가 있다면, 저희는 다음과 같이 쓸 것입니다.
 
 $$
 X \sim \textrm{Bernoulli}(p).
 $$
 
-The cumulative distribution function is 
+누적 분포 함수는 다음과 같습니다.
 
 $$F(x) = \begin{cases} 0 & x < 0, \\ 1-p & 0 \le x < 1, \\ 1 & x >= 1 . \end{cases}$$
 :eqlabel:`eq_bernoulli_cdf`
 
-The probability mass function is plotted below.
+확률 질량 함수는 아래에 플롯되어 있습니다.
 
 ```{.python .input}
 #@tab all
@@ -61,7 +61,7 @@ d2l.plt.ylabel('p.m.f.')
 d2l.plt.show()
 ```
 
-Now, let's plot the cumulative distribution function :eqref:`eq_bernoulli_cdf`.
+이제, 누적 분포 함수 :eqref:`eq_bernoulli_cdf`를 플롯해 봅시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -93,12 +93,12 @@ def F(x):
 d2l.plot(x, tf.constant([F(y) for y in x]), 'x', 'c.d.f.')
 ```
 
-If $X \sim \textrm{Bernoulli}(p)$, then:
+만약 $X \sim \textrm{Bernoulli}(p)$이면:
 
 * $\mu_X = p$,
 * $\sigma_X^2 = p(1-p)$.
 
-We can sample an array of arbitrary shape from a Bernoulli random variable as follows.
+저희는 다음과 같이 베르누이 확률 변수에서 임의 모양의 배열을 샘플링할 수 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -115,20 +115,20 @@ We can sample an array of arbitrary shape from a Bernoulli random variable as fo
 tf.cast(tf.random.uniform((10, 10)) < p, dtype=tf.float32)
 ```
 
-## Discrete Uniform
+## 이산 균등
 
-The next commonly encountered random variable is a discrete uniform.  For our discussion here, we will assume that it is supported on the integers $\{1, 2, \ldots, n\}$, however any other set of values can be freely chosen.  The meaning of the word *uniform* in this context is that every possible value is equally likely.  The probability for each value $i \in \{1, 2, 3, \ldots, n\}$ is $p_i = \frac{1}{n}$.  We will denote a random variable $X$ with this distribution as
+다음으로 일반적으로 마주치는 확률 변수는 이산 균등입니다. 여기서의 저희의 논의를 위해, 정수 $\{1, 2, \ldots, n\}$에서 지원된다고 가정할 것이지만, 다른 어떤 값 집합도 자유롭게 선택될 수 있습니다. 이 맥락에서 *균등*이라는 단어의 의미는 모든 가능한 값이 동등하게 가능성이 있다는 것입니다. 각 값 $i \in \{1, 2, 3, \ldots, n\}$에 대한 확률은 $p_i = \frac{1}{n}$입니다. 저희는 이 분포를 가진 확률 변수 $X$를 다음과 같이 표기할 것입니다.
 
 $$
 X \sim U(n).
 $$
 
-The cumulative distribution function is 
+누적 분포 함수는 다음과 같습니다.
 
 $$F(x) = \begin{cases} 0 & x < 1, \\ \frac{k}{n} & k \le x < k+1 \textrm{ with } 1 \le k < n, \\ 1 & x >= n . \end{cases}$$
 :eqlabel:`eq_discrete_uniform_cdf`
 
-Let's first plot the probability mass function.
+먼저 확률 질량 함수를 플롯해 봅시다.
 
 ```{.python .input}
 #@tab all
@@ -140,7 +140,7 @@ d2l.plt.ylabel('p.m.f.')
 d2l.plt.show()
 ```
 
-Now, let's plot the cumulative distribution function :eqref:`eq_discrete_uniform_cdf`.
+이제, 누적 분포 함수 :eqref:`eq_discrete_uniform_cdf`를 플롯해 봅시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -172,12 +172,12 @@ def F(x):
 d2l.plot(x, [F(y) for y in x], 'x', 'c.d.f.')
 ```
 
-If $X \sim U(n)$, then:
+만약 $X \sim U(n)$이면:
 
 * $\mu_X = \frac{1+n}{2}$,
 * $\sigma_X^2 = \frac{n^2-1}{12}$.
 
-We can sample an array of arbitrary shape from a discrete uniform random variable as follows.
+저희는 다음과 같이 이산 균등 확률 변수에서 임의 모양의 배열을 샘플링할 수 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -194,25 +194,25 @@ torch.randint(1, n, size=(10, 10))
 tf.random.uniform((10, 10), 1, n, dtype=tf.int32)
 ```
 
-## Continuous Uniform
+## 연속 균등
 
-Next, let's discuss the continuous uniform distribution. The idea behind this random variable is that if we increase the $n$ in the discrete uniform distribution, and then scale it to fit within the interval $[a, b]$, we will approach a continuous random variable that just picks an arbitrary value in $[a, b]$ all with equal probability.  We will denote this distribution as
+다음으로, 연속 균등 분포를 논의해 봅시다. 이 확률 변수 뒤에 있는 아이디어는 이산 균등 분포에서 $n$을 증가시키고 구간 $[a, b]$ 내에 맞도록 스케일링하면, $[a, b]$의 임의의 값을 모두 동등한 확률로 그냥 선택하는 연속 확률 변수에 접근할 것이라는 것입니다. 저희는 이 분포를 다음과 같이 표기할 것입니다.
 
 $$
 X \sim U(a, b).
 $$
 
-The probability density function is 
+확률 밀도 함수는 다음과 같습니다.
 
 $$p(x) = \begin{cases} \frac{1}{b-a} & x \in [a, b], \\ 0 & x \not\in [a, b].\end{cases}$$
 :eqlabel:`eq_cont_uniform_pdf`
 
-The cumulative distribution function is 
+누적 분포 함수는 다음과 같습니다.
 
 $$F(x) = \begin{cases} 0 & x < a, \\ \frac{x-a}{b-a} & x \in [a, b], \\ 1 & x >= b . \end{cases}$$
 :eqlabel:`eq_cont_uniform_cdf`
 
-Let's first plot the probability density function :eqref:`eq_cont_uniform_pdf`.
+먼저 확률 밀도 함수 :eqref:`eq_cont_uniform_pdf`를 플롯해 봅시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -242,7 +242,7 @@ p = tf.cast(x > a, tf.float32) * tf.cast(x < b, tf.float32) / (b - a)
 d2l.plot(x, p, 'x', 'p.d.f.')
 ```
 
-Now, let's plot the cumulative distribution function :eqref:`eq_cont_uniform_cdf`.
+이제, 누적 분포 함수 :eqref:`eq_cont_uniform_cdf`를 플롯해 봅시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -268,12 +268,12 @@ def F(x):
 d2l.plot(x, [F(y) for y in x], 'x', 'c.d.f.')
 ```
 
-If $X \sim U(a, b)$, then:
+만약 $X \sim U(a, b)$이면:
 
 * $\mu_X = \frac{a+b}{2}$,
 * $\sigma_X^2 = \frac{(b-a)^2}{12}$.
 
-We can sample an array of arbitrary shape from a uniform random variable as follows.  Note that it by default samples from a $U(0,1)$, so if we want a different range we need to scale it.
+저희는 다음과 같이 균등 확률 변수에서 임의 모양의 배열을 샘플링할 수 있습니다. 기본적으로 $U(0,1)$에서 샘플링하므로, 다른 범위를 원한다면 스케일링해야 한다는 점에 유의하십시오.
 
 ```{.python .input}
 #@tab mxnet
@@ -290,28 +290,28 @@ We can sample an array of arbitrary shape from a uniform random variable as foll
 (b - a) * tf.random.uniform((10, 10)) + a
 ```
 
-## Binomial
+## 이항
 
-Let's make things a little more complex and examine the *binomial* random variable.  This random variable originates from performing a sequence of $n$ independent experiments, each of which has probability $p$ of succeeding, and asking how many successes we expect to see.
+상황을 약간 더 복잡하게 만들어 *이항* 확률 변수를 검토해 봅시다. 이 확률 변수는 각각 성공할 확률 $p$를 가진 $n$개의 독립 실험의 시퀀스를 수행하고, 얼마나 많은 성공을 볼 것으로 기대하는지 묻는 것에서 유래합니다.
 
-Let's express this mathematically.  Each experiment is an independent random variable $X_i$ where we will use $1$ to encode success, and $0$ to encode failure.  Since each is an independent coin flip which is successful with probability $p$, we can say that $X_i \sim \textrm{Bernoulli}(p)$.  Then, the binomial random variable is
+이를 수학적으로 표현해 봅시다. 각 실험은 독립 확률 변수 $X_i$이며, 여기서 저희는 성공을 인코딩하기 위해 $1$을, 실패를 인코딩하기 위해 $0$을 사용할 것입니다. 각각은 확률 $p$로 성공하는 독립 동전 던지기이므로, 저희는 $X_i \sim \textrm{Bernoulli}(p)$라고 말할 수 있습니다. 그러면, 이항 확률 변수는 다음과 같습니다.
 
 $$
 X = \sum_{i=1}^n X_i.
 $$
 
-In this case, we will write
+이 경우, 저희는 다음과 같이 쓸 것입니다.
 
 $$
 X \sim \textrm{Binomial}(n, p).
 $$
 
-To get the cumulative distribution function, we need to notice that getting exactly $k$ successes can occur in $\binom{n}{k} = \frac{n!}{k!(n-k)!}$ ways each of which has a probability of $p^k(1-p)^{n-k}$ of occurring.  Thus the cumulative distribution function is
+누적 분포 함수를 얻기 위해서는, 정확히 $k$개의 성공을 얻는 것은 $\binom{n}{k} = \frac{n!}{k!(n-k)!}$가지 방법으로 발생할 수 있으며, 각각은 발생할 확률 $p^k(1-p)^{n-k}$를 가진다는 점에 유의해야 합니다. 따라서 누적 분포 함수는 다음과 같습니다.
 
 $$F(x) = \begin{cases} 0 & x < 0, \\ \sum_{m \le k} \binom{n}{m} p^m(1-p)^{n-m}  & k \le x < k+1 \textrm{ with } 0 \le k < n, \\ 1 & x >= n . \end{cases}$$
 :eqlabel:`eq_binomial_cdf`
 
-Let's first plot the probability mass function.
+먼저 확률 질량 함수를 플롯해 봅시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -370,7 +370,7 @@ d2l.plt.ylabel('p.m.f.')
 d2l.plt.show()
 ```
 
-Now, let's plot the cumulative distribution function :eqref:`eq_binomial_cdf`.
+이제, 누적 분포 함수 :eqref:`eq_binomial_cdf`를 플롯해 봅시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -405,12 +405,12 @@ def F(x):
 d2l.plot(x, [F(y) for y in x.numpy().tolist()], 'x', 'c.d.f.')
 ```
 
-If $X \sim \textrm{Binomial}(n, p)$, then:
+만약 $X \sim \textrm{Binomial}(n, p)$이면:
 
 * $\mu_X = np$,
 * $\sigma_X^2 = np(1-p)$.
 
-This follows from the linearity of expected value over the sum of $n$ Bernoulli random variables, and the fact that the variance of the sum of independent random variables is the sum of the variances. This can be sampled as follows.
+이는 $n$개의 베르누이 확률 변수의 합에 대한 기댓값의 선형성과, 독립 확률 변수의 합의 분산이 분산의 합이라는 사실로부터 따릅니다. 이는 다음과 같이 샘플링될 수 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -429,39 +429,39 @@ m = tfp.distributions.Binomial(n, p)
 m.sample(sample_shape=(10, 10))
 ```
 
-## Poisson
-Let's now perform a thought experiment.  We are standing at a bus stop and we want to know how many buses will arrive in the next minute.  Let's start by considering $X^{(1)} \sim \textrm{Bernoulli}(p)$ which is simply the probability that a bus arrives in the one minute window.  For bus stops far from an urban center, this might be a pretty good approximation.  We may never see more than one bus in a minute.
+## 푸아송
+이제 사고 실험을 수행해 봅시다. 저희는 버스 정류장에 서 있고 다음 1분 동안 몇 대의 버스가 도착할지 알고 싶습니다. 1분 창 내에 버스가 도착할 확률에 불과한 $X^{(1)} \sim \textrm{Bernoulli}(p)$를 고려하는 것부터 시작해 봅시다. 도시 중심에서 멀리 떨어진 버스 정류장의 경우, 이는 꽤 좋은 근사일 수 있습니다. 저희는 1분 안에 한 대 이상의 버스를 결코 보지 못할 수 있습니다.
 
-However, if we are in a busy area, it is possible or even likely that two buses will arrive.  We can model this by splitting our random variable into two parts for the first 30 seconds, or the second 30 seconds.  In this case we can write
+그러나, 만약 바쁜 지역에 있다면, 두 대의 버스가 도착할 가능성이 있거나 심지어 가능성이 높습니다. 저희는 처음 30초 또는 두 번째 30초에 대해 저희의 확률 변수를 두 부분으로 분할하여 이를 모델링할 수 있습니다. 이 경우 저희는 다음과 같이 쓸 수 있습니다.
 
 $$
 X^{(2)} \sim X^{(2)}_1 + X^{(2)}_2,
 $$
 
-where $X^{(2)}$ is the total sum, and $X^{(2)}_i \sim \textrm{Bernoulli}(p/2)$.  The total distribution is then $X^{(2)} \sim \textrm{Binomial}(2, p/2)$.
+여기서 $X^{(2)}$는 총합이고, $X^{(2)}_i \sim \textrm{Bernoulli}(p/2)$입니다. 그러면 총 분포는 $X^{(2)} \sim \textrm{Binomial}(2, p/2)$입니다.
 
-Why stop here?  Let's continue to split that minute into $n$ parts.  By the same reasoning as above, we see that
+여기서 멈출 이유가 무엇이겠습니까? 저희는 그 1분을 $n$ 부분으로 계속 분할해 봅시다. 위와 같은 추론에 의해, 저희는 다음을 봅니다.
 
 $$X^{(n)} \sim \textrm{Binomial}(n, p/n).$$
 :eqlabel:`eq_eq_poisson_approx`
 
-Consider these random variables.  By the previous section, we know that :eqref:`eq_eq_poisson_approx` has mean $\mu_{X^{(n)}} = n(p/n) = p$, and variance $\sigma_{X^{(n)}}^2 = n(p/n)(1-(p/n)) = p(1-p/n)$.  If we take $n \rightarrow \infty$, we can see that these numbers stabilize to $\mu_{X^{(\infty)}} = p$, and variance $\sigma_{X^{(\infty)}}^2 = p$.  This indicates that there *could be* some random variable we can define in this infinite subdivision limit.  
+이러한 확률 변수를 고려해 보십시오. 이전 절에 의해, 저희는 :eqref:`eq_eq_poisson_approx`가 평균 $\mu_{X^{(n)}} = n(p/n) = p$, 그리고 분산 $\sigma_{X^{(n)}}^2 = n(p/n)(1-(p/n)) = p(1-p/n)$을 가짐을 압니다. 만약 $n \rightarrow \infty$를 취하면, 이 숫자들이 $\mu_{X^{(\infty)}} = p$로 안정화되고 분산이 $\sigma_{X^{(\infty)}}^2 = p$로 안정화됨을 볼 수 있습니다. 이는 이 무한 세분화 극한에서 저희가 정의할 수 있는 어떤 확률 변수가 *존재할 수 있음*을 나타냅니다.
 
-This should not come as too much of a surprise, since in the real world we can just count the number of bus arrivals, however it is nice to see that our mathematical model is well defined.  This discussion can be made formal as the *law of rare events*.
+이는 너무 큰 놀라움으로 다가오지 않아야 합니다. 왜냐하면 실제 세계에서 저희는 단지 버스 도착의 수를 셀 수 있기 때문입니다. 그러나 저희의 수학적 모델이 잘 정의되어 있음을 보는 것은 좋습니다. 이 논의는 *희귀 사건의 법칙*으로 형식화될 수 있습니다.
 
-Following through this reasoning carefully, we can arrive at the following model.  We will say that $X \sim \textrm{Poisson}(\lambda)$ if it is a random variable which takes the values $\{0,1,2, \ldots\}$ with probability
+이 추론을 신중하게 따라가면, 저희는 다음 모델에 도달할 수 있습니다. 만약 확률로 값 $\{0,1,2, \ldots\}$를 취하는 확률 변수라면 저희는 $X \sim \textrm{Poisson}(\lambda)$라고 말할 것입니다.
 
 $$p_k = \frac{\lambda^ke^{-\lambda}}{k!}.$$
 :eqlabel:`eq_poisson_mass`
 
-The value $\lambda > 0$ is known as the *rate* (or the *shape* parameter), and denotes the average number of arrivals we expect in one unit of time.  
+값 $\lambda > 0$는 *비율*(또는 *모양* 매개변수)로 알려져 있으며, 저희가 시간 한 단위에서 기대하는 평균 도착 수를 나타냅니다.
 
-We may sum this probability mass function to get the cumulative distribution function.
+저희는 이 확률 질량 함수를 합산하여 누적 분포 함수를 얻을 수 있습니다.
 
 $$F(x) = \begin{cases} 0 & x < 0, \\ e^{-\lambda}\sum_{m = 0}^k \frac{\lambda^m}{m!} & k \le x < k+1 \textrm{ with } 0 \le k. \end{cases}$$
 :eqlabel:`eq_poisson_cdf`
 
-Let's first plot the probability mass function :eqref:`eq_poisson_mass`.
+먼저 확률 질량 함수 :eqref:`eq_poisson_mass`를 플롯해 봅시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -504,7 +504,7 @@ d2l.plt.ylabel('p.m.f.')
 d2l.plt.show()
 ```
 
-Now, let's plot the cumulative distribution function :eqref:`eq_poisson_cdf`.
+이제, 누적 분포 함수 :eqref:`eq_poisson_cdf`를 플롯해 봅시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -536,12 +536,12 @@ def F(x):
 d2l.plot(x, [F(y) for y in x.numpy().tolist()], 'x', 'c.d.f.')
 ```
 
-As we saw above, the means and variances are particularly concise.  If $X \sim \textrm{Poisson}(\lambda)$, then:
+위에서 본 것처럼, 평균과 분산은 특히 간결합니다. 만약 $X \sim \textrm{Poisson}(\lambda)$이면:
 
 * $\mu_X = \lambda$,
 * $\sigma_X^2 = \lambda$.
 
-This can be sampled as follows.
+이는 다음과 같이 샘플링될 수 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -560,16 +560,16 @@ m = tfp.distributions.Poisson(lam)
 m.sample((10, 10))
 ```
 
-## Gaussian
-Now Let's try a different, but related experiment.  Let's say we again are performing $n$ independent $\textrm{Bernoulli}(p)$ measurements $X_i$.  The distribution of the sum of these is $X^{(n)} \sim \textrm{Binomial}(n, p)$.  Rather than taking a limit as $n$ increases and $p$ decreases, Let's fix $p$, and then send $n \rightarrow \infty$.  In this case $\mu_{X^{(n)}} = np \rightarrow \infty$ and $\sigma_{X^{(n)}}^2 = np(1-p) \rightarrow \infty$, so there is no reason to think this limit should be well defined.
+## 가우시안
+이제 다른, 그러나 관련된 실험을 시도해 봅시다. 다시 $n$개의 독립 $\textrm{Bernoulli}(p)$ 측정 $X_i$를 수행하고 있다고 합시다. 이들의 합의 분포는 $X^{(n)} \sim \textrm{Binomial}(n, p)$입니다. $n$이 증가하고 $p$가 감소함에 따라 극한을 취하는 대신, $p$를 고정한 다음 $n \rightarrow \infty$를 보내봅시다. 이 경우 $\mu_{X^{(n)}} = np \rightarrow \infty$이고 $\sigma_{X^{(n)}}^2 = np(1-p) \rightarrow \infty$이므로, 이 극한이 잘 정의되어야 한다고 생각할 이유가 없습니다.
 
-However, not all hope is lost!  Let's just make the mean and variance be well behaved by defining
+그러나, 모든 희망이 사라진 것은 아닙니다! 다음과 같이 정의함으로써 평균과 분산이 잘 동작하도록 만듭시다.
 
 $$
 Y^{(n)} = \frac{X^{(n)} - \mu_{X^{(n)}}}{\sigma_{X^{(n)}}}.
 $$
 
-This can be seen to have mean zero and variance one, and so it is plausible to believe that it will converge to some limiting distribution.  If we plot what these distributions look like, we will become even more convinced that it will work.
+이는 평균 0과 분산 1을 가지는 것으로 볼 수 있으며, 따라서 어떤 극한 분포로 수렴할 것이라고 믿는 것이 그럴듯합니다. 만약 이 분포들이 어떻게 보이는지 플롯하면, 저희는 그것이 작동할 것이라고 더욱 확신하게 될 것입니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -629,20 +629,20 @@ for i in range(4):
 d2l.plt.show()
 ```
 
-One thing to note: compared to the Poisson case, we are now dividing by the standard deviation which means that we are squeezing the possible outcomes into smaller and smaller areas.  This is an indication that our limit will no longer be discrete, but rather continuous.
+한 가지 주목할 점은, 푸아송의 경우와 비교하여, 저희는 이제 표준 편차로 나누고 있는데, 이는 저희가 가능한 결과를 점점 더 작은 영역으로 쥐어짜고 있음을 의미합니다. 이는 저희의 극한이 더 이상 이산이 아니라 오히려 연속이 될 것이라는 표시입니다.
 
-A derivation of what occurs is beyond the scope of this document, but the *central limit theorem* states that as $n \rightarrow \infty$, this will yield the Gaussian Distribution (or sometimes normal distribution).  More explicitly, for any $a, b$:
+발생하는 것의 유도는 이 문서의 범위를 벗어나지만, *중심 극한 정리*는 $n \rightarrow \infty$일 때 이것이 가우시안 분포(또는 때때로 정규 분포)를 산출할 것이라고 진술합니다. 더 명시적으로, 어떤 $a, b$에 대해서도:
 
 $$
 \lim_{n \rightarrow \infty} P(Y^{(n)} \in [a, b]) = P(\mathcal{N}(0,1) \in [a, b]),
 $$
 
-where we say a random variable is normally distributed with given mean $\mu$ and variance $\sigma^2$, written $X \sim \mathcal{N}(\mu, \sigma^2)$ if $X$ has density
+여기서 저희는 확률 변수가 다음 밀도를 가진다면 주어진 평균 $\mu$와 분산 $\sigma^2$로 정규 분포되어 있다고 말하며, $X \sim \mathcal{N}(\mu, \sigma^2)$로 작성됩니다.
 
 $$p_X(x) = \frac{1}{\sqrt{2\pi\sigma^2}}e^{-\frac{(x-\mu)^2}{2\sigma^2}}.$$
 :eqlabel:`eq_gaussian_pdf`
 
-Let's first plot the probability density function :eqref:`eq_gaussian_pdf`.
+먼저 확률 밀도 함수 :eqref:`eq_gaussian_pdf`를 플롯해 봅시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -676,7 +676,7 @@ p = 1 / tf.sqrt(2 * tf.pi * sigma**2) * tf.exp(
 d2l.plot(x, p, 'x', 'p.d.f.')
 ```
 
-Now, let's plot the cumulative distribution function.  It is beyond the scope of this appendix, but the Gaussian c.d.f. does not have a closed-form formula in terms of more elementary functions.  We will use `erf` which provides a way to compute this integral numerically.
+이제, 누적 분포 함수를 플롯해 봅시다. 이는 이 부록의 범위를 벗어나지만, 가우시안 c.d.f.는 더 기본적인 함수로 닫힌 형식 공식을 가지지 않습니다. 저희는 이 적분을 수치적으로 계산하는 방법을 제공하는 `erf`를 사용할 것입니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -702,32 +702,32 @@ def phi(x):
 d2l.plot(x, [phi(y) for y in x.numpy().tolist()], 'x', 'c.d.f.')
 ```
 
-Keen-eyed readers will recognize some of these terms.  Indeed, we encountered this integral in :numref:`sec_integral_calculus`.  Indeed we need exactly that computation to see that this $p_X(x)$ has total area one and is thus a valid density.
+날카로운 눈을 가진 독자들은 이러한 항 중 일부를 인식할 것입니다. 사실, 저희는 :numref:`sec_integral_calculus`에서 이 적분을 만났습니다. 사실 저희는 이 $p_X(x)$가 총 면적 1을 가지고 따라서 유효한 밀도임을 보기 위해 정확히 그 계산이 필요합니다.
 
-Our choice of working with coin flips made computations shorter, but nothing about that choice was fundamental.  Indeed, if we take any collection of independent identically distributed random variables $X_i$, and form
+저희가 동전 던지기로 작업하기로 선택한 것은 계산을 더 짧게 만들었지만, 그 선택에 대해 근본적인 것은 아무것도 없었습니다. 사실, 어떤 독립적이고 동일하게 분포된 확률 변수 $X_i$의 어떤 모음이든 취하여, 다음을 형성한다면
 
 $$
 X^{(N)} = \sum_{i=1}^N X_i.
 $$
 
-Then
+그러면
 
 $$
 \frac{X^{(N)} - \mu_{X^{(N)}}}{\sigma_{X^{(N)}}}
 $$
 
-will be approximately Gaussian.  There are additional requirements needed to make it work, most commonly $E[X^4] < \infty$, but the philosophy is clear.
+는 대략 가우시안일 것입니다. 그것이 작동하도록 만들기 위해 필요한 추가 요건이 있으며, 가장 일반적으로 $E[X^4] < \infty$이지만, 철학은 분명합니다.
 
-The central limit theorem is the reason why the Gaussian is fundamental to probability, statistics, and machine learning.  Whenever we can say that something we measured is a sum of many small independent contributions, we can assume that the thing being measured will be close to Gaussian.  
+중심 극한 정리는 가우시안이 확률, 통계, 그리고 머신러닝의 기본인 이유입니다. 저희가 측정한 것이 많은 작은 독립 기여의 합이라고 말할 수 있을 때마다, 저희는 측정되는 것이 가우시안에 가까울 것이라고 가정할 수 있습니다.
 
-There are many more fascinating properties of Gaussians, and we would like to discuss one more here.  The Gaussian is what is known as a *maximum entropy distribution*.  We will get into entropy more deeply in :numref:`sec_information_theory`, however all we need to know at this point is that it is a measure of randomness.  In a rigorous mathematical sense, we can think of the Gaussian as the *most* random choice of random variable with fixed mean and variance.  Thus, if we know that our random variable has some mean and variance, the Gaussian is in a sense the most conservative choice of distribution we can make.
+가우시안에는 훨씬 더 매혹적인 속성이 많이 있으며, 저희는 여기서 하나 더 논의하고 싶습니다. 가우시안은 *최대 엔트로피 분포*로 알려진 것입니다. 저희는 :numref:`sec_information_theory`에서 엔트로피에 대해 더 깊이 들어갈 것이지만, 이 시점에서 알아야 할 모든 것은 그것이 무작위성의 측정값이라는 것입니다. 엄격한 수학적 의미에서, 저희는 가우시안을 고정된 평균과 분산을 가진 확률 변수의 *가장* 무작위적인 선택으로 생각할 수 있습니다. 따라서, 만약 저희의 확률 변수가 어떤 평균과 분산을 가진다는 것을 안다면, 가우시안은 어떤 의미에서 저희가 할 수 있는 분포의 가장 보수적인 선택입니다.
 
-To close the section, let's recall that if $X \sim \mathcal{N}(\mu, \sigma^2)$, then:
+이 절을 마치기 위해, $X \sim \mathcal{N}(\mu, \sigma^2)$이면 다음을 떠올립시다.
 
 * $\mu_X = \mu$,
 * $\sigma_X^2 = \sigma^2$.
 
-We can sample from the Gaussian (or standard normal) distribution as shown below.
+저희는 아래와 같이 가우시안(또는 표준 정규) 분포에서 샘플링할 수 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -744,44 +744,26 @@ torch.normal(mu, sigma, size=(10, 10))
 tf.random.normal((10, 10), mu, sigma)
 ```
 
-## Exponential Family
+## 지수족
 :label:`subsec_exponential_family`
 
-One shared property for all the distributions listed above is that they all 
-belong to which is known as the *exponential family*. The exponential family 
-is a set of distributions whose density can be expressed in the following 
-form:
+위에 나열된 모든 분포의 한 가지 공통 속성은 그들 모두가 *지수족*으로 알려진 것에 속한다는 것입니다. 지수족은 밀도가 다음 형태로 표현될 수 있는 분포의 집합입니다.
 
 $$p(\mathbf{x} \mid \boldsymbol{\eta}) = h(\mathbf{x}) \cdot \exp \left( \boldsymbol{\eta}^{\top} \cdot T(\mathbf{x}) - A(\boldsymbol{\eta}) \right)$$
 :eqlabel:`eq_exp_pdf`
 
-As this definition can be a little subtle, let's examine it closely.  
+이 정의가 약간 미묘할 수 있으므로, 자세히 검토해 봅시다.
 
-First, $h(\mathbf{x})$ is known as the *underlying measure* or the 
-*base measure*.  This can be viewed as an original choice of measure we are 
-modifying with our exponential weight.  
+첫째, $h(\mathbf{x})$는 *기저 측도* 또는 *기본 측도*로 알려져 있습니다. 이는 저희가 지수 가중치로 수정하고 있는 측도의 원래 선택으로 볼 수 있습니다.
 
-Second, we have the vector $\boldsymbol{\eta} = (\eta_1, \eta_2, ..., \eta_l) \in
-\mathbb{R}^l$ called the *natural parameters* or *canonical parameters*.  These
-define how the base measure will be modified.  The natural parameters enter 
-into the new measure by taking the dot product of these parameters against 
-some function $T(\cdot)$ of $\mathbf{x}= (x_1, x_2, ..., x_n) \in
-\mathbb{R}^n$ and exponentiated. The vector $T(\mathbf{x})= (T_1(\mathbf{x}),
-T_2(\mathbf{x}), ..., T_l(\mathbf{x}))$ 
-is called the *sufficient statistics* for $\boldsymbol{\eta}$. This name is used since the 
-information represented by $T(\mathbf{x})$ is sufficient to calculate the 
-probability density and no other information from the sample $\mathbf{x}$'s 
-are required.
+둘째, *자연 매개변수* 또는 *정준 매개변수*라고 불리는 벡터 $\boldsymbol{\eta} = (\eta_1, \eta_2, ..., \eta_l) \in \mathbb{R}^l$가 있습니다. 이는 기본 측도가 어떻게 수정될지를 정의합니다. 자연 매개변수는 $\mathbf{x}= (x_1, x_2, ..., x_n) \in \mathbb{R}^n$의 어떤 함수 $T(\cdot)$에 대한 이러한 매개변수의 내적을 취하고 지수화함으로써 새로운 측도에 들어갑니다. 벡터 $T(\mathbf{x})= (T_1(\mathbf{x}), T_2(\mathbf{x}), ..., T_l(\mathbf{x}))$는 $\boldsymbol{\eta}$에 대한 *충분 통계*라고 불립니다. 이 이름은 $T(\mathbf{x})$로 나타낸 정보가 확률 밀도를 계산하기에 충분하고 샘플 $\mathbf{x}$로부터의 다른 어떤 정보도 필요하지 않기 때문에 사용됩니다.
 
-Third, we have $A(\boldsymbol{\eta})$, which is referred to as the *cumulant 
-function*, which ensures that the above distribution :eqref:`eq_exp_pdf` 
-integrates to one, i.e.,
+셋째, *큐물런트 함수*라고 불리는 $A(\boldsymbol{\eta})$가 있는데, 이는 위 분포 :eqref:`eq_exp_pdf`가 1로 적분되도록 보장합니다. 즉,
 
 $$A(\boldsymbol{\eta})  = \log \left[\int h(\mathbf{x}) \cdot \exp
 \left(\boldsymbol{\eta}^{\top} \cdot T(\mathbf{x}) \right) d\mathbf{x} \right].$$
 
-To be concrete, let's consider the Gaussian. Assuming that $\mathbf{x}$ is 
-an univariate variable, we saw that it had a density of
+구체적으로, 가우시안을 고려해 봅시다. $\mathbf{x}$가 단변량 변수라고 가정하면, 저희는 그것이 다음의 밀도를 가짐을 보았습니다.
 
 $$
 \begin{aligned}
@@ -793,40 +775,35 @@ p(x \mid \mu, \sigma) &= \frac{1}{\sqrt{2 \pi \sigma^2}} \cdot \exp
 \end{aligned}
 $$
 
-This matches the definition of the exponential family with:
+이는 다음과 함께 지수족의 정의와 일치합니다.
 
-* *underlying measure*: $h(x) = \frac{1}{\sqrt{2 \pi}}$,
-* *natural parameters*: $\boldsymbol{\eta} = \begin{bmatrix} \eta_1 \\ \eta_2
+* *기저 측도*: $h(x) = \frac{1}{\sqrt{2 \pi}}$,
+* *자연 매개변수*: $\boldsymbol{\eta} = \begin{bmatrix} \eta_1 \\ \eta_2
 \end{bmatrix} = \begin{bmatrix} \frac{\mu}{\sigma^2} \\
 \frac{1}{2 \sigma^2} \end{bmatrix}$,
-* *sufficient statistics*: $T(x) = \begin{bmatrix}x\\-x^2\end{bmatrix}$, and
-* *cumulant function*: $A({\boldsymbol\eta}) = \frac{1}{2 \sigma^2} \mu^2 + \log(\sigma)
+* *충분 통계*: $T(x) = \begin{bmatrix}x\\-x^2\end{bmatrix}$, 그리고
+* *큐물런트 함수*: $A({\boldsymbol\eta}) = \frac{1}{2 \sigma^2} \mu^2 + \log(\sigma)
 = \frac{\eta_1^2}{4 \eta_2} - \frac{1}{2}\log(2 \eta_2)$.
 
-It is worth noting that the exact choice of each of above terms is somewhat 
-arbitrary.  Indeed, the important feature is that the distribution can be 
-expressed in this form, not the exact form itself.
+위 항 각각의 정확한 선택은 다소 임의적이라는 점에 주목할 가치가 있습니다. 사실, 중요한 특징은 분포가 정확한 형태 자체가 아니라 이 형태로 표현될 수 있다는 것입니다.
 
-As we allude to in :numref:`subsec_softmax_and_derivatives`, a widely used 
-technique is to assume that the  final output $\mathbf{y}$ follows an 
-exponential family distribution. The exponential family is a common and 
-powerful family of distributions encountered frequently in machine learning.
+:numref:`subsec_softmax_and_derivatives`에서 암시한 것처럼, 널리 사용되는 기법은 최종 출력 $\mathbf{y}$가 지수족 분포를 따른다고 가정하는 것입니다. 지수족은 머신러닝에서 자주 마주치는 일반적이고 강력한 분포 가족입니다.
 
 
-## Summary
-* Bernoulli random variables can be used to model events with a yes/no outcome.
-* Discrete uniform distributions model selects from a finite set of possibilities.
-* Continuous uniform distributions select from an interval.
-* Binomial distributions model a series of Bernoulli random variables, and count the number of successes.
-* Poisson random variables model the arrival of rare events.
-* Gaussian random variables model the result of adding a large number of independent random variables together.
-* All the above distributions belong to exponential family.
+## 요약
+* 베르누이 확률 변수는 예/아니오 결과를 가진 사건을 모델링하는 데 사용될 수 있습니다.
+* 이산 균등 분포는 유한한 가능성 집합에서의 선택을 모델링합니다.
+* 연속 균등 분포는 구간에서 선택합니다.
+* 이항 분포는 일련의 베르누이 확률 변수를 모델링하고, 성공의 수를 셉니다.
+* 푸아송 확률 변수는 희귀 사건의 도착을 모델링합니다.
+* 가우시안 확률 변수는 많은 수의 독립 확률 변수를 함께 더한 결과를 모델링합니다.
+* 위의 모든 분포는 지수족에 속합니다.
 
-## Exercises
+## 연습문제
 
-1. What is the standard deviation of a random variable that is the difference $X-Y$ of two independent binomial random variables $X, Y \sim \textrm{Binomial}(16, 1/2)$.
-2. If we take a Poisson random variable $X \sim \textrm{Poisson}(\lambda)$ and consider $(X - \lambda)/\sqrt{\lambda}$ as $\lambda \rightarrow \infty$, we can show that this becomes approximately Gaussian.  Why does this make sense?
-3. What is the probability mass function for a sum of two discrete uniform random variables on $n$ elements?
+1. 두 독립 이항 확률 변수 $X, Y \sim \textrm{Binomial}(16, 1/2)$의 차이 $X-Y$인 확률 변수의 표준 편차는 무엇입니까?
+2. 만약 푸아송 확률 변수 $X \sim \textrm{Poisson}(\lambda)$를 취하고 $\lambda \rightarrow \infty$일 때 $(X - \lambda)/\sqrt{\lambda}$를 고려하면, 이것이 대략 가우시안이 됨을 보일 수 있습니다. 이것이 왜 의미가 있습니까?
+3. $n$ 원소에 대한 두 이산 균등 확률 변수의 합에 대한 확률 질량 함수는 무엇입니까?
 
 
 :begin_tab:`mxnet`

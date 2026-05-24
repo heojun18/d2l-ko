@@ -3,20 +3,20 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# The Image Classification Dataset
+# 이미지 분류 데이터셋
 :label:`sec_fashion_mnist`
 
-(~~The MNIST dataset is one of the widely used dataset for image classification, while it is too simple as a benchmark dataset. We will use the similar, but more complex Fashion-MNIST dataset ~~)
+(~~MNIST 데이터셋은 이미지 분류에 널리 사용되는 데이터셋 중 하나이지만, 벤치마크 데이터셋으로는 너무 단순합니다. 저희는 이와 비슷하지만 더 복잡한 Fashion-MNIST 데이터셋을 사용할 것입니다 ~~)
 
-One widely used dataset for image classification is the  [MNIST dataset](https://en.wikipedia.org/wiki/MNIST_database) :cite:`LeCun.Bottou.Bengio.ea.1998` of handwritten digits. At the time of its release in the 1990s it posed a formidable challenge to most machine learning algorithms, consisting of 60,000 images of $28 \times 28$ pixels resolution (plus a test dataset of 10,000 images). To put things into perspective, back in 1995, a Sun SPARCStation 5 with a whopping 64MB of RAM and a blistering 5 MFLOPs was considered state of the art equipment for machine learning at AT&T Bell Laboratories. Achieving high accuracy on digit recognition was a key component in automating letter sorting for the USPS in the 1990s. Deep networks such as LeNet-5 :cite:`LeCun.Jackel.Bottou.ea.1995`, support vector machines with invariances :cite:`Scholkopf.Burges.Vapnik.1996`, and tangent distance classifiers :cite:`Simard.LeCun.Denker.ea.1998` all could reach error rates below 1%. 
+이미지 분류에 널리 사용되는 데이터셋 중 하나는 손글씨 숫자로 이루어진 [MNIST 데이터셋](https://en.wikipedia.org/wiki/MNIST_database) :cite:`LeCun.Bottou.Bengio.ea.1998`입니다. 1990년대 출시 당시 이 데이터셋은 $28 \times 28$ 픽셀 해상도의 60,000개 이미지(추가로 10,000개의 테스트 이미지)로 구성되어 있어 대부분의 머신러닝 알고리즘에 만만치 않은 도전 과제였습니다. 그 시대를 가늠해 보면, 1995년 당시 무려 64MB의 RAM과 눈부신 5 MFLOPs를 자랑하는 Sun SPARCStation 5는 AT&T 벨 연구소에서 머신러닝을 위한 최첨단 장비로 여겨졌습니다. 숫자 인식에서 높은 정확도를 달성하는 것은 1990년대 USPS의 우편 분류 자동화의 핵심 구성 요소였습니다. LeNet-5 :cite:`LeCun.Jackel.Bottou.ea.1995`와 같은 심층 신경망, 불변성을 가진 서포트 벡터 머신 :cite:`Scholkopf.Burges.Vapnik.1996`, 그리고 탄젠트 거리 분류기 :cite:`Simard.LeCun.Denker.ea.1998` 모두 1% 미만의 오류율에 도달할 수 있었습니다.
 
-For over a decade, MNIST served as *the* point of reference for comparing machine learning algorithms. 
-While it had a good run as a benchmark dataset,
-even simple models by today's standards achieve classification accuracy over 95%,
-making it unsuitable for distinguishing between strong models and weaker ones. Even more, the dataset allows for *very* high levels of accuracy, not typically seen in many classification problems. This skewed algorithmic development towards specific families of algorithms that can take advantage of clean datasets, such as active set methods and boundary-seeking active set algorithms.
-Today, MNIST serves as more of a sanity check than as a benchmark. ImageNet :cite:`Deng.Dong.Socher.ea.2009` poses a much 
-more relevant challenge. Unfortunately, ImageNet is too large for many of the examples and illustrations in this book, as it would take too long to train to make the examples interactive. As a substitute we will focus our discussion in the coming sections on the qualitatively similar, but much smaller Fashion-MNIST
-dataset :cite:`Xiao.Rasul.Vollgraf.2017` which was released in 2017. It contains images of 10 categories of clothing at $28 \times 28$ pixels resolution.
+10년이 넘는 기간 동안 MNIST는 머신러닝 알고리즘을 비교하기 위한 *기준점*의 역할을 했습니다.
+벤치마크 데이터셋으로 좋은 시절을 보냈지만,
+오늘날 기준으로 보면 간단한 모델조차도 95%가 넘는 분류 정확도를 달성하여,
+강한 모델과 약한 모델을 구별하기에는 부적합해졌습니다. 더 나아가, 이 데이터셋은 *매우* 높은 수준의 정확도를 허용하는데, 이는 많은 분류 문제에서 일반적으로 볼 수 없는 수준입니다. 이는 알고리즘 개발이 깨끗한 데이터셋의 장점을 활용할 수 있는 특정 계열의 알고리즘(예: 능동 집합 방법, 경계 탐색 능동 집합 알고리즘 등)으로 편향되도록 만들었습니다.
+오늘날 MNIST는 벤치마크라기보다 새너티 체크(sanity check)의 역할을 합니다. ImageNet :cite:`Deng.Dong.Socher.ea.2009`은 훨씬 더
+관련성 있는 도전 과제를 제시합니다. 안타깝게도 ImageNet은 이 책의 많은 예제와 그림에 사용하기에는 너무 크기 때문에, 예제를 인터랙티브하게 만들기 위해 학습하는 데 시간이 너무 오래 걸립니다. 대안으로 저희는 다가오는 절들에서 질적으로 유사하지만 훨씬 더 작은 Fashion-MNIST
+데이터셋 :cite:`Xiao.Rasul.Vollgraf.2017`에 초점을 맞춰 논의를 진행할 것입니다. 이 데이터셋은 2017년에 출시되었고, $28 \times 28$ 픽셀 해상도의 10개 의류 범주 이미지로 구성되어 있습니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -66,9 +66,9 @@ import tensorflow_datasets as tfds
 d2l.use_svg_display()
 ```
 
-## Loading the Dataset
+## 데이터셋 로드
 
-Since the Fashion-MNIST dataset is so useful, all major frameworks provide preprocessed versions of it. We can  [**download and read it into memory using built-in framework utilities.**]
+Fashion-MNIST 데이터셋이 매우 유용하기 때문에 모든 주요 프레임워크는 전처리된 버전을 제공합니다. 저희는 [**프레임워크 내장 유틸리티를 사용해 다운로드하고 메모리로 읽어들일 수 있습니다.**]
 
 ```{.python .input}
 %%tab mxnet
@@ -110,11 +110,11 @@ class FashionMNIST(d2l.DataModule):  #@save
         self.train, self.val = tf.keras.datasets.fashion_mnist.load_data()
 ```
 
-Fashion-MNIST consists of images from 10 categories, each represented
-by 6000 images in the training dataset and by 1000 in the test dataset.
-A *test dataset* is used for evaluating model performance (it must not be used for training).
-Consequently the training set and the test set
-contain 60,000 and 10,000 images, respectively.
+Fashion-MNIST는 10개 범주의 이미지로 구성되어 있으며, 각 범주는
+학습 데이터셋에서 6000개의 이미지로, 테스트 데이터셋에서 1000개의 이미지로 표현됩니다.
+*테스트 데이터셋(test dataset)*은 모델 성능을 평가하는 데 사용됩니다(학습에 사용되어서는 안 됩니다).
+따라서 학습 셋과 테스트 셋은 각각
+60,000개와 10,000개의 이미지를 포함합니다.
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -128,18 +128,18 @@ data = FashionMNIST(resize=(32, 32))
 len(data.train[0]), len(data.val[0])
 ```
 
-The images are grayscale and upscaled to $32 \times 32$ pixels in resolution above. This is similar to the original MNIST dataset which consisted of (binary) black and white images. Note, though, that most modern image data has three channels (red, green, blue) and that hyperspectral images can have in excess of 100 channels (the HyMap sensor has 126 channels).
-By convention we store an image as a $c \times h \times w$ tensor, where $c$ is the number of color channels, $h$ is the height and $w$ is the width.
+이미지들은 그레이스케일이며 위에서 $32 \times 32$ 픽셀 해상도로 업스케일되었습니다. 이는 (이진) 흑백 이미지로 구성되었던 원래의 MNIST 데이터셋과 유사합니다. 다만 대부분의 현대 이미지 데이터는 세 채널(빨강, 초록, 파랑)을 가지며, 초분광 이미지는 100개를 초과하는 채널을 가질 수 있다는 점에 유의하시기 바랍니다(HyMap 센서는 126개의 채널을 가집니다).
+관례적으로 저희는 이미지를 $c \times h \times w$ 텐서로 저장합니다. 여기서 $c$는 컬러 채널의 수, $h$는 높이, $w$는 너비입니다.
 
 ```{.python .input}
 %%tab all
 data.train[0][0].shape
 ```
 
-[~~Two utility functions to visualize the dataset~~]
+[~~데이터셋을 시각화하기 위한 두 가지 유틸리티 함수~~]
 
-The categories of Fashion-MNIST have human-understandable names. 
-The following convenience method converts between numeric labels and their names.
+Fashion-MNIST의 범주는 사람이 이해할 수 있는 이름을 가집니다.
+다음 편의 메서드는 숫자 레이블과 그 이름 사이를 변환합니다.
 
 ```{.python .input}
 %%tab all
@@ -151,13 +151,13 @@ def text_labels(self, indices):
     return [labels[int(i)] for i in indices]
 ```
 
-## Reading a Minibatch
+## 미니배치 읽기
 
-To make our life easier when reading from the training and test sets,
-we use the built-in data iterator rather than creating one from scratch.
-Recall that at each iteration, a data iterator
-[**reads a minibatch of data with size `batch_size`.**]
-We also randomly shuffle the examples for the training data iterator.
+학습 셋과 테스트 셋에서 읽어 들이는 작업을 더 쉽게 하기 위해,
+처음부터 만들기보다는 내장된 데이터 이터레이터를 사용합니다.
+각 반복에서, 데이터 이터레이터가
+[**`batch_size` 크기의 미니배치 데이터를 읽는다는 점을**] 떠올려 보시기 바랍니다.
+또한 학습 데이터 이터레이터에 대해서는 예제들을 무작위로 셔플합니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -195,7 +195,7 @@ def get_dataloader(self, train):
                 self.batch_size).map(resize_fn).shuffle(shuffle_buf))
 ```
 
-To see how this works, let's load a minibatch of images by invoking the `train_dataloader` method. It contains 64 images.
+이것이 어떻게 동작하는지 보기 위해, `train_dataloader` 메서드를 호출하여 이미지 미니배치를 로드해 봅시다. 여기에는 64개의 이미지가 포함됩니다.
 
 ```{.python .input}
 %%tab all
@@ -203,7 +203,7 @@ X, y = next(iter(data.train_dataloader()))
 print(X.shape, X.dtype, y.shape, y.dtype)
 ```
 
-Let's look at the time it takes to read the images. Even though it is a built-in loader, it is not blazingly fast. Nonetheless, this is sufficient since processing images with a deep network takes quite a bit longer. Hence it is good enough that training a network will not be I/O constrained.
+이미지를 읽어 들이는 데 걸리는 시간을 살펴봅시다. 내장 로더임에도 불구하고 눈부시게 빠르지는 않습니다. 그럼에도 불구하고, 심층 신경망으로 이미지를 처리하는 데 훨씬 더 오랜 시간이 걸리기 때문에 이것으로 충분합니다. 따라서 신경망 학습이 I/O에 의해 제약을 받지 않을 정도로 충분히 좋은 수준입니다.
 
 ```{.python .input}
 %%tab all
@@ -213,11 +213,10 @@ for X, y in data.train_dataloader():
 f'{time.time() - tic:.2f} sec'
 ```
 
-## Visualization
+## 시각화
 
-We will often be using the Fashion-MNIST dataset. A convenience function `show_images` can be used to visualize the images and the associated labels. 
-Skipping implementation details, we just show the interface below: we only need to know how to invoke `d2l.show_images` rather than how it works
-for such utility functions.
+저희는 Fashion-MNIST 데이터셋을 자주 사용하게 될 것입니다. 편의 함수 `show_images`를 사용하면 이미지와 관련 레이블을 시각화할 수 있습니다.
+구현 세부 사항은 건너뛰고, 아래에 인터페이스만 보여드립니다. 이러한 유틸리티 함수의 경우 어떻게 작동하는지보다는 `d2l.show_images`를 어떻게 호출하는지만 알면 됩니다.
 
 ```{.python .input}
 %%tab all
@@ -226,9 +225,9 @@ def show_images(imgs, num_rows, num_cols, titles=None, scale=1.5):  #@save
     raise NotImplementedError
 ```
 
-Let's put it to good use. In general, it is a good idea to visualize and inspect data that you are training on. 
-Humans are very good at spotting oddities and because of that, visualization serves as an additional safeguard against mistakes and errors in the design of experiments. Here are [**the images and their corresponding labels**] (in text)
-for the first few examples in the training dataset.
+이 함수를 유용하게 활용해 봅시다. 일반적으로 학습에 사용하는 데이터를 시각화하고 검사하는 것은 좋은 습관입니다.
+사람은 이상한 점을 발견하는 데 매우 능숙하기 때문에, 시각화는 실험 설계에서 발생하는 실수와 오류에 대한 추가적인 안전장치 역할을 합니다. 여기에 학습 데이터셋의 처음 몇 개 예제에 대한
+[**이미지와 그에 대응하는 (텍스트로 된) 레이블**]이 있습니다.
 
 ```{.python .input}
 %%tab all
@@ -248,33 +247,33 @@ batch = next(iter(data.val_dataloader()))
 data.visualize(batch)
 ```
 
-We are now ready to work with the Fashion-MNIST dataset in the sections that follow.
+이제 저희는 다음 절들에서 Fashion-MNIST 데이터셋을 다룰 준비가 되었습니다.
 
-## Summary
+## 요약
 
-We now have a slightly more realistic dataset to use for classification. Fashion-MNIST is an apparel classification dataset consisting of images representing 10 categories. We will use this dataset in subsequent sections and chapters to evaluate various network designs, from a simple linear model to advanced residual networks. As we commonly do with images, we read them as a tensor of shape (batch size, number of channels, height, width). For now, we only have one channel as the images are grayscale (the visualization above uses a false color palette for improved visibility). 
+이제 저희는 분류에 사용할 약간 더 현실적인 데이터셋을 가지게 되었습니다. Fashion-MNIST는 10개 범주를 나타내는 이미지로 구성된 의류 분류 데이터셋입니다. 저희는 이 데이터셋을 다음 절들과 챕터들에서 단순한 선형 모델부터 고급 잔차 신경망에 이르기까지 다양한 신경망 설계를 평가하는 데 사용할 것입니다. 이미지를 다룰 때 흔히 그러하듯, 저희는 이미지를 (배치 크기, 채널 수, 높이, 너비) 형태의 텐서로 읽어들입니다. 현재로서는 이미지가 그레이스케일이므로 채널이 하나뿐입니다(위의 시각화는 가시성을 높이기 위해 가짜 컬러 팔레트를 사용합니다).
 
-Lastly, data iterators are a key component for efficient performance. For instance, we might use GPUs for efficient image decompression, video transcoding, or other preprocessing. Whenever possible, you should rely on well-implemented data iterators that exploit high-performance computing to avoid slowing down your training loop.
+마지막으로, 데이터 이터레이터는 효율적인 성능을 위한 핵심 구성 요소입니다. 예를 들어, 효율적인 이미지 디컴프레션, 비디오 트랜스코딩 또는 기타 전처리를 위해 GPU를 사용할 수도 있습니다. 가능한 한 학습 루프의 속도가 저하되는 것을 막기 위해 고성능 컴퓨팅을 활용하는 잘 구현된 데이터 이터레이터에 의존해야 합니다.
 
 
-## Exercises
+## 연습문제
 
-1. Does reducing the `batch_size` (for instance, to 1) affect the reading performance?
-1. The data iterator performance is important. Do you think the current implementation is fast enough? Explore various options to improve it. Use a system profiler to find out where the bottlenecks are.
-1. Check out the framework's online API documentation. Which other datasets are available?
+1. `batch_size`를 줄이면(예: 1로) 읽기 성능에 영향이 있나요?
+1. 데이터 이터레이터 성능은 중요합니다. 현재 구현이 충분히 빠르다고 생각하나요? 이를 개선할 다양한 옵션을 탐구해 보시기 바랍니다. 시스템 프로파일러를 사용하여 병목이 어디에 있는지 찾아보시기 바랍니다.
+1. 프레임워크의 온라인 API 문서를 확인해 보시기 바랍니다. 어떤 다른 데이터셋들이 사용 가능한가요?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/48)
+[토론](https://discuss.d2l.ai/t/48)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/49)
+[토론](https://discuss.d2l.ai/t/49)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/224)
+[토론](https://discuss.d2l.ai/t/224)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17980)
+[토론](https://discuss.d2l.ai/t/17980)
 :end_tab:

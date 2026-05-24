@@ -1,35 +1,35 @@
-# Gradient Descent
+# 경사 하강법(Gradient Descent)
 :label:`sec_gd`
 
-In this section we are going to introduce the basic concepts underlying *gradient descent*.
-Although it is rarely used directly in deep learning, an understanding of gradient descent is key to understanding stochastic gradient descent algorithms.
-For instance, the optimization problem might diverge due to an overly large learning rate. This phenomenon can already be seen in gradient descent. Likewise, preconditioning is a common technique in gradient descent and carries over to more advanced algorithms.
-Let's start with a simple special case.
+이 절에서는 *경사 하강법*의 기본 개념을 소개합니다.
+딥러닝에서 직접 사용되는 경우는 드물지만, 경사 하강법을 이해하는 것은 확률적 경사 하강법 알고리즘을 이해하는 데 핵심적입니다.
+예를 들어, 학습률이 지나치게 커서 최적화 문제가 발산할 수도 있습니다. 이 현상은 이미 경사 하강법에서 나타날 수 있습니다. 마찬가지로, 사전 조건화(preconditioning)는 경사 하강법에서 흔한 기법이며 더 발전된 알고리즘으로도 이어집니다.
+간단한 특수 사례부터 시작해 봅시다.
 
 
-## One-Dimensional Gradient Descent
+## 1차원 경사 하강법
 
-Gradient descent in one dimension is an excellent example to explain why the gradient descent algorithm may reduce the value of the objective function. Consider some continuously differentiable real-valued function $f: \mathbb{R} \rightarrow \mathbb{R}$. Using a Taylor expansion we obtain
+1차원에서의 경사 하강법은 경사 하강법 알고리즘이 왜 목적 함수의 값을 줄일 수 있는지 설명하는 훌륭한 예입니다. 어떤 연속 미분 가능한 실수값 함수 $f: \mathbb{R} \rightarrow \mathbb{R}$를 생각해 봅시다. 테일러 전개를 사용하면 다음을 얻습니다.
 
 $$f(x + \epsilon) = f(x) + \epsilon f'(x) + \mathcal{O}(\epsilon^2).$$
 :eqlabel:`gd-taylor`
 
-That is, in first-order approximation $f(x+\epsilon)$ is given by the function value $f(x)$ and the first derivative $f'(x)$ at $x$. It is not unreasonable to assume that for small $\epsilon$ moving in the direction of the negative gradient will decrease $f$. To keep things simple we pick a fixed step size $\eta > 0$ and choose $\epsilon = -\eta f'(x)$. Plugging this into the Taylor expansion above we get
+즉, 1차 근사로 $f(x+\epsilon)$는 $x$에서의 함수 값 $f(x)$와 1차 도함수 $f'(x)$로 주어집니다. 작은 $\epsilon$에 대해 음의 경사도 방향으로 이동하면 $f$가 감소할 것이라고 가정하는 것은 무리가 아닙니다. 단순하게 유지하기 위해 고정된 스텝 크기 $\eta > 0$를 고르고 $\epsilon = -\eta f'(x)$를 선택합니다. 이것을 위의 테일러 전개에 대입하면 다음을 얻습니다.
 
 $$f(x - \eta f'(x)) = f(x) - \eta f'^2(x) + \mathcal{O}(\eta^2 f'^2(x)).$$
 :eqlabel:`gd-taylor-2`
 
-If the derivative $f'(x) \neq 0$ does not vanish we make progress since $\eta f'^2(x)>0$. Moreover, we can always choose $\eta$ small enough for the higher-order terms to become irrelevant. Hence we arrive at
+도함수 $f'(x) \neq 0$이 사라지지 않으면 $\eta f'^2(x)>0$이므로 진전을 이루게 됩니다. 더욱이 고차항이 무의미해지도록 $\eta$를 항상 충분히 작게 선택할 수 있습니다. 따라서 저희는
 
 $$f(x - \eta f'(x)) \lessapprox f(x).$$
 
-This means that, if we use
+에 도달합니다. 이는 만약 저희가
 
 $$x \leftarrow x - \eta f'(x)$$
 
-to iterate $x$, the value of function $f(x)$ might decline. Therefore, in gradient descent we first choose an initial value $x$ and a constant $\eta > 0$ and then use them to continuously iterate $x$ until the stop condition is reached, for example, when the magnitude of the gradient $|f'(x)|$ is small enough or the number of iterations has reached a certain value.
+를 사용해 $x$를 반복하면, 함수 $f(x)$의 값이 감소할 수 있음을 의미합니다. 따라서 경사 하강법에서는 먼저 초기 값 $x$와 상수 $\eta > 0$를 선택한 다음, 정지 조건에 도달할 때까지 그것들을 사용해 $x$를 지속적으로 반복합니다. 예를 들어 경사도의 크기 $|f'(x)|$가 충분히 작아지거나 반복 횟수가 특정 값에 도달했을 때 그러합니다.
 
-For simplicity we choose the objective function $f(x)=x^2$ to illustrate how to implement gradient descent. Although we know that $x=0$ is the solution to minimize $f(x)$, we still use this simple function to observe how $x$ changes.
+단순성을 위해 경사 하강법을 어떻게 구현하는지 설명하기 위해 목적 함수 $f(x)=x^2$을 선택합니다. $x=0$이 $f(x)$를 최소화하는 해임을 알고 있지만, $x$가 어떻게 변하는지 관찰하기 위해 이 단순한 함수를 여전히 사용합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -64,7 +64,7 @@ def f_grad(x):  # Gradient (derivative) of the objective function
     return 2 * x
 ```
 
-Next, we use $x=10$ as the initial value and assume $\eta=0.2$. Using gradient descent to iterate $x$ for 10 times we can see that, eventually, the value of $x$ approaches the optimal solution.
+다음으로, $x=10$을 초기 값으로 사용하고 $\eta=0.2$로 가정합니다. 경사 하강법을 사용해 $x$를 10번 반복하면, 결국 $x$의 값이 최적해에 접근하는 것을 볼 수 있습니다.
 
 ```{.python .input}
 #@tab all
@@ -80,7 +80,7 @@ def gd(eta, f_grad):
 results = gd(0.2, f_grad)
 ```
 
-The progress of optimizing over $x$ can be plotted as follows.
+$x$를 최적화하는 과정은 다음과 같이 그릴 수 있습니다.
 
 ```{.python .input}
 #@tab all
@@ -94,26 +94,26 @@ def show_trace(results, f):
 show_trace(results, f)
 ```
 
-### Learning Rate
+### 학습률
 :label:`subsec_gd-learningrate`
 
-The learning rate $\eta$ can be set by the algorithm designer. If we use a learning rate that is too small, it will cause $x$ to update very slowly, requiring more iterations to get a better solution. To show what happens in such a case, consider the progress in the same optimization problem for $\eta = 0.05$. As we can see, even after 10 steps we are still very far from the optimal solution.
+학습률 $\eta$는 알고리즘 설계자가 설정할 수 있습니다. 너무 작은 학습률을 사용하면 $x$가 매우 느리게 업데이트되어 더 나은 해를 얻기 위해 더 많은 반복이 필요하게 됩니다. 이러한 경우 어떤 일이 일어나는지 보여주기 위해 $\eta = 0.05$에 대한 동일한 최적화 문제의 진전을 살펴봅시다. 보시다시피, 10번의 단계 이후에도 여전히 최적해에서 매우 멀리 떨어져 있습니다.
 
 ```{.python .input}
 #@tab all
 show_trace(gd(0.05, f_grad), f)
 ```
 
-Conversely, if we use an excessively high learning rate, $\left|\eta f'(x)\right|$ might be too large for the first-order Taylor expansion formula. That is, the term $\mathcal{O}(\eta^2 f'^2(x))$ in :eqref:`gd-taylor-2` might become significant. In this case, we cannot guarantee that the iteration of $x$ will be able to lower the value of $f(x)$. For example, when we set the learning rate to $\eta=1.1$, $x$ overshoots the optimal solution $x=0$ and gradually diverges.
+반대로, 지나치게 높은 학습률을 사용하면 $\left|\eta f'(x)\right|$가 1차 테일러 전개 공식에 너무 클 수 있습니다. 즉, :eqref:`gd-taylor-2`에서 $\mathcal{O}(\eta^2 f'^2(x))$ 항이 유의미해질 수 있습니다. 이 경우, $x$의 반복이 $f(x)$의 값을 낮출 수 있다는 것을 보장할 수 없습니다. 예를 들어, 학습률을 $\eta=1.1$로 설정하면 $x$는 최적해 $x=0$을 지나쳐 점차 발산합니다.
 
 ```{.python .input}
 #@tab all
 show_trace(gd(1.1, f_grad), f)
 ```
 
-### Local Minima
+### 지역 최솟값
 
-To illustrate what happens for nonconvex functions consider the case of $f(x) = x \cdot \cos(cx)$ for some constant $c$. This function has infinitely many local minima. Depending on our choice of the learning rate and depending on how well conditioned the problem is, we may end up with one of many solutions. The example below illustrates how an (unrealistically) high learning rate will lead to a poor local minimum.
+비볼록 함수의 경우 어떤 일이 일어나는지 설명하기 위해 어떤 상수 $c$에 대한 $f(x) = x \cdot \cos(cx)$의 경우를 생각해 봅시다. 이 함수는 무한히 많은 지역 최솟값을 가집니다. 저희가 선택한 학습률과 문제의 조건이 얼마나 좋은지에 따라, 많은 해들 중 하나로 귀결될 수 있습니다. 아래 예는 (비현실적으로) 높은 학습률이 어떻게 좋지 않은 지역 최솟값으로 이어지는지 보여줍니다.
 
 ```{.python .input}
 #@tab all
@@ -128,24 +128,24 @@ def f_grad(x):  # Gradient of the objective function
 show_trace(gd(2, f_grad), f)
 ```
 
-## Multivariate Gradient Descent
+## 다변량 경사 하강법
 
-Now that we have a better intuition of the univariate case, let's consider the situation where $\mathbf{x} = [x_1, x_2, \ldots, x_d]^\top$. That is, the objective function $f: \mathbb{R}^d \to \mathbb{R}$ maps vectors into scalars. Correspondingly its gradient is multivariate, too. It is a vector consisting of $d$ partial derivatives:
+이제 일변량 경우에 대한 더 나은 직관을 얻었으니, $\mathbf{x} = [x_1, x_2, \ldots, x_d]^\top$인 상황을 생각해 봅시다. 즉, 목적 함수 $f: \mathbb{R}^d \to \mathbb{R}$는 벡터를 스칼라로 매핑합니다. 그에 대응하여 그것의 경사도도 다변량입니다. 이는 $d$개의 편도함수로 구성된 벡터입니다.
 
 $$\nabla f(\mathbf{x}) = \bigg[\frac{\partial f(\mathbf{x})}{\partial x_1}, \frac{\partial f(\mathbf{x})}{\partial x_2}, \ldots, \frac{\partial f(\mathbf{x})}{\partial x_d}\bigg]^\top.$$
 
-Each partial derivative element $\partial f(\mathbf{x})/\partial x_i$ in the gradient indicates the rate of change of $f$ at $\mathbf{x}$ with respect to the input $x_i$. As before in the univariate case we can use the corresponding Taylor approximation for multivariate functions to get some idea of what we should do. In particular, we have that
+경사도의 각 편도함수 요소 $\partial f(\mathbf{x})/\partial x_i$는 입력 $x_i$에 대한 $\mathbf{x}$에서의 $f$의 변화율을 나타냅니다. 일변량 경우와 마찬가지로, 저희는 무엇을 해야 할지에 대한 아이디어를 얻기 위해 다변량 함수에 대한 대응되는 테일러 근사를 사용할 수 있습니다. 특히, 다음이 성립합니다.
 
 $$f(\mathbf{x} + \boldsymbol{\epsilon}) = f(\mathbf{x}) + \mathbf{\boldsymbol{\epsilon}}^\top \nabla f(\mathbf{x}) + \mathcal{O}(\|\boldsymbol{\epsilon}\|^2).$$
 :eqlabel:`gd-multi-taylor`
 
-In other words, up to second-order terms in $\boldsymbol{\epsilon}$ the direction of steepest descent is given by the negative gradient $-\nabla f(\mathbf{x})$. Choosing a suitable learning rate $\eta > 0$ yields the prototypical gradient descent algorithm:
+다시 말해, $\boldsymbol{\epsilon}$에 대한 2차 항까지 보면, 가장 가파른 하강 방향은 음의 경사도 $-\nabla f(\mathbf{x})$로 주어집니다. 적절한 학습률 $\eta > 0$를 선택하면 전형적인 경사 하강법 알고리즘이 나옵니다.
 
 $$\mathbf{x} \leftarrow \mathbf{x} - \eta \nabla f(\mathbf{x}).$$
 
-To see how the algorithm behaves in practice let's construct an objective function $f(\mathbf{x})=x_1^2+2x_2^2$ with a two-dimensional vector $\mathbf{x} = [x_1, x_2]^\top$ as input and a scalar as output. The gradient is given by $\nabla f(\mathbf{x}) = [2x_1, 4x_2]^\top$. We will observe the trajectory of $\mathbf{x}$ by gradient descent from the initial position $[-5, -2]$.
+이 알고리즘이 실제로 어떻게 동작하는지 보기 위해, 2차원 벡터 $\mathbf{x} = [x_1, x_2]^\top$를 입력으로 받고 스칼라를 출력하는 목적 함수 $f(\mathbf{x})=x_1^2+2x_2^2$를 만들어 봅시다. 경사도는 $\nabla f(\mathbf{x}) = [2x_1, 4x_2]^\top$로 주어집니다. 초기 위치 $[-5, -2]$에서 경사 하강법에 의한 $\mathbf{x}$의 궤적을 관찰할 것입니다.
 
-To begin with, we need two more helper functions. The first uses an update function and applies it 20 times to the initial value. The second helper visualizes the trajectory of $\mathbf{x}$.
+먼저, 두 개의 도우미 함수가 더 필요합니다. 첫 번째는 업데이트 함수를 사용하여 초기 값에 20번 적용합니다. 두 번째 도우미는 $\mathbf{x}$의 궤적을 시각화합니다.
 
 ```{.python .input}
 #@tab all
@@ -204,7 +204,7 @@ def show_trace_2d(f, results):  #@save
     d2l.plt.ylabel('x2')
 ```
 
-Next, we observe the trajectory of the optimization variable $\mathbf{x}$ for learning rate $\eta = 0.1$. We can see that after 20 steps the value of $\mathbf{x}$ approaches its minimum at $[0, 0]$. Progress is fairly well-behaved albeit rather slow.
+다음으로, 학습률 $\eta = 0.1$에 대해 최적화 변수 $\mathbf{x}$의 궤적을 관찰합니다. 20번의 단계 후 $\mathbf{x}$의 값이 $[0, 0]$의 최솟값에 접근하는 것을 볼 수 있습니다. 진전은 다소 느리지만 꽤 잘 동작합니다.
 
 ```{.python .input}
 #@tab all
@@ -222,37 +222,36 @@ eta = 0.1
 show_trace_2d(f_2d, train_2d(gd_2d, f_grad=f_2d_grad))
 ```
 
-## Adaptive Methods
+## 적응적 방법(Adaptive Methods)
 
-As we could see in :numref:`subsec_gd-learningrate`, getting the learning rate $\eta$ "just right" is tricky. If we pick it too small, we make little progress. If we pick it too large, the solution oscillates and in the worst case it might even diverge. What if we could determine $\eta$ automatically or get rid of having to select a learning rate at all?
-Second-order methods that look not only at the value and gradient of the objective function
-but also at its *curvature* can help in this case. While these methods cannot be applied to deep learning directly due to the computational cost, they provide useful intuition into how to design advanced optimization algorithms that mimic many of the desirable properties of the algorithms outlined below.
+:numref:`subsec_gd-learningrate`에서 보았듯이, 학습률 $\eta$를 "딱 맞게" 설정하는 것은 까다롭습니다. 너무 작게 선택하면 거의 진전이 없습니다. 너무 크게 선택하면 해가 진동하며 최악의 경우 발산할 수도 있습니다. $\eta$를 자동으로 결정하거나 학습률을 선택할 필요 자체를 없앨 수 있다면 어떨까요?
+목적 함수의 값과 경사도뿐 아니라 그것의 *곡률(curvature)*까지 살펴보는 2차 방법들이 이 경우 도움이 될 수 있습니다. 비록 이러한 방법들은 계산 비용 때문에 딥러닝에 직접 적용될 수는 없지만, 아래에 설명될 알고리즘들의 바람직한 특성을 많이 모방하는 발전된 최적화 알고리즘을 설계하는 방법에 대한 유용한 직관을 제공합니다.
 
 
-### Newton's Method
+### 뉴턴의 방법(Newton's Method)
 
-Reviewing the Taylor expansion of some function $f: \mathbb{R}^d \rightarrow \mathbb{R}$ there is no need to stop after the first term. In fact, we can write it as
+어떤 함수 $f: \mathbb{R}^d \rightarrow \mathbb{R}$의 테일러 전개를 살펴볼 때, 첫 번째 항 이후에 멈출 필요는 없습니다. 사실 다음과 같이 쓸 수 있습니다.
 
 $$f(\mathbf{x} + \boldsymbol{\epsilon}) = f(\mathbf{x}) + \boldsymbol{\epsilon}^\top \nabla f(\mathbf{x}) + \frac{1}{2} \boldsymbol{\epsilon}^\top \nabla^2 f(\mathbf{x}) \boldsymbol{\epsilon} + \mathcal{O}(\|\boldsymbol{\epsilon}\|^3).$$
 :eqlabel:`gd-hot-taylor`
 
-To avoid cumbersome notation we define $\mathbf{H} \stackrel{\textrm{def}}{=} \nabla^2 f(\mathbf{x})$ to be the Hessian of $f$, which is a $d \times d$ matrix. For small $d$ and simple problems $\mathbf{H}$ is easy to compute. For deep neural networks, on the other hand, $\mathbf{H}$ may be prohibitively large, due to the cost of storing $\mathcal{O}(d^2)$ entries. Furthermore it may be too expensive to compute via backpropagation. For now let's ignore such considerations and look at what algorithm we would get.
+번거로운 표기를 피하기 위해 $f$의 헤시안이라고 하는 $\mathbf{H} \stackrel{\textrm{def}}{=} \nabla^2 f(\mathbf{x})$를 정의하는데, 이는 $d \times d$ 행렬입니다. 작은 $d$와 단순한 문제에 대해서는 $\mathbf{H}$를 계산하기 쉽습니다. 반면 딥 뉴럴 네트워크의 경우, $\mathcal{O}(d^2)$ 항목을 저장하는 비용 때문에 $\mathbf{H}$가 지나치게 클 수 있습니다. 더욱이 역전파를 통해 계산하기에 너무 비쌀 수 있습니다. 지금은 그러한 고려 사항을 무시하고 어떤 알고리즘을 얻게 되는지 살펴봅시다.
 
-After all, the minimum of $f$ satisfies $\nabla f = 0$.
-Following calculus rules in :numref:`subsec_calculus-grad`,
-by taking derivatives of :eqref:`gd-hot-taylor` with regard to $\boldsymbol{\epsilon}$ and ignoring higher-order terms we arrive at
+결국, $f$의 최솟값은 $\nabla f = 0$를 만족합니다.
+:numref:`subsec_calculus-grad`의 미적분 규칙을 따라,
+:eqref:`gd-hot-taylor`을 $\boldsymbol{\epsilon}$에 대해 미분하고 고차 항을 무시하면 다음에 도달합니다.
 
 $$\nabla f(\mathbf{x}) + \mathbf{H} \boldsymbol{\epsilon} = 0 \textrm{ and hence }
 \boldsymbol{\epsilon} = -\mathbf{H}^{-1} \nabla f(\mathbf{x}).$$
 
-That is, we need to invert the Hessian $\mathbf{H}$ as part of the optimization problem.
+즉, 저희는 최적화 문제의 일부로 헤시안 $\mathbf{H}$를 역행렬화해야 합니다.
 
-As a simple example, for $f(x) = \frac{1}{2} x^2$ we have $\nabla f(x) = x$ and $\mathbf{H} = 1$. Hence for any $x$ we obtain $\epsilon = -x$. In other words, a *single* step is sufficient to converge perfectly without the need for any adjustment! Alas, we got a bit lucky here: the Taylor expansion was exact since $f(x+\epsilon)= \frac{1}{2} x^2 + \epsilon x + \frac{1}{2} \epsilon^2$.
+간단한 예로, $f(x) = \frac{1}{2} x^2$에 대해 $\nabla f(x) = x$이고 $\mathbf{H} = 1$입니다. 따라서 임의의 $x$에 대해 $\epsilon = -x$를 얻습니다. 다시 말해, 어떤 조정도 필요 없이 *단 한 번*의 단계로 완벽하게 수렴할 수 있습니다! 안타깝게도, 저희가 여기서 약간 운이 좋았습니다. $f(x+\epsilon)= \frac{1}{2} x^2 + \epsilon x + \frac{1}{2} \epsilon^2$이므로 테일러 전개가 정확했습니다.
 
-Let's see what happens in other problems.
-Given a convex hyperbolic cosine function $f(x) = \cosh(cx)$ for some constant $c$, we can see that
-the global minimum at $x=0$ is reached
-after a few iterations.
+다른 문제에서는 어떻게 되는지 봅시다.
+어떤 상수 $c$에 대한 볼록 쌍곡 코사인 함수 $f(x) = \cosh(cx)$가 주어졌을 때,
+$x=0$에서의 전역 최솟값에
+몇 번의 반복 후에 도달함을 볼 수 있습니다.
 
 ```{.python .input}
 #@tab all
@@ -279,9 +278,9 @@ def newton(eta=1):
 show_trace(newton(), f)
 ```
 
-Now let's consider a *nonconvex* function, such as $f(x) = x \cos(c x)$ for some constant $c$. After all, note that in Newton's method we end up dividing by the Hessian. This means that if the second derivative is *negative* we may walk into the direction of *increasing* the value of $f$.
-That is a fatal flaw of the algorithm.
-Let's see what happens in practice.
+이제 어떤 상수 $c$에 대한 $f(x) = x \cos(c x)$와 같은 *비볼록* 함수를 생각해 봅시다. 결국, 뉴턴의 방법에서는 헤시안으로 나누게 됩니다. 이는 2차 도함수가 *음수*이면 $f$의 값을 *증가시키는* 방향으로 걸어갈 수 있음을 의미합니다.
+이는 알고리즘의 치명적인 결함입니다.
+실제로 어떤 일이 일어나는지 봅시다.
 
 ```{.python .input}
 #@tab all
@@ -299,81 +298,81 @@ def f_hess(x):  # Hessian of the objective function
 show_trace(newton(), f)
 ```
 
-This went spectacularly wrong. How can we fix it? One way would be to "fix" the Hessian by taking its absolute value instead. Another strategy is to bring back the learning rate. This seems to defeat the purpose, but not quite. Having second-order information allows us to be cautious whenever the curvature is large and to take longer steps whenever the objective function is flatter.
-Let's see how this works with a slightly smaller learning rate, say $\eta = 0.5$. As we can see, we have quite an efficient algorithm.
+이는 극적으로 잘못되었습니다. 어떻게 고칠 수 있을까요? 한 가지 방법은 헤시안의 절댓값을 취해 "고치는" 것입니다. 또 다른 전략은 학습률을 다시 도입하는 것입니다. 이는 목적을 무산시키는 것처럼 보이지만, 꼭 그렇지는 않습니다. 2차 정보를 가지면 곡률이 클 때마다 신중해질 수 있고 목적 함수가 더 평평할 때마다 더 큰 걸음을 내디딜 수 있습니다.
+약간 더 작은 학습률, 예를 들어 $\eta = 0.5$에서 이것이 어떻게 동작하는지 봅시다. 보시다시피, 꽤 효율적인 알고리즘을 얻습니다.
 
 ```{.python .input}
 #@tab all
 show_trace(newton(0.5), f)
 ```
 
-### Convergence Analysis
+### 수렴 분석
 
-We only analyze the convergence rate of Newton's method for some convex and three times differentiable objective function $f$, where the second derivative is nonzero, i.e., $f'' > 0$. The multivariate proof is a straightforward extension of the one-dimensional argument below and omitted since it does not help us much in terms of intuition.
+저희는 2차 도함수가 0이 아닌, 즉 $f'' > 0$인 어떤 볼록이고 세 번 미분 가능한 목적 함수 $f$에 대해 뉴턴 방법의 수렴 속도만 분석합니다. 다변량 증명은 아래 1차원 논증의 직접적인 확장이며, 직관 측면에서 크게 도움이 되지 않으므로 생략합니다.
 
-Denote by $x^{(k)}$ the value of $x$ at the $k^\textrm{th}$ iteration and let $e^{(k)} \stackrel{\textrm{def}}{=} x^{(k)} - x^*$ be the distance from optimality at the $k^\textrm{th}$ iteration. By Taylor  expansion we have that the condition $f'(x^*) = 0$ can be written as
+$x^{(k)}$를 $k$번째 반복에서의 $x$의 값으로 표기하고 $e^{(k)} \stackrel{\textrm{def}}{=} x^{(k)} - x^*$를 $k$번째 반복에서의 최적성으로부터의 거리라 합시다. 테일러 전개에 의해, 조건 $f'(x^*) = 0$은 다음과 같이 쓸 수 있습니다.
 
 $$0 = f'(x^{(k)} - e^{(k)}) = f'(x^{(k)}) - e^{(k)} f''(x^{(k)}) + \frac{1}{2} (e^{(k)})^2 f'''(\xi^{(k)}),$$
 
-which holds for some $\xi^{(k)} \in [x^{(k)} - e^{(k)}, x^{(k)}]$. Dividing the above expansion by $f''(x^{(k)})$ yields
+이는 어떤 $\xi^{(k)} \in [x^{(k)} - e^{(k)}, x^{(k)}]$에 대해 성립합니다. 위의 전개를 $f''(x^{(k)})$로 나누면 다음을 얻습니다.
 
 $$e^{(k)} - \frac{f'(x^{(k)})}{f''(x^{(k)})} = \frac{1}{2} (e^{(k)})^2 \frac{f'''(\xi^{(k)})}{f''(x^{(k)})}.$$
 
-Recall that we have the update $x^{(k+1)} = x^{(k)} - f'(x^{(k)}) / f''(x^{(k)})$.
-Plugging in this update equation and taking the absolute value of both sides, we have
+저희가 업데이트 $x^{(k+1)} = x^{(k)} - f'(x^{(k)}) / f''(x^{(k)})$를 가지고 있음을 기억하세요.
+이 업데이트 방정식을 대입하고 양변에 절댓값을 취하면, 저희는
 
 $$\left|e^{(k+1)}\right| = \frac{1}{2}(e^{(k)})^2 \frac{\left|f'''(\xi^{(k)})\right|}{f''(x^{(k)})}.$$
 
-Consequently, whenever we are in a region of bounded $\left|f'''(\xi^{(k)})\right| / (2f''(x^{(k)})) \leq c$, we have a quadratically decreasing error
+를 얻습니다. 따라서, 저희가 한정된 $\left|f'''(\xi^{(k)})\right| / (2f''(x^{(k)})) \leq c$의 영역에 있을 때마다, 저희는 이차적으로 감소하는 오차를 갖습니다.
 
 $$\left|e^{(k+1)}\right| \leq c (e^{(k)})^2.$$
 
 
-As an aside, optimization researchers call this *linear* convergence, whereas a condition such as $\left|e^{(k+1)}\right| \leq \alpha \left|e^{(k)}\right|$ would be called a *constant* rate of convergence.
-Note that this analysis comes with a number of caveats.
-First, we do not really have much of a guarantee when we will reach the region of rapid convergence. Instead, we only know that once we reach it, convergence will be very quick. Second, this analysis requires that $f$ is well-behaved up to higher-order derivatives. It comes down to ensuring that $f$ does not have any "surprising" properties in terms of how it might change its values.
+여담으로, 최적화 연구자들은 이것을 *선형(linear)* 수렴이라고 부르며, $\left|e^{(k+1)}\right| \leq \alpha \left|e^{(k)}\right|$와 같은 조건은 *상수(constant)* 수렴 속도라고 부릅니다.
+이 분석에는 몇 가지 주의 사항이 따른다는 점에 유의하세요.
+첫째, 저희는 빠른 수렴 영역에 언제 도달할지에 대해서는 사실 많은 보장을 가지지 못합니다. 대신, 일단 도달하면 수렴이 매우 빠를 것이라는 점만 알 수 있습니다. 둘째, 이 분석은 $f$가 고차 도함수까지 잘 동작해야 함을 요구합니다. 이는 $f$가 값을 변경하는 방식에 있어 "놀라운" 속성을 가지지 않도록 보장하는 것에 해당합니다.
 
 
 
-### Preconditioning
+### 사전 조건화(Preconditioning)
 
-Quite unsurprisingly computing and storing the full Hessian is very expensive. It is thus desirable to find alternatives. One way to improve matters is *preconditioning*. It avoids computing the Hessian in its entirety but only computes the *diagonal* entries. This leads to update algorithms of the form
+당연하게도 전체 헤시안을 계산하고 저장하는 것은 매우 비쌉니다. 따라서 대안을 찾는 것이 바람직합니다. 한 가지 개선 방법은 *사전 조건화*입니다. 헤시안을 전체적으로 계산하는 것을 피하고 *대각* 항목만 계산합니다. 이는 다음 형태의 업데이트 알고리즘으로 이어집니다.
 
 $$\mathbf{x} \leftarrow \mathbf{x} - \eta \textrm{diag}(\mathbf{H})^{-1} \nabla f(\mathbf{x}).$$
 
 
-While this is not quite as good as the full Newton's method, it is still much better than not using it.
-To see why this might be a good idea consider a situation where one variable denotes height in millimeters and the other one denotes height in kilometers. Assuming that for both the natural scale is in meters, we have a terrible mismatch in parametrizations. Fortunately, using preconditioning removes this. Effectively preconditioning with gradient descent amounts to selecting a different learning rate for each variable (coordinate of vector $\mathbf{x}$).
-As we will see later, preconditioning drives some of the innovation in stochastic gradient descent optimization algorithms.
+이것이 완전한 뉴턴 방법만큼 좋지는 않지만, 사용하지 않는 것보다는 훨씬 낫습니다.
+이것이 왜 좋은 아이디어일 수 있는지 보려면, 한 변수가 밀리미터 단위 높이를 나타내고 다른 변수가 킬로미터 단위 높이를 나타내는 상황을 생각해 보세요. 두 경우 모두 자연스러운 척도가 미터라고 가정하면, 매개변수화에 끔찍한 불일치가 있습니다. 다행히, 사전 조건화를 사용하면 이것이 제거됩니다. 사실상 경사 하강법에 사전 조건화를 적용하는 것은 각 변수(벡터 $\mathbf{x}$의 좌표)에 대해 다른 학습률을 선택하는 것에 해당합니다.
+나중에 보겠지만, 사전 조건화는 확률적 경사 하강법 최적화 알고리즘의 일부 혁신을 이끕니다.
 
 
-### Gradient Descent with Line Search
+### 선 탐색이 포함된 경사 하강법
 
-One of the key problems in gradient descent is that we might overshoot the goal or make insufficient progress. A simple fix for the problem is to use line search in conjunction with gradient descent. That is, we use the direction given by $\nabla f(\mathbf{x})$ and then perform binary search as to which learning rate $\eta$ minimizes $f(\mathbf{x} - \eta \nabla f(\mathbf{x}))$.
+경사 하강법의 주요 문제 중 하나는 목표를 지나치거나 불충분한 진전을 이룰 수 있다는 점입니다. 이 문제에 대한 간단한 해결책은 경사 하강법과 함께 선 탐색을 사용하는 것입니다. 즉, $\nabla f(\mathbf{x})$로 주어진 방향을 사용한 다음 어떤 학습률 $\eta$가 $f(\mathbf{x} - \eta \nabla f(\mathbf{x}))$를 최소화하는지에 대해 이진 탐색을 수행합니다.
 
-This algorithm converges rapidly (for an analysis and proof see e.g., :citet:`Boyd.Vandenberghe.2004`). However, for the purpose of deep learning this is not quite so feasible, since each step of the line search would require us to evaluate the objective function on the entire dataset. This is way too costly to accomplish.
+이 알고리즘은 빠르게 수렴합니다(분석과 증명은 예를 들어 :citet:`Boyd.Vandenberghe.2004` 참조). 그러나 딥러닝의 목적상 이는 그다지 실현 가능하지 않은데, 선 탐색의 각 단계에서 전체 데이터셋에 대해 목적 함수를 평가해야 하기 때문입니다. 이는 수행하기에 너무 비쌉니다.
 
-## Summary
+## 요약
 
-* Learning rates matter. Too large and we diverge, too small and we do not make progress.
-* Gradient descent can get stuck in local minima.
-* In high dimensions adjusting the learning rate is complicated.
-* Preconditioning can help with scale adjustment.
-* Newton's method is a lot faster once it has started working properly in convex problems.
-* Beware of using Newton's method without any adjustments for nonconvex problems.
+* 학습률이 중요합니다. 너무 크면 발산하고, 너무 작으면 진전이 없습니다.
+* 경사 하강법은 지역 최솟값에 갇힐 수 있습니다.
+* 고차원에서는 학습률을 조정하는 것이 복잡합니다.
+* 사전 조건화는 스케일 조정에 도움이 될 수 있습니다.
+* 뉴턴의 방법은 볼록 문제에서 적절히 작동하기 시작하면 훨씬 빠릅니다.
+* 비볼록 문제에서는 조정 없이 뉴턴의 방법을 사용하는 것에 주의하세요.
 
-## Exercises
+## 연습문제
 
-1. Experiment with different learning rates and objective functions for gradient descent.
-1. Implement line search to minimize a convex function in the interval $[a, b]$.
-    1. Do you need derivatives for binary search, i.e., to decide whether to pick $[a, (a+b)/2]$ or $[(a+b)/2, b]$.
-    1. How rapid is the rate of convergence for the algorithm?
-    1. Implement the algorithm and apply it to minimizing $\log (\exp(x) + \exp(-2x -3))$.
-1. Design an objective function defined on $\mathbb{R}^2$ where gradient descent is exceedingly slow. Hint: scale different coordinates differently.
-1. Implement the lightweight version of Newton's method using preconditioning:
-    1. Use diagonal Hessian as preconditioner.
-    1. Use the absolute values of that rather than the actual (possibly signed) values.
-    1. Apply this to the problem above.
-1. Apply the algorithm above to a number of objective functions (convex or not). What happens if you rotate coordinates by $45$ degrees?
+1. 경사 하강법에 대해 다양한 학습률과 목적 함수를 실험해 보세요.
+1. 구간 $[a, b]$에서 볼록 함수를 최소화하기 위해 선 탐색을 구현해 보세요.
+    1. 이진 탐색을 위해, 즉 $[a, (a+b)/2]$와 $[(a+b)/2, b]$ 중 어느 것을 선택할지 결정하기 위해 도함수가 필요한가요?
+    1. 알고리즘의 수렴 속도는 얼마나 빠른가요?
+    1. 알고리즘을 구현하고 $\log (\exp(x) + \exp(-2x -3))$을 최소화하는 데 적용해 보세요.
+1. $\mathbb{R}^2$ 위에 정의된 목적 함수 중 경사 하강법이 극도로 느린 것을 설계하세요. 힌트: 서로 다른 좌표를 다르게 스케일링하세요.
+1. 사전 조건화를 사용해 뉴턴 방법의 가벼운 버전을 구현하세요.
+    1. 대각 헤시안을 사전 조건자로 사용하세요.
+    1. 실제(부호가 있을 수 있는) 값 대신 그것의 절댓값을 사용하세요.
+    1. 이를 위 문제에 적용하세요.
+1. 위 알고리즘을 여러 목적 함수(볼록이든 아니든)에 적용해 보세요. 좌표를 $45$도 회전시키면 어떻게 되나요?
 
 [Discussions](https://discuss.d2l.ai/t/351)

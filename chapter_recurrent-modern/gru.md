@@ -1,19 +1,8 @@
-# Gated Recurrent Units (GRU)
+# 게이트 순환 유닛 (Gated Recurrent Units, GRU)
 :label:`sec_gru`
 
 
-As RNNs and particularly the LSTM architecture (:numref:`sec_lstm`)
-rapidly gained popularity during the 2010s,
-a number of researchers began to experiment 
-with simplified architectures in hopes 
-of retaining the key idea of incorporating
-an internal state and multiplicative gating mechanisms
-but with the aim of speeding up computation.
-The gated recurrent unit (GRU) :cite:`Cho.Van-Merrienboer.Bahdanau.ea.2014` 
-offered a streamlined version of the LSTM memory cell
-that often achieves comparable performance
-but with the advantage of being faster 
-to compute :cite:`Chung.Gulcehre.Cho.ea.2014`.
+2010년대 동안 RNN, 특히 LSTM 아키텍처(:numref:`sec_lstm`)가 급속도로 인기를 얻으면서, 많은 연구자들이 내부 상태와 곱셈적 게이팅 메커니즘을 통합한다는 핵심 아이디어는 유지하되 계산 속도를 높이는 것을 목표로 단순화된 아키텍처를 실험하기 시작했습니다. 게이트 순환 유닛(GRU) :cite:`Cho.Van-Merrienboer.Bahdanau.ea.2014`은 LSTM 메모리 셀의 간소화된 버전을 제공했으며, 이는 종종 비슷한 성능을 달성하지만 계산이 더 빠르다는 장점을 가집니다 :cite:`Chung.Gulcehre.Cho.ea.2014`.
 
 ```{.python .input  n=5}
 %load_ext d2lbook.tab
@@ -49,36 +38,14 @@ import jax
 from jax import numpy as jnp
 ```
 
-## Reset Gate and Update Gate
+## 리셋 게이트와 업데이트 게이트 (Reset Gate and Update Gate)
 
-Here, the LSTM's three gates are replaced by two:
-the *reset gate* and the *update gate*.
-As with LSTMs, these gates are given sigmoid activations,
-forcing their values to lie in the interval $(0, 1)$.
-Intuitively, the reset gate controls how much of the previous state 
-we might still want to remember.
-Likewise, an update gate would allow us to control 
-how much of the new state is just a copy of the old one.
-:numref:`fig_gru_1` illustrates the inputs for both
-the reset and update gates in a GRU, 
-given the input of the current time step
-and the hidden state of the previous time step.
-The outputs of the gates are given 
-by two fully connected layers
-with a sigmoid activation function.
+여기서, LSTM의 세 게이트는 두 개, 즉 *리셋 게이트(reset gate)*와 *업데이트 게이트(update gate)*로 대체됩니다. LSTM과 마찬가지로, 이 게이트들에는 시그모이드 활성화가 주어져, 그 값이 $(0, 1)$ 구간에 놓이도록 강제됩니다. 직관적으로, 리셋 게이트는 저희가 여전히 기억하고 싶은 이전 상태의 양을 제어합니다. 마찬가지로, 업데이트 게이트는 새 상태의 얼마만큼이 단순히 이전 상태의 복사본인지를 제어할 수 있게 해줍니다. :numref:`fig_gru_1`은 현재 시간 단계의 입력과 이전 시간 단계의 은닉 상태가 주어졌을 때, GRU에서 리셋 게이트와 업데이트 게이트 양쪽 모두에 대한 입력을 보여줍니다. 게이트의 출력은 시그모이드 활성화 함수를 가진 두 개의 완전 연결 레이어에 의해 주어집니다.
 
-![Computing the reset gate and the update gate in a GRU model.](../img/gru-1.svg)
+![GRU 모델에서의 리셋 게이트와 업데이트 게이트 계산.](../img/gru-1.svg)
 :label:`fig_gru_1`
 
-Mathematically, for a given time step $t$,
-suppose that the input is a minibatch
-$\mathbf{X}_t \in \mathbb{R}^{n \times d}$ 
-(number of examples $=n$; number of inputs $=d$)
-and the hidden state of the previous time step 
-is $\mathbf{H}_{t-1} \in \mathbb{R}^{n \times h}$ 
-(number of hidden units $=h$). 
-Then the reset gate $\mathbf{R}_t \in \mathbb{R}^{n \times h}$ 
-and update gate $\mathbf{Z}_t \in \mathbb{R}^{n \times h}$ are computed as follows:
+수학적으로, 주어진 시간 단계 $t$에 대해, 입력이 미니배치 $\mathbf{X}_t \in \mathbb{R}^{n \times d}$ (예제의 수 $=n$; 입력의 수 $=d$)이고 이전 시간 단계의 은닉 상태가 $\mathbf{H}_{t-1} \in \mathbb{R}^{n \times h}$ (은닉 유닛의 수 $=h$)라고 가정합시다. 그러면 리셋 게이트 $\mathbf{R}_t \in \mathbb{R}^{n \times h}$와 업데이트 게이트 $\mathbf{Z}_t \in \mathbb{R}^{n \times h}$는 다음과 같이 계산됩니다.
 
 $$
 \begin{aligned}
@@ -87,94 +54,51 @@ $$
 \end{aligned}
 $$
 
-where $\mathbf{W}_{\textrm{xr}}, \mathbf{W}_{\textrm{xz}} \in \mathbb{R}^{d \times h}$ 
-and $\mathbf{W}_{\textrm{hr}}, \mathbf{W}_{\textrm{hz}} \in \mathbb{R}^{h \times h}$ 
-are weight parameters and $\mathbf{b}_\textrm{r}, \mathbf{b}_\textrm{z} \in \mathbb{R}^{1 \times h}$ 
-are bias parameters.
+여기서 $\mathbf{W}_{\textrm{xr}}, \mathbf{W}_{\textrm{xz}} \in \mathbb{R}^{d \times h}$와 $\mathbf{W}_{\textrm{hr}}, \mathbf{W}_{\textrm{hz}} \in \mathbb{R}^{h \times h}$는 가중치 매개변수이고 $\mathbf{b}_\textrm{r}, \mathbf{b}_\textrm{z} \in \mathbb{R}^{1 \times h}$는 편향 매개변수입니다.
 
 
-## Candidate Hidden State
+## 후보 은닉 상태 (Candidate Hidden State)
 
-Next, we integrate the reset gate $\mathbf{R}_t$ 
-with the regular updating mechanism
-in :eqref:`rnn_h_with_state`,
-leading to the following
-*candidate hidden state*
-$\tilde{\mathbf{H}}_t \in \mathbb{R}^{n \times h}$ at time step $t$:
+다음으로, 저희는 리셋 게이트 $\mathbf{R}_t$를 :eqref:`rnn_h_with_state`에 있는 일반적인 업데이트 메커니즘과 통합하여, 시간 단계 $t$에서 다음과 같은 *후보 은닉 상태(candidate hidden state)* $\tilde{\mathbf{H}}_t \in \mathbb{R}^{n \times h}$로 이어집니다.
 
 $$\tilde{\mathbf{H}}_t = \tanh(\mathbf{X}_t \mathbf{W}_{\textrm{xh}} + \left(\mathbf{R}_t \odot \mathbf{H}_{t-1}\right) \mathbf{W}_{\textrm{hh}} + \mathbf{b}_\textrm{h}),$$
 :eqlabel:`gru_tilde_H`
 
-where $\mathbf{W}_{\textrm{xh}} \in \mathbb{R}^{d \times h}$ and $\mathbf{W}_{\textrm{hh}} \in \mathbb{R}^{h \times h}$
-are weight parameters,
-$\mathbf{b}_\textrm{h} \in \mathbb{R}^{1 \times h}$
-is the bias,
-and the symbol $\odot$ is the Hadamard (elementwise) product operator.
-Here we use a tanh activation function.
+여기서 $\mathbf{W}_{\textrm{xh}} \in \mathbb{R}^{d \times h}$와 $\mathbf{W}_{\textrm{hh}} \in \mathbb{R}^{h \times h}$는 가중치 매개변수이고, $\mathbf{b}_\textrm{h} \in \mathbb{R}^{1 \times h}$는 편향이며, 기호 $\odot$는 아다마르(원소별) 곱셈 연산자입니다. 여기서는 tanh 활성화 함수를 사용합니다.
 
-The result is a *candidate*, since we still need 
-to incorporate the action of the update gate.
-Comparing with :eqref:`rnn_h_with_state`,
-the influence of the previous states
-can now be reduced with the
-elementwise multiplication of
-$\mathbf{R}_t$ and $\mathbf{H}_{t-1}$
-in :eqref:`gru_tilde_H`.
-Whenever the entries in the reset gate $\mathbf{R}_t$ are close to 1, 
-we recover a vanilla RNN such as that in :eqref:`rnn_h_with_state`.
-For all entries of the reset gate $\mathbf{R}_t$ that are close to 0, 
-the candidate hidden state is the result of an MLP with $\mathbf{X}_t$ as input. 
-Any pre-existing hidden state is thus *reset* to defaults.
+업데이트 게이트의 작용을 여전히 통합해야 하기 때문에, 그 결과는 *후보(candidate)*입니다. :eqref:`rnn_h_with_state`와 비교하면, 이전 상태들의 영향력은 이제 :eqref:`gru_tilde_H`에서 $\mathbf{R}_t$와 $\mathbf{H}_{t-1}$의 원소별 곱셈으로 감소될 수 있습니다. 리셋 게이트 $\mathbf{R}_t$의 항목들이 1에 가까울 때마다, 저희는 :eqref:`rnn_h_with_state`와 같은 기본 RNN을 복원합니다. 리셋 게이트 $\mathbf{R}_t$의 모든 항목이 0에 가까울 때는, 후보 은닉 상태가 $\mathbf{X}_t$를 입력으로 하는 MLP의 결과입니다. 따라서 기존의 모든 은닉 상태는 기본값으로 *리셋*됩니다.
 
-:numref:`fig_gru_2` illustrates the computational flow after applying the reset gate.
+:numref:`fig_gru_2`는 리셋 게이트를 적용한 후의 계산 흐름을 보여줍니다.
 
-![Computing the candidate hidden state in a GRU model.](../img/gru-2.svg)
+![GRU 모델에서의 후보 은닉 상태 계산.](../img/gru-2.svg)
 :label:`fig_gru_2`
 
 
-## Hidden State
+## 은닉 상태 (Hidden State)
 
-Finally, we need to incorporate the effect of the update gate $\mathbf{Z}_t$.
-This determines the extent to which the new hidden state $\mathbf{H}_t \in \mathbb{R}^{n \times h}$ 
-matches the old state $\mathbf{H}_{t-1}$ compared with how much 
-it resembles the new candidate state $\tilde{\mathbf{H}}_t$.
-The update gate $\mathbf{Z}_t$ can be used for this purpose, 
-simply by taking elementwise convex combinations 
-of $\mathbf{H}_{t-1}$ and $\tilde{\mathbf{H}}_t$.
-This leads to the final update equation for the GRU:
+마지막으로, 업데이트 게이트 $\mathbf{Z}_t$의 효과를 통합할 필요가 있습니다. 이는 새 은닉 상태 $\mathbf{H}_t \in \mathbb{R}^{n \times h}$가 새 후보 상태 $\tilde{\mathbf{H}}_t$를 닮은 정도와 비교하여, 이전 상태 $\mathbf{H}_{t-1}$과 얼마나 일치하는지의 정도를 결정합니다. 업데이트 게이트 $\mathbf{Z}_t$는 단순히 $\mathbf{H}_{t-1}$과 $\tilde{\mathbf{H}}_t$의 원소별 볼록 결합을 취함으로써, 이 목적에 사용될 수 있습니다. 이는 GRU의 최종 업데이트 방정식으로 이어집니다.
 
 $$\mathbf{H}_t = \mathbf{Z}_t \odot \mathbf{H}_{t-1}  + (1 - \mathbf{Z}_t) \odot \tilde{\mathbf{H}}_t.$$
 
 
-Whenever the update gate $\mathbf{Z}_t$ is close to 1,
-we simply retain the old state. 
-In this case the information from $\mathbf{X}_t$ is ignored, 
-effectively skipping time step $t$ in the dependency chain. 
-By contrast, whenever $\mathbf{Z}_t$ is close to 0,
-the new latent state $\mathbf{H}_t$ approaches the candidate latent state $\tilde{\mathbf{H}}_t$. 
-:numref:`fig_gru_3` shows the computational flow after the update gate is in action.
+업데이트 게이트 $\mathbf{Z}_t$가 1에 가까울 때마다, 저희는 단순히 이전 상태를 유지합니다. 이 경우 $\mathbf{X}_t$로부터의 정보는 무시되며, 의존성 사슬에서 시간 단계 $t$를 효과적으로 건너뜁니다. 반대로, $\mathbf{Z}_t$가 0에 가까울 때마다, 새로운 잠재 상태 $\mathbf{H}_t$는 후보 잠재 상태 $\tilde{\mathbf{H}}_t$에 접근합니다. :numref:`fig_gru_3`은 업데이트 게이트가 작동한 후의 계산 흐름을 보여줍니다.
 
-![Computing the hidden state in a GRU model.](../img/gru-3.svg)
+![GRU 모델에서의 은닉 상태 계산.](../img/gru-3.svg)
 :label:`fig_gru_3`
 
 
-In summary, GRUs have the following two distinguishing features:
+요약하면, GRU는 다음과 같은 두 가지 구별되는 특징을 가집니다.
 
-* Reset gates help capture short-term dependencies in sequences.
-* Update gates help capture long-term dependencies in sequences.
+* 리셋 게이트는 시퀀스에서 단기 의존성을 포착하는 데 도움이 됩니다.
+* 업데이트 게이트는 시퀀스에서 장기 의존성을 포착하는 데 도움이 됩니다.
 
-## Implementation from Scratch
+## 처음부터 구현하기 (Implementation from Scratch)
 
-To gain a better understanding of the GRU model, let's implement it from scratch.
+GRU 모델을 더 잘 이해하기 위해, 처음부터 구현해 봅시다.
 
-### (**Initializing Model Parameters**)
+### (**모델 매개변수 초기화**)
 
-The first step is to initialize the model parameters.
-We draw the weights from a Gaussian distribution
-with standard deviation to be `sigma` and set the bias to 0. 
-The hyperparameter `num_hiddens` defines the number of hidden units.
-We instantiate all weights and biases relating to the update gate, 
-the reset gate, and the candidate hidden state.
+첫 번째 단계는 모델 매개변수를 초기화하는 것입니다. 표준편차가 `sigma`인 가우시안 분포로부터 가중치를 추출하고 편향은 0으로 설정합니다. 하이퍼파라미터 `num_hiddens`는 은닉 유닛의 수를 정의합니다. 업데이트 게이트, 리셋 게이트, 후보 은닉 상태와 관련된 모든 가중치와 편향을 인스턴스화합니다.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -225,11 +149,9 @@ class GRUScratch(d2l.Module):
         self.W_xh, self.W_hh, self.b_h = triple('h')  # Candidate hidden state
 ```
 
-### Defining the Model
+### 모델 정의하기
 
-Now we are ready to [**define the GRU forward computation**].
-Its structure is the same as that of the basic RNN cell, 
-except that the update equations are more complex.
+이제 [**GRU 순방향 계산을 정의**]할 준비가 되었습니다. 그 구조는 기본 RNN 셀의 구조와 동일하지만, 업데이트 방정식이 더 복잡합니다.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -285,10 +207,9 @@ def forward(self, inputs, H=None):
     return outputs, carry
 ```
 
-### Training
+### 훈련
 
-[**Training**] a language model on *The Time Machine* dataset
-works in exactly the same manner as in :numref:`sec_rnn-scratch`.
+*The Time Machine* 데이터셋에 대해 언어 모델을 [**훈련**]하는 것은 :numref:`sec_rnn-scratch`에서와 정확히 같은 방식으로 동작합니다.
 
 ```{.python .input}
 %%tab all
@@ -305,10 +226,9 @@ if tab.selected('tensorflow'):
 trainer.fit(model, data)
 ```
 
-## [**Concise Implementation**]
+## [**간결한 구현**]
 
-In high-level APIs, we can directly instantiate a GRU model.
-This encapsulates all the configuration detail that we made explicit above.
+고수준 API에서는 GRU 모델을 직접 인스턴스화할 수 있습니다. 이는 저희가 위에서 명시했던 모든 구성 세부 사항을 캡슐화합니다.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -344,8 +264,7 @@ class GRU(d2l.RNN):
         return outputs, H
 ```
 
-The code is significantly faster in training as it uses compiled operators 
-rather than Python.
+이 코드는 Python 대신 컴파일된 연산자를 사용하므로 훈련에서 상당히 더 빠릅니다.
 
 ```{.python .input}
 %%tab all
@@ -361,8 +280,7 @@ if tab.selected('tensorflow'):
 trainer.fit(model, data)
 ```
 
-After training, we print out the perplexity on the training set
-and the predicted sequence following the provided prefix.
+훈련 후에, 저희는 훈련 세트에 대한 퍼플렉시티와 제공된 접두사 다음에 이어지는 예측된 시퀀스를 출력합니다.
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -379,34 +297,30 @@ model.predict('it has', 20, data.vocab)
 model.predict('it has', 20, data.vocab, trainer.state.params)
 ```
 
-## Summary
+## 요약
 
-Compared with LSTMs, GRUs achieve similar performance but tend to be lighter computationally.
-Generally, compared with simple RNNs, gated RNNS, just like LSTMs and GRUs,
-can better capture dependencies for sequences with large time step distances.
-GRUs contain basic RNNs as their extreme case whenever the reset gate is switched on. 
-They can also skip subsequences by turning on the update gate.
+LSTM과 비교하여, GRU는 유사한 성능을 달성하지만 계산적으로 더 가벼운 경향이 있습니다. 일반적으로 단순 RNN과 비교했을 때, LSTM과 GRU 같은 게이트가 있는 RNN은 큰 시간 단계 거리를 가진 시퀀스에 대한 의존성을 더 잘 포착할 수 있습니다. GRU는 리셋 게이트가 켜져 있을 때마다 기본 RNN을 극단적인 경우로 포함합니다. 또한 업데이트 게이트를 켜서 부분 시퀀스를 건너뛸 수도 있습니다.
 
 
-## Exercises
+## 연습문제
 
-1. Assume that we only want to use the input at time step $t'$ to predict the output at time step $t > t'$. What are the best values for the reset and update gates for each time step?
-1. Adjust the hyperparameters and analyze their influence on running time, perplexity, and the output sequence.
-1. Compare runtime, perplexity, and the output strings for `rnn.RNN` and `rnn.GRU` implementations with each other.
-1. What happens if you implement only parts of a GRU, e.g., with only a reset gate or only an update gate?
+1. 시간 단계 $t' $에서의 입력만을 사용하여 시간 단계 $t > t'$에서의 출력을 예측하고 싶다고 가정해 봅시다. 각 시간 단계에 대한 리셋 게이트와 업데이트 게이트의 최적 값은 무엇입니까?
+1. 하이퍼파라미터를 조정하고 실행 시간, 퍼플렉시티, 출력 시퀀스에 미치는 영향을 분석해 보십시오.
+1. `rnn.RNN`과 `rnn.GRU` 구현 사이의 실행 시간, 퍼플렉시티, 출력 문자열을 서로 비교해 보십시오.
+1. GRU의 일부분, 예를 들어 리셋 게이트만 또는 업데이트 게이트만을 구현한다면 어떻게 됩니까?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/342)
+[토론](https://discuss.d2l.ai/t/342)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1056)
+[토론](https://discuss.d2l.ai/t/1056)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/3860)
+[토론](https://discuss.d2l.ai/t/3860)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18017)
+[토론](https://discuss.d2l.ai/t/18017)
 :end_tab:

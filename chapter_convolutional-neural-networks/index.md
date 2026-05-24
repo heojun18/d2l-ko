@@ -1,63 +1,58 @@
-# Convolutional Neural Networks
+# 합성곱 신경망
 :label:`chap_cnn`
 
-Image data is represented as a two-dimensional grid of pixels, be the image
-monochromatic or in color. Accordingly each pixel corresponds to one
-or multiple numerical values respectively. So far we have ignored this rich
-structure and treated images as vectors of numbers by *flattening* them, irrespective of the spatial relation between pixels. This
-deeply unsatisfying approach was necessary in order to feed the
-resulting one-dimensional vectors through a fully connected MLP.
+이미지 데이터는 흑백이든 컬러든 픽셀의 2차원 격자로 표현됩니다.
+이에 따라 각 픽셀은 하나 또는 여러 개의 수치 값에 대응합니다.
+지금까지 저희는 이러한 풍부한 구조를 무시하고
+픽셀 간의 공간적 관계를 고려하지 않은 채 이미지를 *평탄화(flatten)*하여
+숫자의 벡터로 다루어 왔습니다. 이러한
+매우 불만족스러운 접근법은, 그 결과로 얻은 1차원 벡터를
+완전 연결 MLP에 입력하기 위해 어쩔 수 없이 사용되었습니다.
 
-Because these networks are invariant to the order of the features, we
-could get similar results regardless of whether we preserve an order
-corresponding to the spatial structure of the pixels or if we permute
-the columns of our design matrix before fitting the MLP's parameters.
-Ideally, we would leverage our prior knowledge that nearby pixels
-are typically related to each other, to build efficient models for
-learning from image data.
+이러한 네트워크는 특성의 순서에 대해 불변이기 때문에,
+픽셀의 공간 구조에 대응하는 순서를 보존하든,
+혹은 MLP의 매개변수를 학습시키기 전에 설계 행렬의 열을 임의로
+재배열하든 비슷한 결과를 얻을 수 있습니다.
+이상적으로는, 인접한 픽셀들이 일반적으로 서로 관련되어 있다는
+사전 지식을 활용하여 이미지 데이터로부터 학습하기 위한
+효율적인 모델을 구축할 수 있어야 합니다.
 
-This chapter introduces *convolutional neural networks* (CNNs)
-:cite:`LeCun.Jackel.Bottou.ea.1995`, a powerful family of neural networks that
-are designed for precisely this purpose.
-CNN-based architectures are
-now ubiquitous in the field of computer vision.
-For instance, on the Imagnet collection
-:cite:`Deng.Dong.Socher.ea.2009` it was only the use of convolutional neural
-networks, in short Convnets, that provided significant performance
-improvements :cite:`Krizhevsky.Sutskever.Hinton.2012`.
+이 장에서는 바로 이러한 목적을 위해 설계된 강력한 신경망 계열인
+*합성곱 신경망*(convolutional neural networks, CNN)
+:cite:`LeCun.Jackel.Bottou.ea.1995`을 소개합니다.
+CNN 기반 아키텍처는 이제 컴퓨터 비전 분야에서
+어디서나 볼 수 있습니다.
+예를 들어, ImageNet 컬렉션
+:cite:`Deng.Dong.Socher.ea.2009`에서 의미 있는 성능 향상을 가져온 것은 오직
+합성곱 신경망(줄여서 Convnet)의 사용이었습니다
+:cite:`Krizhevsky.Sutskever.Hinton.2012`.
 
-Modern CNNs, as they are called colloquially, owe their design to
-inspirations from biology, group theory, and a healthy dose of
-experimental tinkering.  In addition to their sample efficiency in
-achieving accurate models, CNNs tend to be computationally efficient,
-both because they require fewer parameters than fully connected
-architectures and because convolutions are easy to parallelize across
-GPU cores :cite:`Chetlur.Woolley.Vandermersch.ea.2014`.  Consequently, practitioners often
-apply CNNs whenever possible, and increasingly they have emerged as
-credible competitors even on tasks with a one-dimensional sequence
-structure, such as audio :cite:`Abdel-Hamid.Mohamed.Jiang.ea.2014`, text
-:cite:`Kalchbrenner.Grefenstette.Blunsom.2014`, and time series analysis
-:cite:`LeCun.Bengio.ea.1995`, where recurrent neural networks are
-conventionally used.  Some clever adaptations of CNNs have also
-brought them to bear on graph-structured data :cite:`Kipf.Welling.2016` and
-in recommender systems.
+흔히 부르듯 모던 CNN은 생물학, 군론, 그리고 적당한 양의
+실험적 시도에서 영감을 얻어 설계되었습니다. 정확한 모델을 얻기 위한
+샘플 효율성뿐만 아니라, CNN은 일반적으로 완전 연결
+아키텍처보다 적은 매개변수를 필요로 하고 합성곱이 GPU 코어에서
+병렬화하기 쉽기 때문에 계산적으로도 효율적인 경향이 있습니다
+:cite:`Chetlur.Woolley.Vandermersch.ea.2014`. 따라서 실무자들은
+가능하면 언제든지 CNN을 적용하며, 점점 더 음성
+:cite:`Abdel-Hamid.Mohamed.Jiang.ea.2014`, 텍스트
+:cite:`Kalchbrenner.Grefenstette.Blunsom.2014`, 시계열 분석
+:cite:`LeCun.Bengio.ea.1995`과 같이 일반적으로 순환 신경망이 사용되는
+1차원 시퀀스 구조의 과제에서도 신뢰할 만한 경쟁자로
+부상하고 있습니다. CNN의 영리한 적응은 그래프 구조 데이터
+:cite:`Kipf.Welling.2016`와 추천 시스템에까지 그 적용 범위를 넓혀 왔습니다.
 
-First, we will dive more deeply into the motivation for convolutional
-neural networks. This is followed by a walk through the basic operations
-that comprise the backbone of all convolutional networks.
-These include the convolutional layers themselves,
-nitty-gritty details including padding and stride,
-the pooling layers used to aggregate information
-across adjacent spatial regions,
-the use of multiple channels  at each layer,
-and a careful discussion of the structure of modern architectures.
-We will conclude the chapter with a full working example of LeNet,
-the first convolutional network successfully deployed,
-long before the rise of modern deep learning.
-In the next chapter, we will dive into full implementations
-of some popular and comparatively recent CNN architectures
-whose designs represent most of the techniques
-commonly used by modern practitioners.
+먼저 합성곱 신경망의 동기에 대해 좀 더 깊이 살펴봅니다.
+이어서 모든 합성곱 네트워크의 근간을 이루는 기본 연산들을 차근차근
+살펴봅니다. 여기에는 합성곱 계층 자체,
+패딩과 스트라이드를 비롯한 세부 사항,
+인접한 공간 영역에 걸쳐 정보를 집계하기 위해 사용되는
+풀링 계층, 각 계층에서의 다중 채널 사용,
+그리고 모던 아키텍처 구조에 대한 신중한 논의가 포함됩니다.
+이 장은 모던 딥러닝의 부상 훨씬 이전에 성공적으로 배치된 최초의
+합성곱 네트워크인 LeNet의 완전한 작동 예제로 마무리합니다.
+다음 장에서는 모던 실무자들이 일반적으로 사용하는 기법 대부분을 대표하는
+설계를 가진, 인기 있고 비교적 최근의 몇몇 CNN 아키텍처의
+완전한 구현을 깊이 살펴봅니다.
 
 ```toc
 :maxdepth: 2

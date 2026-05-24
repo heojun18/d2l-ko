@@ -1,984 +1,936 @@
-# Introduction
+# 서론
 :label:`chap_introduction`
 
-Until recently, nearly every computer program
-that you might have interacted with during
-an ordinary day
-was coded up as a rigid set of rules
-specifying precisely how it should behave.
-Say that we wanted to write an application
-to manage an e-commerce platform.
-After huddling around a whiteboard
-for a few hours to ponder the problem,
-we might settle on the broad strokes
-of a working solution, for example:
-(i) users interact with the application through an interface
-running in a web browser or mobile application;
-(ii) our application interacts with a commercial-grade database engine
-to keep track of each user's state and maintain records
-of historical transactions;
-and (iii) at the heart of our application,
-the *business logic* (you might say, the *brains*) of our application
-spells out a set of rules that map every conceivable circumstance
-to the corresponding action that our program should take.
+최근까지만 해도, 평범한 하루 동안
+여러분이 마주쳤을 법한 거의 모든 컴퓨터 프로그램은
+프로그램이 정확히 어떻게 동작해야 하는지를 명시하는
+경직된 규칙들의 집합으로 작성되어 있었습니다.
+저희가 전자상거래 플랫폼을 관리하는
+애플리케이션을 작성하고 싶다고 해봅시다.
+화이트보드 앞에 옹기종기 모여
+몇 시간 동안 문제를 곱씹은 끝에,
+저희는 다음과 같이 동작하는 해결책의
+큰 줄기에 합의할 수 있을 것입니다.
+(i) 사용자는 웹 브라우저나 모바일 애플리케이션에서
+동작하는 인터페이스를 통해 애플리케이션과 상호작용합니다.
+(ii) 저희의 애플리케이션은 상용 데이터베이스 엔진과 상호작용하여
+각 사용자의 상태를 추적하고
+과거 거래 기록을 유지합니다.
+(iii) 그리고 애플리케이션의 핵심에 자리한
+*비즈니스 로직*(말하자면 애플리케이션의 *두뇌*)이
+생각할 수 있는 모든 상황을
+프로그램이 취해야 할 해당 동작에 대응시키는
+규칙의 집합을 명세합니다.
 
-To build the brains of our application,
-we might enumerate all the common events
-that our program should handle.
-For example, whenever a customer clicks
-to add an item to their shopping cart,
-our program should add an entry
-to the shopping cart database table,
-associating that user's ID
-with the requested product's ID.
-We might then attempt to step through
-every possible corner case,
-testing the appropriateness of our rules
-and making any necessary modifications.
-What happens if a user
-initiates a purchase with an empty cart?
-While few developers ever get it
-completely right the first time
-(it might take some test runs to work out the kinks),
-for the most part we can write such programs
-and confidently launch them
-*before* ever seeing a real customer.
-Our ability to manually design automated systems
-that drive functioning products and systems,
-often in novel situations,
-is a remarkable cognitive feat.
-And when you are able to devise solutions
-that work $100\%$ of the time,
-you typically should not be
-worrying about machine learning.
+애플리케이션의 두뇌를 구축하기 위해,
+저희는 프로그램이 처리해야 할
+일반적인 모든 사건들을 열거해 볼 수 있을 것입니다.
+예를 들어 고객이 장바구니에 상품을 추가하기 위해
+클릭할 때마다,
+저희 프로그램은 장바구니 데이터베이스 테이블에
+해당 사용자의 ID와
+요청된 상품의 ID를 연결하는
+항목을 추가해야 합니다.
+이후 저희는 모든 가능한 코너 케이스를
+하나씩 짚어가며
+규칙의 적절성을 시험하고
+필요한 수정을 가하려 시도할 수 있습니다.
+사용자가 빈 장바구니로
+구매를 시작하면 어떻게 될까요?
+처음 한 번에 완벽하게 해내는 개발자는
+거의 없지만
+(문제를 잡아내기 위해 몇 번의 시험 실행이 필요할 수도 있습니다),
+대부분의 경우 저희는 실제 고객을 마주하기 *전에*
+이런 프로그램들을 작성하고
+자신 있게 출시할 수 있습니다.
+종종 새로운 상황 속에서도
+잘 동작하는 제품과 시스템을 구동하는
+자동화된 시스템을 수동으로 설계할 수 있는 능력은
+놀라운 인지적 위업입니다.
+그리고 $100\%$ 동작하는 해결책을
+고안해낼 수 있다면,
+일반적으로 머신러닝을
+걱정할 필요가 없습니다.
 
-Fortunately for the growing community
-of machine learning scientists,
-many tasks that we would like to automate
-do not bend so easily to human ingenuity.
-Imagine huddling around the whiteboard
-with the smartest minds you know,
-but this time you are tackling
-one of the following problems:
+성장하고 있는 머신러닝 과학자 공동체에게는 다행스럽게도,
+저희가 자동화하고 싶어 하는 많은 작업들은
+인간의 독창성에 그렇게 쉽게 굴복하지 않습니다.
+여러분이 아는 가장 똑똑한 사람들과 함께
+화이트보드 앞에 모여 있다고 상상해 봅시다.
+다만 이번에는 다음 문제들 중
+하나에 도전하고 있습니다.
 
-* Write a program that predicts tomorrow's weather given geographic information, satellite images, and a trailing window of past weather.
-* Write a program that takes in a factoid question, expressed in free-form text, and  answers it correctly.
-* Write a program that, given an image, identifies every person depicted in it and draws outlines around each.
-* Write a program that presents users with products that they are likely to enjoy but unlikely, in the natural course of browsing, to encounter.
+* 지리 정보, 위성 이미지, 그리고 과거 날씨의 시계열 윈도가 주어졌을 때 내일의 날씨를 예측하는 프로그램을 작성하시오.
+* 자유로운 형식의 텍스트로 표현된 사실 질문을 받아 정확하게 답하는 프로그램을 작성하시오.
+* 이미지가 주어졌을 때, 그 안에 묘사된 모든 사람을 식별하고 각각의 윤곽을 그려주는 프로그램을 작성하시오.
+* 사용자가 좋아할 가능성이 높지만, 평소 둘러보는 과정에서 마주칠 가능성은 낮은 상품을 사용자에게 제시하는 프로그램을 작성하시오.
 
-For these problems,
-even elite programmers would struggle
-to code up solutions from scratch.
-The reasons can vary.
-Sometimes the program that we are looking for
-follows a pattern that changes over time,
-so there is no fixed right answer!
-In such cases, any successful solution
-must adapt gracefully to a changing world.
-At other times, the relationship (say between pixels,
-and abstract categories) may be too complicated,
-requiring thousands or millions of computations
-and following unknown principles.
-In the case of image recognition,
-the precise steps required to perform the task
-lie beyond our conscious understanding,
-even though our subconscious cognitive processes
-execute the task effortlessly.
-
-
-*Machine learning* is the study of algorithms
-that can learn from experience.
-As a machine learning algorithm accumulates more experience,
-typically in the form of observational data
-or interactions with an environment,
-its performance improves.
-Contrast this with our deterministic e-commerce platform,
-which follows the same business logic,
-no matter how much experience accrues,
-until the developers themselves learn and decide
-that it is time to update the software.
-In this book, we will teach you
-the fundamentals of machine learning,
-focusing in particular on *deep learning*,
-a powerful set of techniques
-driving innovations in areas as diverse as computer vision,
-natural language processing, healthcare, and genomics.
-
-## A Motivating Example
-
-Before beginning writing, the authors of this book,
-like much of the work force, had to become caffeinated.
-We hopped in the car and started driving.
-Using an iPhone, Alex called out "Hey Siri",
-awakening the phone's voice recognition system.
-Then Mu commanded "directions to Blue Bottle coffee shop".
-The phone quickly displayed the transcription of his command.
-It also recognized that we were asking for directions
-and launched the Maps application (app)
-to fulfill our request.
-Once launched, the Maps app identified a number of routes.
-Next to each route, the phone displayed a predicted transit time.
-While this story was fabricated for pedagogical convenience,
-it demonstrates that in the span of just a few seconds,
-our everyday interactions with a smart phone
-can engage several machine learning models.
+이런 문제들에 대해서는
+엘리트 프로그래머조차도
+밑바닥부터 해결책을 코딩하는 데 어려움을 겪을 것입니다.
+이유는 다양할 수 있습니다.
+때로는 저희가 찾고 있는 프로그램이
+시간에 따라 변하는 패턴을 따르기 때문에,
+고정된 정답이 존재하지 않기도 합니다!
+이런 경우 어떤 성공적인 해결책이든
+변화하는 세상에 우아하게 적응할 수 있어야 합니다.
+또 어떤 때는 (예컨대 픽셀과
+추상적 범주 사이의) 관계가 너무 복잡해서,
+수천 또는 수백만 번의 계산을 요구하고
+알려지지 않은 원리를 따르기도 합니다.
+이미지 인식의 경우,
+저희의 무의식적 인지 과정은
+그 작업을 손쉽게 수행하지만,
+정작 그 작업을 수행하는 데 필요한 정확한 단계는
+저희의 의식적 이해를 벗어나 있습니다.
 
 
-Imagine just writing a program to respond to a *wake word*
-such as "Alexa", "OK Google", and "Hey Siri".
-Try coding it up in a room by yourself
-with nothing but a computer and a code editor,
-as illustrated in :numref:`fig_wake_word`.
-How would you write such a program from first principles?
-Think about it... the problem is hard.
-Every second, the microphone will collect roughly
-44,000 samples.
-Each sample is a measurement of the amplitude of the sound wave.
-What rule could map reliably from a snippet of raw audio to confident predictions
-$\{\textrm{yes}, \textrm{no}\}$
-about whether the snippet contains the wake word?
-If you are stuck, do not worry.
-We do not know how to write such a program from scratch either.
-That is why we use machine learning.
+*머신러닝*은 경험으로부터 학습할 수 있는
+알고리즘에 대한 학문입니다.
+머신러닝 알고리즘은 보통 관측 데이터나
+환경과의 상호작용 형태로
+더 많은 경험을 축적하면서
+그 성능이 향상됩니다.
+이를 결정론적인 전자상거래 플랫폼과 비교해 봅시다.
+이 플랫폼은 아무리 많은 경험이 쌓여도
+개발자들 스스로 학습하여 소프트웨어를 업데이트할 때가 되었다고
+결정할 때까지는 동일한 비즈니스 로직을 따릅니다.
+이 책에서 저희는 여러분에게
+머신러닝의 기초를 가르치되,
+특히 *딥러닝*에 초점을 맞출 것입니다.
+딥러닝은 컴퓨터 비전, 자연어 처리, 의료, 유전체학에 이르는 다양한 분야에서
+혁신을 이끌고 있는 강력한 기법들의 집합입니다.
 
-![Identify a wake word.](../img/wake-word.svg)
+## 동기를 부여하는 예시
+
+이 책을 쓰기 시작하기 전에, 저자들도
+대부분의 직장인처럼 카페인을 섭취해야 했습니다.
+저희는 차에 올라 운전을 시작했습니다.
+Alex는 iPhone에 대고 "Hey Siri"라고 외쳐
+폰의 음성 인식 시스템을 깨웠습니다.
+그러자 Mu가 "directions to Blue Bottle coffee shop"이라고 명령했습니다.
+폰은 곧 그의 명령의 전사를 표시했습니다.
+또한 저희가 길 안내를 요청하고 있음을 인식하고
+요청을 수행하기 위해 지도 애플리케이션(앱)을
+실행했습니다.
+실행되자, 지도 앱은 여러 경로를 식별했습니다.
+각 경로 옆에는 예상 이동 시간이 표시되었습니다.
+이 이야기는 교육적 편의를 위해 꾸며낸 것이지만,
+단 몇 초 사이에 스마트폰과의 일상적인 상호작용이
+여러 머신러닝 모델을 작동시킬 수 있다는 점을
+보여줍니다.
+
+
+"Alexa", "OK Google", "Hey Siri"와 같은
+*기상어*(wake word)에 반응하는 프로그램을 작성한다고 상상해 봅시다.
+:numref:`fig_wake_word`에 묘사된 것처럼,
+방 안에서 컴퓨터와 코드 편집기 외에는 아무것도 없이
+혼자서 코딩해 보십시오.
+제1원리로부터 이런 프로그램을 어떻게 작성하시겠습니까?
+생각해 보십시오... 이 문제는 어렵습니다.
+매초마다 마이크는 대략
+44,000개의 샘플을 수집합니다.
+각 샘플은 음파의 진폭을 측정한 값입니다.
+어떤 규칙이 원시 오디오 조각을
+그 조각이 기상어를 포함하는지에 대한 자신 있는 예측
+$\{\textrm{yes}, \textrm{no}\}$로
+신뢰성 있게 사상할 수 있을까요?
+막혔다면, 걱정하지 마십시오.
+저희도 그런 프로그램을 밑바닥부터 작성하는 법은 모릅니다.
+그래서 저희는 머신러닝을 사용합니다.
+
+![기상어를 식별합니다.](../img/wake-word.svg)
 :label:`fig_wake_word`
 
 
-Here is the trick.
-Often, even when we do not know how to tell a computer
-explicitly how to map from inputs to outputs,
-we are nonetheless capable of performing the cognitive feat ourselves.
-In other words, even if you do not know
-how to program a computer to recognize the word "Alexa",
-you yourself are able to recognize it.
-Armed with this ability, we can collect a huge *dataset*
-containing examples of audio snippets and associated labels,
-indicating which snippets contain the wake word.
-In the currently dominant approach to machine learning,
-we do not attempt to design a system
-*explicitly* to recognize wake words.
-Instead, we define a flexible program
-whose behavior is determined by a number of *parameters*.
-Then we use the dataset to determine the best possible parameter values,
-i.e., those that improve the performance of our program
-with respect to a chosen performance measure.
+비결은 이렇습니다.
+종종 입력을 출력으로 어떻게 사상해야 하는지
+컴퓨터에 명시적으로 알려주는 법을 모를 때조차도,
+저희 자신은 그 인지적 위업을 수행할 능력이 있습니다.
+다시 말해, "Alexa"라는 단어를 인식하도록
+컴퓨터를 프로그램하는 방법을 모른다 해도,
+여러분 자신은 그것을 인식할 수 있습니다.
+이 능력으로 무장한 채, 저희는 어떤 조각이 기상어를 포함하는지를 나타내는
+오디오 조각과 그에 연관된 레이블의 예시를 담은
+거대한 *데이터셋*을 수집할 수 있습니다.
+현재 머신러닝의 지배적인 접근법에서는,
+저희는 기상어를 인식하도록
+시스템을 *명시적으로* 설계하려 하지 않습니다.
+대신, 저희는 다수의 *파라미터*에 의해
+그 동작이 결정되는 유연한 프로그램을 정의합니다.
+그러고 나서 데이터셋을 사용해 가능한 최선의 파라미터 값,
+즉 선택한 성능 척도에 대해 프로그램의 성능을
+향상시키는 값들을 결정합니다.
 
-You can think of the parameters as knobs that we can turn,
-manipulating the behavior of the program.
-Once the parameters are fixed, we call the program a *model*.
-The set of all distinct programs (input--output mappings)
-that we can produce just by manipulating the parameters
-is called a *family* of models.
-And the "meta-program" that uses our dataset
-to choose the parameters is called a *learning algorithm*.
+파라미터는 저희가 돌릴 수 있는 손잡이로 생각할 수 있으며,
+이 손잡이로 프로그램의 동작을 조작합니다.
+파라미터가 고정되면, 저희는 그 프로그램을 *모델*이라고 부릅니다.
+파라미터를 조작하는 것만으로 만들어낼 수 있는
+모든 서로 다른 프로그램들(입력-출력 사상들)의 집합을
+모델의 *패밀리*라고 부릅니다.
+그리고 저희의 데이터셋을 사용해
+파라미터를 선택하는 "메타 프로그램"을 *학습 알고리즘*이라고 부릅니다.
 
-Before we can go ahead and engage the learning algorithm,
-we have to define the problem precisely,
-pinning down the exact nature of the inputs and outputs,
-and choosing an appropriate model family.
-In this case,
-our model receives a snippet of audio as *input*,
-and the model
-generates a selection among
-$\{\textrm{yes}, \textrm{no}\}$ as *output*.
-If all goes according to plan
-the model's guesses will
-typically be correct as to
-whether the snippet contains the wake word.
+학습 알고리즘을 동작시키기에 앞서,
+저희는 문제를 정확하게 정의해야 합니다.
+입력과 출력의 정확한 본질을 고정하고,
+적절한 모델 패밀리를 선택해야 합니다.
+이 경우,
+저희 모델은 오디오 조각을 *입력*으로 받고,
+$\{\textrm{yes}, \textrm{no}\}$ 중 하나를
+*출력*으로 생성합니다.
+계획대로 모든 것이 진행되면
+모델의 추측은 일반적으로 그 조각이 기상어를 포함하는지에 대해
+정확할 것입니다.
 
-If we choose the right family of models,
-there should exist one setting of the knobs
-such that the model fires "yes" every time it hears the word "Alexa".
-Because the exact choice of the wake word is arbitrary,
-we will probably need a model family sufficiently rich that,
-via another setting of the knobs, it could fire "yes"
-only upon hearing the word "Apricot".
-We expect that the same model family should be suitable
-for "Alexa" recognition and "Apricot" recognition
-because they seem, intuitively, to be similar tasks.
-However, we might need a different family of models entirely
-if we want to deal with fundamentally different inputs or outputs,
-say if we wanted to map from images to captions,
-or from English sentences to Chinese sentences.
+저희가 올바른 모델 패밀리를 선택한다면,
+모델이 "Alexa"라는 단어를 들을 때마다 "yes"를 발사하도록 하는
+손잡이 설정이 하나는 존재해야 합니다.
+기상어의 정확한 선택은 임의적이므로,
+손잡이의 다른 설정을 통해서는
+"Apricot"이라는 단어를 들었을 때만 "yes"를 발사할 수 있을 만큼
+충분히 풍부한 모델 패밀리가 아마 필요할 것입니다.
+저희는 "Alexa" 인식과 "Apricot" 인식이
+직관적으로 유사한 작업으로 보이기 때문에,
+동일한 모델 패밀리가 두 가지 모두에 적합할 것이라 기대합니다.
+하지만 근본적으로 다른 입력이나 출력을 다루고 싶다면,
+예컨대 이미지에서 캡션으로 사상하거나
+영어 문장에서 중국어 문장으로 사상하고 싶다면,
+완전히 다른 모델 패밀리가 필요할 수도 있습니다.
 
-As you might guess, if we just set all of the knobs randomly,
-it is unlikely that our model will recognize "Alexa",
-"Apricot", or any other English word.
-In machine learning,
-the *learning* is the process
-by which we discover the right setting of the knobs
-for coercing the desired behavior from our model.
-In other words,
-we *train* our model with data.
-As shown in :numref:`fig_ml_loop`, the training process usually looks like the following:
+짐작하시겠지만, 모든 손잡이를 그냥 무작위로 설정한다면,
+저희 모델이 "Alexa"나 "Apricot",
+또는 다른 어떤 영어 단어를 인식할 가능성은 낮습니다.
+머신러닝에서,
+*학습*은 모델로부터 원하는 동작을 끌어내기 위한
+올바른 손잡이 설정을 발견해 나가는 과정입니다.
+다시 말해,
+저희는 데이터로 모델을 *훈련*시킵니다.
+:numref:`fig_ml_loop`에서 보여주듯이, 훈련 과정은 보통 다음과 같이 진행됩니다.
 
-1. Start off with a randomly initialized model that cannot do anything useful.
-1. Grab some of your data (e.g., audio snippets and corresponding $\{\textrm{yes}, \textrm{no}\}$ labels).
-1. Tweak the knobs to make the model perform better as assessed on those examples.
-1. Repeat Steps 2 and 3 until the model is awesome.
+1. 아무런 유용한 일도 할 수 없는, 무작위로 초기화된 모델로 시작합니다.
+1. 데이터 일부를 가져옵니다(예: 오디오 조각과 그에 해당하는 $\{\textrm{yes}, \textrm{no}\}$ 레이블).
+1. 모델이 그 예시들에 대해 평가했을 때 더 잘 수행하도록 손잡이를 조정합니다.
+1. 모델이 훌륭해질 때까지 2단계와 3단계를 반복합니다.
 
-![A typical training process.](../img/ml-loop.svg)
+![전형적인 훈련 과정.](../img/ml-loop.svg)
 :label:`fig_ml_loop`
 
-To summarize, rather than code up a wake word recognizer,
-we code up a program that can *learn* to recognize wake words,
-if presented with a large labeled dataset.
-You can think of this act of determining a program's behavior
-by presenting it with a dataset as *programming with data*.
-That is to say, we can "program" a cat detector
-by providing our machine learning system
-with many examples of cats and dogs.
-This way the detector will eventually learn to emit
-a very large positive number if it is a cat,
-a very large negative number if it is a dog,
-and something closer to zero if it is not sure.
-This barely scratches the surface of what machine learning can do.
-Deep learning, which we will explain in greater detail later,
-is just one among many popular methods
-for solving machine learning problems.
+요약하자면, 기상어 인식기를 직접 코딩하는 것이 아니라,
+충분히 큰 레이블링된 데이터셋이 주어졌을 때
+기상어를 인식하는 법을 *학습*할 수 있는 프로그램을 코딩하는 것입니다.
+데이터셋을 제시함으로써 프로그램의 동작을 결정하는 이런 행위를
+*데이터로 프로그래밍하기*라고 생각할 수 있습니다.
+즉, 저희는 머신러닝 시스템에 고양이와 개의 많은 예시를 제공함으로써
+고양이 탐지기를 "프로그래밍"할 수 있습니다.
+이런 식으로 탐지기는 결국 고양이라면 매우 큰 양수를,
+개라면 매우 큰 음수를,
+확신이 없다면 0에 가까운 값을 출력하도록
+학습하게 됩니다.
+이는 머신러닝이 할 수 있는 일의 표면을 겨우 긁은 정도에 불과합니다.
+나중에 더 자세히 설명할 딥러닝은,
+머신러닝 문제를 해결하는 많은 인기 있는 방법들 중
+하나일 뿐입니다.
 
 
-## Key Components
+## 핵심 구성 요소
 
-In our wake word example, we described a dataset
-consisting of audio snippets and binary labels,
-and we gave a hand-wavy sense of how we might train
-a model to approximate a mapping from snippets to classifications.
-This sort of problem,
-where we try to predict a designated unknown label
-based on known inputs
-given a dataset consisting of examples
-for which the labels are known,
-is called *supervised learning*.
-This is just one among many kinds of machine learning problems.
-Before we explore other varieties,
-we would like to shed more light
-on some core components that will follow us around,
-no matter what kind of machine learning problem we tackle:
+기상어 예시에서, 저희는 오디오 조각과 이진 레이블로 구성된
+데이터셋을 설명했고,
+조각에서 분류로의 사상을 근사하도록 모델을 훈련하는 방법에 대해
+대략적인 감을 잡았습니다.
+이런 종류의 문제, 즉 레이블이 알려진 예시들로 구성된
+데이터셋이 주어졌을 때, 알려진 입력을 바탕으로
+지정된 미지의 레이블을 예측하려는 문제를
+*지도 학습*이라고 부릅니다.
+이는 많은 종류의 머신러닝 문제들 중 하나일 뿐입니다.
+다른 종류들을 살펴보기에 앞서,
+저희가 어떤 종류의 머신러닝 문제를 다루든
+저희를 따라다닐 몇 가지 핵심 구성 요소에
+좀 더 빛을 비춰보고자 합니다.
 
-1. The *data* that we can learn from.
-1. A *model* of how to transform the data.
-1. An *objective function* that quantifies how well (or badly) the model is doing.
-1. An *algorithm* to adjust the model's parameters to optimize the objective function.
+1. 학습할 수 있는 *데이터*.
+1. 데이터를 어떻게 변환할지에 대한 *모델*.
+1. 모델이 얼마나 잘(또는 잘못) 하고 있는지를 정량화하는 *목적 함수*.
+1. 목적 함수를 최적화하도록 모델의 파라미터를 조정하는 *알고리즘*.
 
-### Data
+### 데이터
 
-It might go without saying that you cannot do data science without data.
-We could lose hundreds of pages pondering what precisely data *is*,
-but for now, we will focus on the key properties
-of the datasets that we will be concerned with.
-Generally, we are concerned with a collection of examples.
-In order to work with data usefully, we typically
-need to come up with a suitable numerical representation.
-Each *example* (or *data point*, *data instance*, *sample*)
-typically consists of a set of attributes
-called *features* (sometimes called *covariates* or *inputs*),
-based on which the model must make its predictions.
-In supervised learning problems,
-our goal is to predict the value of a special attribute,
-called the *label* (or *target*),
-that is not part of the model's input.
+데이터 없이는 데이터 과학을 할 수 없다는 말은 굳이 할 필요가 없을지도 모릅니다.
+저희는 데이터가 정확히 *무엇*인지를 곱씹는 데 수백 페이지를 허비할 수도 있겠지만,
+지금은 저희가 관심을 가질 데이터셋의
+핵심 속성에 초점을 맞추려 합니다.
+일반적으로 저희는 예시들의 모음을 다룹니다.
+데이터를 유용하게 다루기 위해, 저희는 보통
+적절한 수치 표현을 마련해야 합니다.
+각 *예시*(또는 *데이터 포인트*, *데이터 인스턴스*, *샘플*)는
+일반적으로 *특징*(때로는 *공변량* 또는 *입력*이라고도 함)이라 부르는
+속성들의 집합으로 구성되며,
+이를 바탕으로 모델은 예측을 내놓아야 합니다.
+지도 학습 문제에서,
+저희의 목표는 모델의 입력에 포함되지 않는 특별한 속성,
+즉 *레이블*(또는 *타깃*)의 값을 예측하는 것입니다.
 
-If we were working with image data,
-each example might consist of an
-individual photograph (the features)
-and a number indicating the category
-to which the photograph belongs (the label).
-The photograph would be represented numerically
-as three grids of numerical values representing
-the brightness of red, green, and blue light
-at each pixel location.
-For example, a $200\times 200$ pixel color photograph
-would consist of $200\times200\times3=120000$ numerical values.
+이미지 데이터를 다룬다면,
+각 예시는 한 장의 사진(특징)과
+그 사진이 속한 범주를 나타내는
+숫자(레이블)로 구성될 수 있습니다.
+그 사진은 각 픽셀 위치에서 빨강, 초록, 파랑 빛의 밝기를 나타내는
+세 개의 숫자 격자로
+수치 표현될 것입니다.
+예를 들어, $200\times 200$ 픽셀의 컬러 사진은
+$200\times200\times3=120000$개의 숫자 값으로 구성됩니다.
 
-Alternatively, we might work with electronic health record data
-and tackle the task of predicting the likelihood
-that a given patient  will survive the next 30 days.
-Here, our features might consist of a collection
-of readily available attributes
-and frequently recorded measurements,
-including age, vital signs, comorbidities,
-current medications, and recent procedures.
-The label available for training would be a binary value
-indicating whether each patient in the historical data
-survived within the 30-day window.
+또는 저희가 전자 건강 기록 데이터를 다루며
+주어진 환자가 향후 30일 동안 생존할 가능성을 예측하는
+과제에 도전할 수도 있습니다.
+이 경우, 저희의 특징은 나이, 활력 징후, 동반 질환,
+현재 복용 중인 약, 최근 시술 등
+쉽게 구할 수 있는 속성과
+자주 기록되는 측정치들의 모음으로 구성될 수 있습니다.
+훈련에 사용할 수 있는 레이블은
+과거 데이터의 각 환자가 30일 윈도 내에 생존했는지를 나타내는
+이진 값일 것입니다.
 
-In such cases, when every example is characterized
-by the same number of numerical features,
-we say that the inputs are fixed-length vectors
-and we call the (constant) length of the vectors
-the *dimensionality* of the data.
-As you might imagine, fixed-length inputs can be convenient,
-giving us one less complication to worry about.
-However, not all data can easily
-be represented as *fixed-length* vectors.
-While we might expect microscope images
-to come from standard equipment,
-we cannot expect images mined from the Internet
-all to have the same resolution or shape.
-For images, we might consider
-cropping them to a standard size,
-but that strategy only gets us so far.
-We risk losing information in the cropped-out portions.
-Moreover, text data resists fixed-length
-representations even more stubbornly.
-Consider the customer reviews left
-on e-commerce sites such as Amazon, IMDb, and TripAdvisor.
-Some are short: "it stinks!".
-Others ramble for pages.
-One major advantage of deep learning over traditional methods
-is the comparative grace with which modern models
-can handle *varying-length* data.
+이런 경우, 모든 예시가 동일한 수의 수치 특징으로
+특징지어질 때,
+저희는 입력이 고정 길이 벡터라고 말하며
+그 벡터의 (상수) 길이를
+데이터의 *차원성*이라고 부릅니다.
+짐작하시듯이, 고정 길이 입력은 편리할 수 있으며,
+신경 써야 할 복잡함을 하나 줄여줍니다.
+하지만 모든 데이터가 *고정 길이* 벡터로
+쉽게 표현될 수 있는 것은 아닙니다.
+현미경 이미지는 표준 장비에서 나올 것이라 기대할 수 있지만,
+인터넷에서 채굴한 이미지가 모두 같은 해상도나 형태를 가질 것이라
+기대할 수는 없습니다.
+이미지의 경우, 표준 크기로
+잘라내는 것을 고려할 수도 있지만,
+그 전략으로는 일정 수준까지밖에 갈 수 없습니다.
+잘려나간 부분에 담긴 정보를 잃을 위험이 있기 때문입니다.
+게다가, 텍스트 데이터는 고정 길이 표현에
+훨씬 더 완강하게 저항합니다.
+Amazon, IMDb, TripAdvisor 같은 전자상거래 사이트에 남겨진
+고객 리뷰를 떠올려 봅시다.
+어떤 것은 "it stinks!"처럼 짧고,
+어떤 것은 여러 페이지에 걸쳐 장황하게 이어집니다.
+전통적인 방법에 비해 딥러닝의 한 가지 큰 장점은
+현대 모델들이 *가변 길이* 데이터를
+상대적으로 우아하게 다룰 수 있다는 점입니다.
 
-Generally, the more data we have, the easier our job becomes.
-When we have more data, we can train more powerful models
-and rely less heavily on preconceived assumptions.
-The regime change from (comparatively) small to big data
-is a major contributor to the success of modern deep learning.
-To drive the point home, many of
-the most exciting models in deep learning
-do not work without large datasets.
-Some others might work in the small data regime,
-but are no better than traditional approaches.
+일반적으로, 데이터가 많을수록 저희의 일은 쉬워집니다.
+데이터가 더 많을 때, 저희는 더 강력한 모델을 훈련시킬 수 있고
+선입견적 가정에 덜 크게 의존할 수 있습니다.
+(상대적으로) 작은 데이터에서 빅데이터로의 체제 변화는
+현대 딥러닝 성공의 주요 기여 요인입니다.
+요점을 강조하자면, 딥러닝에서 가장 흥미로운 모델들 중 다수는
+대규모 데이터셋 없이는 동작하지 않습니다.
+일부는 작은 데이터 체제에서도 동작할 수 있지만,
+전통적 접근법보다 나을 것이 없습니다.
 
-Finally, it is not enough to have lots of data
-and to process it cleverly.
-We need the *right* data.
-If the data is full of mistakes,
-or if the chosen features are not predictive
-of the target quantity of interest,
-learning is going to fail.
-The situation is captured well by the cliché:
-*garbage in, garbage out*.
-Moreover, poor predictive performance
-is not the only potential consequence.
-In sensitive applications of machine learning,
-like predictive policing, resume screening,
-and risk models used for lending,
-we must be especially alert
-to the consequences of garbage data.
-One commonly occurring failure mode concerns datasets
-where some groups of people are unrepresented
-in the training data.
-Imagine applying a skin cancer recognition system
-that had never seen black skin before.
-Failure can also occur when the data
-does not only under-represent some groups
-but reflects societal prejudices.
-For example, if past hiring decisions
-are used to train a predictive model
-that will be used to screen resumes
-then machine learning models could inadvertently
-capture and automate historical injustices.
-Note that this can all happen without the data scientist
-actively conspiring, or even being aware.
+마지막으로, 데이터가 많고
+그것을 영리하게 처리하는 것만으로는 충분치 않습니다.
+저희에게는 *올바른* 데이터가 필요합니다.
+데이터가 오류로 가득하거나,
+선택한 특징이 관심 있는 타깃 양에 대해
+예측력이 없다면,
+학습은 실패할 것입니다.
+이 상황은 다음과 같은 상투구로 잘 포착됩니다.
+*쓰레기를 넣으면 쓰레기가 나온다(garbage in, garbage out)*.
+또한, 부족한 예측 성능만이
+잠재적 결과의 전부가 아닙니다.
+예측 치안, 이력서 선별,
+대출에 사용되는 위험 모델 같은
+머신러닝의 민감한 응용에서는,
+저희는 쓰레기 데이터의 결과에
+특히 주의를 기울여야 합니다.
+흔히 발생하는 실패 양상 중 하나는
+특정 집단의 사람들이 훈련 데이터에 충분히 표현되지 않은
+데이터셋과 관련이 있습니다.
+흑인 피부를 한 번도 본 적이 없는 피부암 인식 시스템을
+적용한다고 상상해 봅시다.
+데이터가 어떤 집단을 과소 표현할 뿐 아니라
+사회적 편견을 반영할 때도 실패가 발생할 수 있습니다.
+예를 들어, 과거의 채용 결정을
+이력서 선별에 사용될 예측 모델을 훈련하는 데 쓴다면,
+머신러닝 모델은 의도치 않게
+역사적 불평등을 포착하고 자동화할 수 있습니다.
+이 모든 일은 데이터 과학자가 적극적으로 공모하지 않더라도,
+심지어 인지하지 못한 채로도 일어날 수 있다는 점에 유의하십시오.
 
 
-### Models
+### 모델
 
-Most machine learning involves transforming the data in some sense.
-We might want to build a system that ingests photos and predicts smiley-ness.
-Alternatively,
-we might want to ingest a set of sensor readings
-and predict how normal vs. anomalous the readings are.
-By *model*, we denote the computational machinery for ingesting data
-of one type,
-and spitting out predictions of a possibly different type.
-In particular, we are interested in *statistical models*
-that can be estimated from data.
-While simple models are perfectly capable of addressing
-appropriately simple problems,
-the problems
-that we focus on in this book stretch the limits of classical methods.
-Deep learning is differentiated from classical approaches
-principally by the set of powerful models that it focuses on.
-These models consist of many successive transformations of the data
-that are chained together top to bottom, thus the name *deep learning*.
-On our way to discussing deep models,
-we will also discuss some more traditional methods.
+대부분의 머신러닝은 어떤 의미에서 데이터를 변환하는 일을 수반합니다.
+저희는 사진을 받아들여 웃는 정도를 예측하는 시스템을 구축하고 싶을 수 있습니다.
+또는,
+센서 판독값의 집합을 받아들여
+판독값이 얼마나 정상인지 또는 이상인지를 예측하고 싶을 수도 있습니다.
+*모델*이라는 말로 저희는 한 가지 유형의 데이터를 받아들여
+가능하면 다른 유형의 예측을 내뱉는
+계산 기계를 가리킵니다.
+특히, 저희는 데이터로부터 추정될 수 있는
+*통계적 모델*에 관심이 있습니다.
+단순한 모델은 적절히 단순한 문제를 다루는 데
+완벽하게 능하지만,
+이 책에서 저희가 초점을 맞추는 문제들은 고전적 방법의 한계를 늘립니다.
+딥러닝은 그것이 초점을 맞추는 강력한 모델 집합에 의해
+고전적 접근법과 주로 구별됩니다.
+이런 모델들은 위에서 아래로 사슬처럼 연결된
+데이터의 많은 연속적인 변환들로 구성되며, 그래서 *딥러닝*이라는 이름이 붙었습니다.
+심층 모델을 논의하는 과정에서,
+저희는 좀 더 전통적인 방법들도 함께 논의할 것입니다.
 
-### Objective Functions
+### 목적 함수
 
-Earlier, we introduced machine learning as learning from experience.
-By *learning* here,
-we mean improving at some task over time.
-But who is to say what constitutes an improvement?
-You might imagine that we could propose updating our model,
-and some people might disagree on whether our proposal
-constituted an improvement or not.
+앞서 저희는 머신러닝을 경험으로부터의 학습으로 소개했습니다.
+여기서 *학습*이란,
+시간이 지남에 따라 어떤 작업에서 향상되는 것을 의미합니다.
+그런데 무엇이 향상을 구성하는지 누가 정한단 말입니까?
+저희가 모델을 갱신하자고 제안했을 때,
+어떤 사람들은 그 제안이 향상을 구성하는지 아닌지에 대해
+동의하지 않을 수도 있다고 상상할 수 있습니다.
 
-In order to develop a formal mathematical system of learning machines,
-we need to have formal measures of how good (or bad) our models are.
-In machine learning, and optimization more generally,
-we call these *objective functions*.
-By convention, we usually define objective functions
-so that lower is better.
-This is merely a convention.
-You can take any function
-for which higher is better, and turn it into a new function
-that is qualitatively identical but for which lower is better
-by flipping the sign.
-Because we choose lower to be better, these functions are sometimes called
-*loss functions*.
+학습 기계에 대한 형식적 수학 체계를 발전시키려면,
+저희 모델이 얼마나 좋은지(또는 나쁜지)에 대한 형식적 척도를
+가져야 합니다.
+머신러닝에서, 그리고 더 일반적으로는 최적화에서,
+저희는 이를 *목적 함수*라고 부릅니다.
+관례적으로, 저희는 보통 낮을수록 좋은 방향으로
+목적 함수를 정의합니다.
+이는 단지 관례일 뿐입니다.
+높을수록 좋은 어떤 함수든
+부호를 뒤집음으로써,
+질적으로 동일하지만 낮을수록 좋은 새로운 함수로 바꿀 수 있습니다.
+낮을수록 좋게 선택하기 때문에, 이런 함수들은 때때로
+*손실 함수*라고도 불립니다.
 
-When trying to predict numerical values,
-the most common loss function is *squared error*,
-i.e., the square of the difference between
-the prediction and the ground truth target.
-For classification, the most common objective
-is to minimize error rate,
-i.e., the fraction of examples on which
-our predictions disagree with the ground truth.
-Some objectives (e.g., squared error) are easy to optimize,
-while others (e.g., error rate) are difficult to optimize directly,
-owing to non-differentiability or other complications.
-In these cases, it is common instead to optimize a *surrogate objective*.
+수치 값을 예측하려 할 때,
+가장 흔한 손실 함수는 *제곱 오차*,
+즉 예측과 실측 타깃 사이의 차이를
+제곱한 값입니다.
+분류에서, 가장 흔한 목표는 오류율,
+즉 저희의 예측이 실측과 일치하지 않는
+예시의 비율을 최소화하는 것입니다.
+어떤 목적(예: 제곱 오차)은 최적화하기 쉬운 반면,
+다른 목적(예: 오류율)은 미분 불가능성이나 다른 복잡성 때문에
+직접 최적화하기 어렵습니다.
+이런 경우, 대신 *대리 목적*을 최적화하는 것이 일반적입니다.
 
-During optimization, we think of the loss
-as a function of the model's parameters,
-and treat the training dataset as a constant.
-We learn
-the best values of our model's parameters
-by minimizing the loss incurred on a set
-consisting of some number of examples collected for training.
-However, doing well on the training data
-does not guarantee that we will do well on unseen data.
-So we will typically want to split the available data into two partitions:
-the *training dataset* (or *training set*), for learning model parameters;
-and the *test dataset* (or *test set*), which is held out for evaluation.
-At the end of the day, we typically report
-how our models perform on both partitions.
-You could think of training performance
-as analogous to the scores that a student achieves
-on the practice exams used to prepare for some real final exam.
-Even if the results are encouraging,
-that does not guarantee success on the final exam.
-Over the course of studying, the student
-might begin to memorize the practice questions,
-appearing to master the topic but faltering
-when faced with previously unseen questions
-on the actual final exam.
-When a model performs well on the training set
-but fails to generalize to unseen data,
-we say that it is *overfitting* to the training data.
+최적화 동안, 저희는 손실을
+모델의 파라미터에 대한 함수로 생각하고,
+훈련 데이터셋은 상수로 취급합니다.
+저희는 훈련을 위해 수집된 일정 수의 예시들로 구성된 집합에서
+발생한 손실을 최소화함으로써
+모델 파라미터의 최선의 값을 학습합니다.
+하지만, 훈련 데이터에서 잘하는 것이
+보지 못한 데이터에서도 잘할 것임을 보장하지는 않습니다.
+그래서 저희는 보통 가용한 데이터를 두 개의 분할로 나누고 싶어 합니다.
+즉, 모델 파라미터를 학습하기 위한 *훈련 데이터셋*(또는 *훈련 세트*)과
+평가를 위해 따로 떼어둔 *테스트 데이터셋*(또는 *테스트 세트*)입니다.
+결국 저희는 보통 두 분할 모두에서
+저희 모델이 어떻게 수행하는지를 보고합니다.
+훈련 성능을 학생이 진짜 기말고사를 준비하기 위해 사용하는
+모의 시험에서 받는 점수와 유사한 것으로
+생각할 수 있습니다.
+결과가 고무적이더라도,
+그것이 기말고사의 성공을 보장하지는 않습니다.
+공부하는 과정에서, 학생은
+연습 문제를 외우기 시작할 수 있고,
+주제를 통달한 것처럼 보이지만 실제 기말고사에서
+이전에 본 적 없는 문제를 마주하면
+흔들릴 수 있습니다.
+모델이 훈련 세트에서는 잘 수행하지만
+보지 못한 데이터에는 일반화하지 못할 때,
+저희는 그 모델이 훈련 데이터에 *과적합*되었다고 말합니다.
 
 
-### Optimization Algorithms
+### 최적화 알고리즘
 
-Once we have got some data source and representation,
-a model, and a well-defined objective function,
-we need an algorithm capable of searching
-for the best possible parameters for minimizing the loss function.
-Popular optimization algorithms for deep learning
-are based on an approach called *gradient descent*.
-In brief, at each step, this method
-checks to see, for each parameter,
-how that training set loss would change
-if you perturbed that parameter by just a small amount.
-It would then update the parameter
-in the direction that lowers the loss.
+어떤 데이터 소스와 표현, 모델, 그리고
+잘 정의된 목적 함수를 갖추고 나면,
+저희는 손실 함수를 최소화하기 위한 최선의 파라미터를
+탐색할 수 있는 알고리즘이 필요합니다.
+딥러닝을 위한 인기 있는 최적화 알고리즘은
+*경사 하강법*(gradient descent)이라 부르는 접근법에 기반합니다.
+간단히 말해, 각 단계에서 이 방법은,
+각 파라미터에 대해, 그 파라미터를 아주 조금 섭동시켰을 때
+훈련 세트 손실이 어떻게 변할지를 점검합니다.
+그런 다음 손실을 낮추는 방향으로
+파라미터를 갱신합니다.
 
 
-## Kinds of Machine Learning Problems
+## 머신러닝 문제의 종류
 
-The wake word problem in our motivating example
-is just one among many
-that machine learning can tackle.
-To motivate the reader further
-and provide us with some common language
-that will follow us throughout the book,
-we now provide a broad overview of the landscape
-of machine learning problems.
+저희의 동기 부여 예시에서 다룬 기상어 문제는
+머신러닝이 다룰 수 있는 많은 문제들 중
+하나일 뿐입니다.
+독자에게 더 큰 동기를 부여하고
+이 책 전반에 걸쳐 저희를 따라다닐
+공통 어휘를 제공하기 위해,
+이제 머신러닝 문제 지형에 대한
+폭넓은 개관을 제공합니다.
 
-### Supervised Learning
+### 지도 학습
 
-Supervised learning describes tasks
-where we are given a dataset
-containing both features and labels
-and 
-asked to produce a model that predicts the labels when
-given input features.
-Each feature--label pair is called an example.
-Sometimes, when the context is clear,
-we may use the term *examples*
-to refer to a collection of inputs,
-even when the corresponding labels are unknown.
-The supervision comes into play
-because, for choosing the parameters,
-we (the supervisors) provide the model
-with a dataset consisting of labeled examples.
-In probabilistic terms, we typically are interested in estimating
-the conditional probability of a label given input features.
-While it is just one among several paradigms,
-supervised learning accounts for the majority of successful
-applications of machine learning in industry.
-Partly that is because many important tasks
-can be described crisply as estimating the probability
-of something unknown given a particular set of available data:
+지도 학습은 특징과 레이블을 모두 포함하는
+데이터셋이 주어지고,
+입력 특징이 주어졌을 때 레이블을 예측하는 모델을
+만들어내도록 요청받는 작업을 가리킵니다.
+각 특징-레이블 쌍을 예시라고 부릅니다.
+때로는 문맥이 명확할 때,
+해당 레이블이 알려지지 않았을 때조차도
+입력의 모음을 가리키는 데
+*예시*라는 용어를 사용할 수 있습니다.
+지도(supervision)가 작용하는 이유는,
+파라미터를 선택하기 위해
+저희(감독자)가 모델에 레이블링된 예시들로 구성된
+데이터셋을 제공하기 때문입니다.
+확률적 관점에서, 저희는 보통 입력 특징이 주어졌을 때
+레이블의 조건부 확률을 추정하는 데 관심이 있습니다.
+지도 학습은 여러 패러다임 중 하나일 뿐이지만,
+산업에서의 성공적인 머신러닝 응용의 대다수를 차지합니다.
+이는 부분적으로 많은 중요한 작업이
+가용한 특정 데이터의 집합이 주어졌을 때 미지의 무언가에 대한 확률을 추정하는 것으로
+선명하게 기술될 수 있기 때문입니다.
 
-* Predict cancer vs. not cancer, given a computer tomography image.
-* Predict the correct translation in French, given a sentence in English.
-* Predict the price of a stock next month based on this month's financial reporting data.
+* 컴퓨터 단층촬영 이미지가 주어졌을 때, 암인지 아닌지 예측합니다.
+* 영어 문장이 주어졌을 때, 올바른 프랑스어 번역을 예측합니다.
+* 이번 달 재무 보고 데이터를 기반으로 다음 달 주가를 예측합니다.
 
-While all supervised learning problems
-are captured by the simple description
-"predicting the labels given input features",
-supervised learning itself can take diverse forms
-and require tons of modeling decisions,
-depending on (among other considerations)
-the type, size, and quantity of the inputs and outputs.
-For example, we use different models
-for processing sequences of arbitrary lengths
-and fixed-length vector representations.
-We will visit many of these problems
-in depth throughout this book.
+모든 지도 학습 문제가
+"입력 특징이 주어졌을 때 레이블 예측"이라는
+단순한 기술에 포착되지만,
+지도 학습 자체는 다양한 형태를 띨 수 있고,
+(다른 고려 사항들 중에서도)
+입력과 출력의 유형, 크기, 양에 따라
+수많은 모델링 결정이 필요할 수 있습니다.
+예를 들어, 저희는 임의의 길이를 가진 시퀀스를 처리하는 데
+고정 길이 벡터 표현을 처리하는 것과 다른 모델을 사용합니다.
+이 책 전반에 걸쳐 저희는 이런 문제들 중 많은 것을
+깊이 다룰 것입니다.
 
-Informally, the learning process looks something like the following.
-First, grab a big collection of examples for which the features are known
-and select from them a random subset,
-acquiring the ground truth labels for each.
-Sometimes these labels might be available data that have already been collected
-(e.g., did a patient die within the following year?)
-and other times we might need to employ human annotators to label the data,
-(e.g., assigning images to categories).
-Together, these inputs and corresponding labels comprise the training set.
-We feed the training dataset into a supervised learning algorithm,
-a function that takes as input a dataset
-and outputs another function: the learned model.
-Finally, we can feed previously unseen inputs to the learned model,
-using its outputs as predictions of the corresponding label.
-The full process is drawn in :numref:`fig_supervised_learning`.
+비공식적으로, 학습 과정은 다음과 같은 모습입니다.
+먼저, 특징이 알려진 예시들의 큰 모음을 가져와서
+그중 무작위 부분집합을 선택하고,
+각각에 대한 실측 레이블을 획득합니다.
+때때로 이 레이블들은 이미 수집된 가용 데이터일 수도 있고
+(예: 환자가 다음 1년 안에 사망했는가?),
+다른 때에는 데이터에 레이블을 붙이기 위해
+사람 주석자를 고용해야 할 수도 있습니다(예: 이미지를 범주에 할당).
+이런 입력과 그에 해당하는 레이블이 함께 훈련 세트를 구성합니다.
+저희는 훈련 데이터셋을 지도 학습 알고리즘,
+즉 데이터셋을 입력으로 받아
+또 다른 함수, 즉 학습된 모델을 출력하는 함수에 공급합니다.
+마지막으로, 이전에 본 적 없는 입력을 학습된 모델에 공급하고,
+그 출력을 해당 레이블의 예측으로 사용할 수 있습니다.
+전체 과정이 :numref:`fig_supervised_learning`에 그려져 있습니다.
 
-![Supervised learning.](../img/supervised-learning.svg)
+![지도 학습.](../img/supervised-learning.svg)
 :label:`fig_supervised_learning`
 
-#### Regression
+#### 회귀
 
-Perhaps the simplest supervised learning task
-to wrap your head around is *regression*.
-Consider, for example, a set of data harvested
-from a database of home sales.
-We might construct a table,
-in which each row corresponds to a different house,
-and each column corresponds to some relevant attribute,
-such as the square footage of a house,
-the number of bedrooms, the number of bathrooms,
-and the number of minutes (walking) to the center of town.
-In this dataset, each example would be a specific house,
-and the corresponding feature vector would be one row in the table.
-If you live in New York or San Francisco,
-and you are not the CEO of Amazon, Google, Microsoft, or Facebook,
-the (sq. footage, no. of bedrooms, no. of bathrooms, walking distance)
-feature vector for your home might look something like: $[600, 1, 1, 60]$.
-However, if you live in Pittsburgh, it might look more like $[3000, 4, 3, 10]$.
-Fixed-length feature vectors like this are essential
-for most classic machine learning algorithms.
+아마 머리에 가장 쉽게 그려볼 수 있는
+지도 학습 작업은 *회귀*일 것입니다.
+예를 들어, 주택 판매 데이터베이스에서 채취한
+데이터의 집합을 생각해 봅시다.
+저희는 각 행이 서로 다른 주택에 해당하고,
+각 열이 주택의 면적,
+침실 수, 욕실 수, 시내 중심까지의 도보 분 같은
+관련 속성에 해당하는
+표를 구성할 수 있습니다.
+이 데이터셋에서, 각 예시는 특정 주택이 되고,
+해당 특징 벡터는 표의 한 행이 됩니다.
+여러분이 뉴욕이나 샌프란시스코에 살고,
+Amazon, Google, Microsoft, Facebook의 CEO가 아니라면,
+여러분 집의 (면적, 침실 수, 욕실 수, 도보 거리)
+특징 벡터는 $[600, 1, 1, 60]$과 비슷한 모양일 것입니다.
+하지만 피츠버그에 산다면, 좀 더 $[3000, 4, 3, 10]$ 같은 모양일 수 있습니다.
+이런 고정 길이 특징 벡터는
+대부분의 고전적 머신러닝 알고리즘에 필수적입니다.
 
-What makes a problem a regression is actually
-the form of the target.
-Say that you are in the market for a new home.
-You might want to estimate the fair market value of a house,
-given some features such as above.
-The data here might consist of historical home listings
-and the labels might be the observed sales prices.
-When labels take on arbitrary numerical values
-(even within some interval),
-we call this a *regression* problem.
-The goal is to produce a model whose predictions
-closely approximate the actual label values.
-
-
-Lots of practical problems are easily described as regression problems.
-Predicting the rating that a user will assign to a movie
-can be thought of as a regression problem
-and if you designed a great algorithm
-to accomplish this feat in 2009,
-you might have won the [1-million-dollar Netflix prize](https://en.wikipedia.org/wiki/Netflix_Prize).
-Predicting the length of stay for patients in the hospital
-is also a regression problem.
-A good rule of thumb is that any *how much?* or *how many?* problem
-is likely to be regression. For example:
-
-* How many hours will this surgery take?
-* How much rainfall will this town have in the next six hours?
+문제를 회귀로 만드는 것은 사실
+타깃의 형태입니다.
+여러분이 새 집을 사려는 시장에 있다고 합시다.
+앞서 본 것 같은 특징이 주어졌을 때,
+주택의 공정 시장 가치를 추정하고 싶을 것입니다.
+여기서 데이터는 과거 주택 매물 목록으로 구성될 수 있고
+레이블은 관측된 판매 가격일 수 있습니다.
+레이블이 임의의 수치 값(어떤 구간 내에서라도)을
+가질 때,
+저희는 이를 *회귀* 문제라고 부릅니다.
+목표는 예측이 실제 레이블 값에 가깝게 근사하는
+모델을 만들어내는 것입니다.
 
 
-Even if you have never worked with machine learning before,
-you have probably worked through a regression problem informally.
-Imagine, for example, that you had your drains repaired
-and that your contractor spent 3 hours
-removing gunk from your sewage pipes.
-Then they sent you a bill of 350 dollars.
-Now imagine that your friend hired the same contractor for 2 hours
-and received a bill of 250 dollars.
-If someone then asked you how much to expect
-on their upcoming gunk-removal invoice
-you might make some reasonable assumptions,
-such as more hours worked costs more dollars.
-You might also assume that there is some base charge
-and that the contractor then charges per hour.
-If these assumptions held true, then given these two data examples,
-you could already identify the contractor's pricing structure:
-100 dollars per hour plus 50 dollars to show up at your house.
-If you followed that much, then you already understand
-the high-level idea behind *linear* regression.
+많은 실용적 문제는 회귀 문제로 쉽게 기술됩니다.
+사용자가 영화에 매길 평점을 예측하는 것을
+회귀 문제로 생각할 수 있으며,
+2009년에 이 위업을 달성하는 훌륭한 알고리즘을
+설계했다면, [1백만 달러 Netflix 상](https://en.wikipedia.org/wiki/Netflix_Prize)을 받았을 수도 있습니다.
+환자의 입원 기간을 예측하는 것도
+회귀 문제입니다.
+좋은 어림 법칙은 *얼마나 많은가?* 또는 *얼마나 큰가?* 같은 모든 문제는
+회귀일 가능성이 높다는 것입니다. 예를 들어,
 
-In this case, we could produce the parameters
-that exactly matched the contractor's prices.
-Sometimes this is not possible,
-e.g., if some of the variation
-arises from factors beyond your two features.
-In these cases, we will try to learn models
-that minimize the distance between our predictions and the observed values.
-In most of our chapters, we will focus on
-minimizing the squared error loss function.
-As we will see later, this loss corresponds to the assumption
-that our data were corrupted by Gaussian noise.
+* 이 수술은 몇 시간이나 걸릴까?
+* 이 마을에 다음 6시간 동안 얼마나 많은 비가 내릴까?
 
-#### Classification
 
-While regression models are great
-for addressing *how many?* questions,
-lots of problems do not fit comfortably in this template.
-Consider, for example, a bank that wants
-to develop a check scanning feature for its mobile app.
-Ideally, the customer would simply snap a photo of a check
-and the app would automatically recognize the text from the image.
-Assuming that we had some ability
-to segment out image patches
-corresponding to each handwritten character,
-then the primary remaining task would be
-to determine which character among some known set
-is depicted in each image patch.
-These kinds of *which one?* problems are called *classification*
-and require a different set of tools
-from those used for regression,
-although many techniques will carry over.
+이전에 머신러닝을 다뤄본 적이 없더라도,
+여러분은 아마 비공식적으로 회귀 문제를 풀어본 적이 있을 것입니다.
+예를 들어, 여러분의 배수관을 수리하기 위해
+계약자가 하수관에서 찌꺼기를 제거하는 데 3시간을 썼고,
+그 후 350달러 청구서를 보냈다고 상상해 봅시다.
+이제 여러분 친구가 같은 계약자를 2시간 동안 고용했고,
+250달러 청구서를 받았다고 상상해 봅시다.
+그러면 누군가가 곧 받게 될 찌꺼기 제거 청구서에
+얼마를 예상해야 하는지 묻는다면,
+일한 시간이 많을수록 비용이 더 든다는 것 같은
+합리적인 가정을 할 수 있을 것입니다.
+또한 어떤 기본 요금이 있고
+그다음 계약자가 시간당 요금을 부과한다고 가정할 수도 있습니다.
+이 가정들이 참이라면, 이 두 데이터 예시만 주어져도
+여러분은 이미 계약자의 가격 구조를 식별할 수 있을 것입니다.
+시간당 100달러에 출장비 50달러입니다.
+여기까지 따라왔다면, 여러분은 이미
+*선형* 회귀의 고수준 아이디어를 이해한 것입니다.
 
-In *classification*, we want our model to look at features,
-e.g., the pixel values in an image,
-and then predict to which *category*
-(sometimes called a *class*)
-among some discrete set of options,
-an example belongs.
-For handwritten digits, we might have ten classes,
-corresponding to the digits 0 through 9.
-The simplest form of classification is when there are only two classes,
-a problem which we call *binary classification*.
-For example, our dataset could consist of images of animals
-and our labels  might be the classes $\textrm{\{cat, dog\}}$.
-Whereas in regression we sought a regressor to output a numerical value,
-in classification we seek a classifier,
-whose output is the predicted class assignment.
+이 경우, 저희는 계약자의 가격에 정확히 일치하는
+파라미터를 만들어낼 수 있었습니다.
+때로는 이것이 불가능합니다.
+예를 들어 변동의 일부가 여러분의 두 특징을 넘어선
+요인에서 발생할 때입니다.
+이런 경우, 저희는 예측과 관측 값 사이의 거리를
+최소화하는 모델을 학습하려 시도할 것입니다.
+대부분의 장에서, 저희는
+제곱 오차 손실 함수를 최소화하는 데 초점을 맞출 것입니다.
+나중에 보겠지만, 이 손실은 저희의 데이터가
+가우시안 노이즈에 의해 오염되었다는 가정에 해당합니다.
 
-For reasons that we will get into as the book gets more technical,
-it can be difficult to optimize a model that can only output
-a *firm* categorical assignment,
-e.g., either "cat" or "dog".
-In these cases, it is usually much easier to express
-our model in the language of probabilities.
-Given features of an example,
-our model assigns a probability
-to each possible class.
-Returning to our animal classification example
-where the classes are $\textrm{\{cat, dog\}}$,
-a classifier might see an image and output the probability
-that the image is a cat as 0.9.
-We can interpret this number by saying that the classifier
-is 90\% sure that the image depicts a cat.
-The magnitude of the probability for the predicted class
-conveys a notion of uncertainty.
-It is not the only one available
-and we will discuss others in chapters dealing with more advanced topics.
+#### 분류
 
-When we have more than two possible classes,
-we call the problem *multiclass classification*.
-Common examples include handwritten character recognition
-$\textrm{\{0, 1, 2, ... 9, a, b, c, ...\}}$.
-While we attacked regression problems by trying
-to minimize the squared error loss function,
-the common loss function for classification problems is called *cross-entropy*,
-whose name will be demystified
-when we introduce information theory in later chapters.
+회귀 모델은 *얼마나 많은가?* 질문을 다루기에는 훌륭하지만,
+많은 문제가 이 틀에 편안하게 들어맞지는 않습니다.
+예를 들어, 모바일 앱에 수표 스캔 기능을 개발하고자 하는
+은행을 생각해 봅시다.
+이상적으로, 고객은 수표 사진을 찍기만 하면 되고
+앱이 이미지에서 텍스트를 자동으로 인식해야 합니다.
+각 손글씨 문자에 해당하는 이미지 조각을
+분할해낼 수 있는 능력이 어느 정도 있다고 가정하면,
+주된 남은 과제는 알려진 집합 중에서
+어떤 문자가 각 이미지 조각에 묘사되어 있는지를
+판정하는 것이 될 것입니다.
+이런 종류의 *어느 것?* 문제를 *분류*라고 부르며,
+회귀에 사용된 도구와는 다른 도구 집합이 필요합니다.
+물론 많은 기법이 이어집니다.
 
-Note that the most likely class is not necessarily
-the one that you are going to use for your decision.
-Assume that you find a beautiful mushroom in your backyard
-as shown in :numref:`fig_death_cap`.
+*분류*에서, 저희는 모델이 특징,
+예컨대 이미지의 픽셀 값을 보고,
+어떤 이산적인 옵션 집합 중에서
+예시가 어느 *범주*(때로 *클래스*라 불림)에
+속하는지를 예측하기를 원합니다.
+손글씨 숫자의 경우, 0부터 9까지의 숫자에 해당하는
+10개의 클래스를 가질 수 있습니다.
+가장 단순한 형태의 분류는 두 개의 클래스만 있을 때이며,
+이를 *이진 분류*라고 부릅니다.
+예를 들어, 저희의 데이터셋은 동물 이미지로 구성될 수 있고
+저희의 레이블은 $\textrm{\{cat, dog\}}$ 클래스가 될 수 있습니다.
+회귀에서는 수치 값을 출력하는 회귀자를 찾았다면,
+분류에서는 출력이 예측된 클래스 할당인
+분류기를 찾습니다.
 
-![Death cap---do not eat!](../img/death-cap.jpg)
+책이 좀 더 기술적으로 진행되면서 다룰 이유들 때문에,
+*확정적인* 범주 할당, 예를 들어 "cat" 또는 "dog" 중 하나만 출력할 수 있는
+모델을 최적화하는 것은 어려울 수 있습니다.
+이런 경우, 보통은 모델을 확률의 언어로 표현하는 것이
+훨씬 더 쉽습니다.
+예시의 특징이 주어졌을 때,
+저희 모델은 가능한 각 클래스에
+확률을 할당합니다.
+클래스가 $\textrm{\{cat, dog\}}$인 저희의 동물 분류 예시로 돌아가면,
+분류기는 이미지를 보고 그 이미지가 고양이일 확률을
+0.9로 출력할 수 있습니다.
+이 숫자는 분류기가 그 이미지가 고양이를 묘사한다고
+90\% 확신한다고 말함으로써 해석할 수 있습니다.
+예측된 클래스에 대한 확률의 크기는
+불확실성의 개념을 전달합니다.
+이는 사용 가능한 유일한 개념은 아니며,
+더 고급 주제를 다루는 장에서 다른 것들을 논의할 것입니다.
+
+두 개보다 많은 가능한 클래스를 가질 때,
+저희는 이 문제를 *다중 클래스 분류*라고 부릅니다.
+흔한 예시로는 손글씨 문자 인식
+$\textrm{\{0, 1, 2, ... 9, a, b, c, ...\}}$이 있습니다.
+저희가 제곱 오차 손실 함수를 최소화함으로써
+회귀 문제를 공략했던 반면,
+분류 문제에 흔히 쓰이는 손실 함수는 *교차 엔트로피*라고 불리며,
+이 이름의 신비는 이후 장에서 정보 이론을 소개할 때
+풀릴 것입니다.
+
+가장 가능성 있는 클래스가 반드시
+여러분의 결정에 사용할 것은 아니라는 점에 유의하십시오.
+:numref:`fig_death_cap`에서 보이듯이 뒷마당에서
+아름다운 버섯을 발견했다고 가정해 봅시다.
+
+![알광대버섯(do not eat!).](../img/death-cap.jpg)
 :width:`200px`
 :label:`fig_death_cap`
 
-Now, assume that you built a classifier and trained it
-to predict whether a mushroom is poisonous based on a photograph.
-Say our poison-detection classifier outputs
-that the probability that
-:numref:`fig_death_cap` shows a death cap is 0.2.
-In other words, the classifier is 80\% sure
-that our mushroom is not a death cap.
-Still, you would have to be a fool to eat it.
-That is because the certain benefit of a delicious dinner
-is not worth a 20\% risk of dying from it.
-In other words, the effect of the uncertain risk
-outweighs the benefit by far.
-Thus, in order to make a decision about whether to eat the mushroom,
-we need to compute the expected detriment
-associated with each action
-which depends both on the likely outcomes
-and the benefits or harms associated with each.
-In this case, the detriment incurred
-by eating the mushroom
-might be $0.2 \times \infty + 0.8 \times 0 = \infty$,
-whereas the loss of discarding it
-is $0.2 \times 0 + 0.8 \times 1 = 0.8$.
-Our caution was justified:
-as any mycologist would tell us,
-the mushroom in :numref:`fig_death_cap`
-is actually a death cap.
+이제, 여러분이 분류기를 구축했고
+사진을 기반으로 버섯이 독성이 있는지 예측하도록 훈련시켰다고 가정합시다.
+저희의 독 탐지 분류기가
+:numref:`fig_death_cap`이 알광대버섯을 보여줄 확률이 0.2라고
+출력한다고 합시다.
+다시 말해, 분류기는 저희 버섯이 알광대버섯이 아니라고
+80\% 확신합니다.
+그래도 그것을 먹는다면 바보일 것입니다.
+맛있는 저녁 식사라는 확실한 이득이
+20\% 사망 위험을 감수할 만큼 가치 있지는 않기 때문입니다.
+다시 말해, 불확실한 위험의 영향이
+이득을 훨씬 능가합니다.
+따라서 버섯을 먹을지 결정하기 위해서는,
+각 행동과 관련된 기대 손실을 계산해야 하며,
+이는 가능성 있는 결과와
+각 결과와 관련된 이득 또는 해 모두에 의존합니다.
+이 경우, 버섯을 먹어서 발생하는 손실은
+$0.2 \times \infty + 0.8 \times 0 = \infty$일 수 있는 반면,
+그것을 버리는 데서 오는 손실은
+$0.2 \times 0 + 0.8 \times 1 = 0.8$입니다.
+저희의 신중함은 정당화되었습니다.
+어떤 균학자라도 말해주겠지만,
+:numref:`fig_death_cap`의 버섯은
+실제로 알광대버섯입니다.
 
-Classification can get much more complicated than just
-binary or multiclass classification.
-For instance, there are some variants of classification
-addressing hierarchically structured classes.
-In such cases not all errors are equal---if
-we must err, we might prefer to misclassify
-to a related class rather than a distant class.
-Usually, this is referred to as *hierarchical classification*.
-For inspiration, you might think of [Linnaeus](https://en.wikipedia.org/wiki/Carl_Linnaeus),
-who organized fauna in a hierarchy.
+분류는 단순한 이진 또는 다중 클래스 분류보다
+훨씬 더 복잡해질 수 있습니다.
+예를 들어, 계층적으로 구조화된 클래스를 다루는
+몇 가지 분류 변형이 있습니다.
+이런 경우 모든 오류가 동등하지는 않습니다(실수를 해야 한다면,
+저희는 먼 클래스로 잘못 분류하기보다는
+관련 있는 클래스로 잘못 분류하는 쪽을 선호할 수도 있습니다).
+보통, 이를 *계층적 분류*라고 합니다.
+영감을 얻으려면, 동물상을 계층으로 정리한
+[린네](https://en.wikipedia.org/wiki/Carl_Linnaeus)를 떠올려 봐도 좋습니다.
 
-In the case of animal classification,
-it might not be so bad to mistake
-a poodle for a schnauzer,
-but our model would pay a huge penalty
-if it confused a poodle with a dinosaur.
-Which hierarchy is relevant might depend
-on how you plan to use the model.
-For example, rattlesnakes and garter snakes
-might be close on the phylogenetic tree,
-but mistaking a rattler for a garter could have fatal consequences.
+동물 분류의 경우,
+푸들을 슈나우저로 착각하는 것은 그렇게 나쁘지 않을 수 있지만,
+저희 모델이 푸들을 공룡으로 혼동한다면
+큰 페널티를 받을 것입니다.
+어떤 계층이 관련 있는지는
+여러분이 그 모델을 어떻게 사용할 계획인지에 따라 다를 수 있습니다.
+예를 들어, 방울뱀과 가터뱀은
+계통수에서 가까울 수 있지만,
+방울뱀을 가터뱀으로 착각하면 치명적인 결과를 초래할 수 있습니다.
 
-#### Tagging
+#### 태깅
 
-Some classification problems fit neatly
-into the binary or multiclass classification setups.
-For example, we could train a normal binary classifier
-to distinguish cats from dogs.
-Given the current state of computer vision,
-we can do this easily, with off-the-shelf tools.
-Nonetheless, no matter how accurate our model gets,
-we might find ourselves in trouble when the classifier
-encounters an image of the *Town Musicians of Bremen*,
-a popular German fairy tale featuring four animals
+일부 분류 문제는 이진 또는 다중 클래스 분류 설정에
+깔끔하게 들어맞습니다.
+예를 들어, 저희는 고양이와 개를 구별하기 위해
+일반적인 이진 분류기를 훈련할 수 있습니다.
+현재 컴퓨터 비전 상태를 감안하면,
+저희는 기성 도구로 이것을 쉽게 할 수 있습니다.
+그럼에도 불구하고, 저희 모델이 아무리 정확해지더라도,
+분류기가 네 마리의 동물이 등장하는 인기 있는 독일 동화인
+*브레멘의 음악대* 이미지를 마주칠 때
+저희는 곤란에 빠질 수 있습니다
 (:numref:`fig_stackedanimals`).
 
-![A donkey, a dog, a cat, and a rooster.](../img/stackedanimals.png)
+![당나귀, 개, 고양이, 그리고 수탉.](../img/stackedanimals.png)
 :width:`300px`
 :label:`fig_stackedanimals`
 
-As you can see, the photo features a cat,
-a rooster, a dog, and a donkey,
-with some trees in the background.
-If we anticipate encountering such images,
-multiclass classification might not be
-the right problem formulation.
-Instead, we might want to give the model the option of
-saying the image depicts a cat, a dog, a donkey,
-*and* a rooster.
+보시다시피, 사진에는 고양이, 수탉, 개, 그리고 당나귀가 등장하고,
+배경에는 몇 그루의 나무가 있습니다.
+저희가 이런 이미지를 마주칠 것을 예상한다면,
+다중 클래스 분류는 올바른 문제 정식화가
+아닐 수 있습니다.
+대신, 저희는 모델에 이미지가 고양이, 개, 당나귀,
+*그리고* 수탉을 묘사한다고 말할 수 있는 옵션을
+주고 싶을 수 있습니다.
 
-The problem of learning to predict classes that are
-not mutually exclusive is called *multi-label classification*.
-Auto-tagging problems are typically best described
-in terms of multi-label classification.
-Think of the tags people might apply
-to posts on a technical blog,
-e.g., "machine learning", "technology", "gadgets",
-"programming languages", "Linux", "cloud computing", "AWS".
-A typical article might have 5--10 tags applied.
-Typically, tags will exhibit some correlation structure.
-Posts about "cloud computing" are likely to mention "AWS"
-and posts about "machine learning" are likely to mention "GPUs".
+상호 배타적이지 않은 클래스를
+예측하는 법을 학습하는 문제를 *다중 레이블 분류*라고 합니다.
+자동 태깅 문제는 보통 다중 레이블 분류의 관점에서
+가장 잘 기술됩니다.
+사람들이 기술 블로그의 게시물에 적용할 만한 태그를 떠올려 봅시다.
+예를 들어, "machine learning", "technology", "gadgets",
+"programming languages", "Linux", "cloud computing", "AWS" 등이 있습니다.
+전형적인 글에는 5~10개의 태그가 적용될 수 있습니다.
+보통, 태그는 어떤 상관 구조를 보입니다.
+"cloud computing"에 관한 게시물은 "AWS"를 언급할 가능성이 높고,
+"machine learning"에 관한 게시물은 "GPUs"를 언급할 가능성이 높습니다.
 
-Sometimes such tagging problems
-draw on enormous label sets.
-The National Library of Medicine
-employs many professional annotators
-who associate each article to be indexed in PubMed
-with a set of tags drawn from the
-Medical Subject Headings (MeSH) ontology,
-a collection of roughly 28,000 tags.
-Correctly tagging articles is important
-because it allows researchers to conduct
-exhaustive reviews of the literature.
-This is a time-consuming process and typically there is a one-year lag between archiving and tagging.
-Machine learning can provide provisional tags
-until each article has a proper manual review.
-Indeed, for several years, the BioASQ organization
-has [hosted competitions](http://bioasq.org/)
-for this task.
+때때로 이런 태깅 문제는
+거대한 레이블 집합을 활용합니다.
+미국 국립의학도서관은 많은 전문 주석자를 고용하여
+PubMed에 색인될 각 글을
+약 28,000개의 태그 모음인
+Medical Subject Headings (MeSH) 온톨로지에서 추출한
+태그 집합과 연관시킵니다.
+글에 올바르게 태그를 다는 일은 중요한데,
+이는 연구자들이 문헌에 대한
+포괄적인 리뷰를 수행할 수 있게 해주기 때문입니다.
+이는 시간이 많이 걸리는 과정이고 보통 보관과 태깅 사이에 1년의 시차가 있습니다.
+머신러닝은 각 글이 적절한 수동 검토를 받기 전까지
+임시 태그를 제공할 수 있습니다.
+실제로 수년 동안, BioASQ 조직은
+이 작업을 위한 [경연을 개최해](http://bioasq.org/) 왔습니다.
 
-#### Search
+#### 검색
 
-In the field of information retrieval,
-we often impose ranks on sets of items.
-Take web search for example.
-The goal is less to determine *whether*
-a particular page is relevant for a query, 
-but rather which, among a set of relevant results,
-should be shown most prominently
-to a particular user.
-One way of doing this might be
-to first assign a score
-to every element in the set
-and then to retrieve the top-rated elements.
-[PageRank](https://en.wikipedia.org/wiki/PageRank),
-the original secret sauce behind the Google search engine,
-was an early example of such a scoring system.
-Weirdly, the scoring provided by PageRank
-did not depend on the actual query.
-Instead, they relied on a simple relevance filter
-to identify the set of relevant candidates
-and then used PageRank to prioritize
-the more authoritative pages.
-Nowadays, search engines use machine learning and behavioral models
-to obtain query-dependent relevance scores.
-There are entire academic conferences devoted to this subject.
+정보 검색 분야에서,
+저희는 종종 항목 집합에 순위를 매깁니다.
+웹 검색을 예로 들어 봅시다.
+목표는 특정 페이지가 질의에 대해 관련성이 *있는지*를
+판정하기보다는,
+관련성 있는 결과 집합 중에서
+특정 사용자에게 어느 것을 가장 두드러지게
+보여주어야 하는지를 정하는 것입니다.
+이를 수행하는 한 가지 방법은
+집합의 모든 요소에 먼저 점수를 할당하고
+그다음 가장 높은 점수의 요소를 가져오는 것일 수 있습니다.
+구글 검색 엔진의 원래 비결이었던
+[PageRank](https://en.wikipedia.org/wiki/PageRank)는
+이런 점수 시스템의 초기 예시입니다.
+이상하게도, PageRank가 제공하는 점수는
+실제 질의에 의존하지 않았습니다.
+대신, 관련 있는 후보 집합을 식별하기 위해
+단순한 관련성 필터에 의존했고,
+그다음 더 권위 있는 페이지를 우선시하기 위해
+PageRank를 사용했습니다.
+오늘날 검색 엔진은 질의 의존적 관련성 점수를 얻기 위해
+머신러닝과 행동 모델을 사용합니다.
+이 주제만을 다루는 학술 학회가 통째로 존재합니다.
 
-#### Recommender Systems
+#### 추천 시스템
 :label:`subsec_recommender_systems`
 
-Recommender systems are another problem setting
-that is related to search and ranking.
-The problems are similar insofar as the goal
-is to display a set of items relevant to the user.
-The main difference is the emphasis on *personalization*
-to specific users in the context of recommender systems.
-For instance, for movie recommendations,
-the results page for a science fiction fan
-and the results page
-for a connoisseur of Peter Sellers comedies
-might differ significantly.
-Similar problems pop up in other recommendation settings,
-e.g., for retail products, music, and news recommendation.
+추천 시스템은 검색 및 순위 매기기와 관련된
+또 다른 문제 설정입니다.
+사용자에게 관련 있는 항목 집합을 표시하는 것이 목표라는 점에서
+문제는 비슷합니다.
+주요 차이점은 추천 시스템의 맥락에서 특정 사용자에 대한
+*개인화*를 강조한다는 점입니다.
+예를 들어, 영화 추천의 경우,
+공상과학 팬을 위한 결과 페이지와
+Peter Sellers 코미디 애호가를 위한 결과 페이지는
+크게 다를 수 있습니다.
+유사한 문제가 다른 추천 설정에서도 등장합니다.
+예컨대 소매 상품, 음악, 뉴스 추천 등이 있습니다.
 
-In some cases, customers provide explicit feedback,
-communicating how much they liked a particular product
-(e.g., the product ratings and reviews
-on Amazon, IMDb, or Goodreads).
-In other cases, they provide implicit feedback,
-e.g., by skipping titles on a playlist,
-which might indicate 
-dissatisfaction or maybe just
-indicate
-that the song was inappropriate in context.
-In the simplest formulations,
-these systems are trained
-to estimate some score,
-such as an expected star rating
-or the probability that a given user
-will purchase a particular item.
+어떤 경우에는, 고객이 명시적인 피드백을 제공하여
+특정 상품을 얼마나 좋아했는지 알려줍니다
+(예: Amazon, IMDb, Goodreads의 상품 평점과 리뷰).
+다른 경우에는, 그들이 암묵적 피드백을 제공합니다.
+예를 들어, 재생목록에서 곡을 건너뜀으로써,
+이는 불만족을 나타내거나
+혹은 단지 그 곡이 그 맥락에서
+부적절했음을 나타낼 수도 있습니다.
+가장 단순한 정식화에서,
+이 시스템들은 어떤 점수,
+예컨대 기대 별점 평점이나
+주어진 사용자가 특정 항목을 구매할 확률을
+추정하도록 훈련됩니다.
 
-Given such a model, for any given user,
-we could retrieve the set of objects with the largest scores,
-which could then be recommended to the user.
-Production systems are considerably more advanced
-and take detailed user activity and item characteristics
-into account when computing such scores.
-:numref:`fig_deeplearning_amazon` displays the deep learning books
-recommended by Amazon based on personalization algorithms
-tuned to capture Aston's preferences.
+그런 모델이 주어지면, 어떤 사용자에 대해서든,
+저희는 가장 큰 점수를 가진 객체 집합을 가져올 수 있고,
+이를 그 사용자에게 추천할 수 있습니다.
+실제 운영 시스템은 상당히 더 발전되어 있고
+이런 점수를 계산할 때 상세한 사용자 활동과 항목 특성을
+고려합니다.
+:numref:`fig_deeplearning_amazon`은
+Aston의 선호를 포착하도록 조정된 개인화 알고리즘에 기반하여
+Amazon이 추천한 딥러닝 책들을 보여줍니다.
 
-![Deep learning books recommended by Amazon.](../img/deeplearning-amazon.jpg)
+![Amazon이 추천한 딥러닝 책들.](../img/deeplearning-amazon.jpg)
 :label:`fig_deeplearning_amazon`
 
-Despite their tremendous economic value,
-recommender systems
-naively built on top of predictive models
-suffer some serious conceptual flaws.
-To start, we only observe *censored feedback*:
-users preferentially rate movies
-that they feel strongly about.
-For example, on a five-point scale,
-you might notice that items receive
-many one- and five-star ratings
-but that there are conspicuously few three-star ratings.
-Moreover, current purchase habits are often a result
-of the recommendation algorithm currently in place,
-but learning algorithms do not always take this detail into account.
-Thus it is possible for feedback loops to form
-where a recommender system preferentially pushes an item
-that is then taken to be better (due to greater purchases)
-and in turn is recommended even more frequently.
-Many of these problems---about
-how to deal with censoring,
-incentives, and feedback loops---are important open research questions.
+엄청난 경제적 가치에도 불구하고,
+예측 모델 위에 단순하게 구축된 추천 시스템은
+심각한 개념적 결함을 겪습니다.
+우선, 저희는 *검열된 피드백*만을 관측합니다.
+사용자는 자신이 강한 감정을 가진 영화를
+우선적으로 평가합니다.
+예를 들어, 5점 척도에서
+항목들이 많은 1점과 5점 평점을 받지만
+3점 평점은 눈에 띄게 적다는 것을
+알아챌 수 있습니다.
+게다가, 현재의 구매 습관은 종종
+현재 자리 잡고 있는 추천 알고리즘의 결과이지만,
+학습 알고리즘은 이 세부 사항을 항상 고려하는 것은 아닙니다.
+따라서 추천 시스템이 어떤 항목을 우선적으로 밀어주면
+그것이 (더 큰 구매로 인해) 더 좋게 받아들여지고
+그 결과 더 자주 추천되는 피드백 루프가 형성될 수 있습니다.
+검열, 인센티브, 피드백 루프를 어떻게 다룰 것인가에 관한
+이런 문제들 중 많은 것이 중요한 열린 연구 질문입니다.
 
-#### Sequence Learning
+#### 시퀀스 학습
 
-So far, we have looked at problems where we have
-some fixed number of inputs and produce a fixed number of outputs.
-For example, we considered predicting house prices
-given a fixed set of features:
-square footage, number of bedrooms,
-number of bathrooms, and the transit time to downtown.
-We also discussed mapping from an image (of fixed dimension)
-to the predicted probabilities that it belongs
-to each among a fixed number of classes
-and predicting star ratings associated with purchases
-based on the user ID and product ID alone.
-In these cases, once our model is trained,
-after each test example is fed into our model,
-it is immediately forgotten.
-We assumed that successive observations were independent
-and thus there was no need to hold on to this context.
+지금까지, 저희는 고정된 수의 입력을 가지고
+고정된 수의 출력을 만들어내는 문제들을 살펴봤습니다.
+예를 들어, 저희는 면적, 침실 수, 욕실 수, 시내 중심까지의 이동 시간이라는
+고정된 특징 집합이 주어졌을 때 주택 가격을 예측하는 것을
+고려했습니다.
+또한 (고정 차원의) 이미지에서
+고정된 수의 클래스 각각에 속할 예측 확률로의 사상,
+그리고 사용자 ID와 상품 ID만으로 구매와 관련된
+별점 평점을 예측하는 것도 논의했습니다.
+이런 경우, 일단 모델이 훈련되면,
+각 테스트 예시가 모델에 공급된 후
+즉시 잊혀집니다.
+저희는 연속된 관측이 독립적이라고 가정했고,
+따라서 이 맥락을 붙들고 있을 필요가 없었습니다.
 
-But how should we deal with video snippets?
-In this case, each snippet might consist of a different number of frames.
-And our guess of what is going on in each frame might be much stronger
-if we take into account the previous or succeeding frames.
-The same goes for language.
-For example, one popular deep learning problem is machine translation:
-the task of ingesting sentences in some source language
-and predicting their translations in another language.
+하지만 동영상 조각을 어떻게 다루어야 할까요?
+이 경우, 각 조각은 서로 다른 수의 프레임으로 구성될 수 있습니다.
+그리고 각 프레임에서 무슨 일이 일어나고 있는지에 대한 저희의 추측은
+이전 또는 이후 프레임을 고려한다면 훨씬 더 강력할 수 있습니다.
+언어도 마찬가지입니다.
+예를 들어, 인기 있는 딥러닝 문제 중 하나는 기계 번역입니다.
+이는 어떤 원천 언어의 문장을 받아들여
+다른 언어로의 번역을 예측하는 작업입니다.
 
-Such problems also occur in medicine.
-We might want a model to monitor patients in the intensive care unit
-and to fire off alerts whenever their risk of dying in the next 24 hours
-exceeds some threshold.
-Here, we would not throw away everything
-that we know about the patient history every hour,
-because we might not want to make predictions based only
-on the most recent measurements.
+이런 문제는 의학에서도 발생합니다.
+저희는 모델이 중환자실의 환자를 모니터링하고
+향후 24시간 내 사망 위험이 어떤 임계값을 초과할 때마다
+경보를 발하기를 원할 수 있습니다.
+여기서, 저희는 가장 최근의 측정치만을 기반으로
+예측을 하고 싶지 않을 수 있으므로,
+매시간 환자 이력에 대해 알고 있는 모든 것을
+버리지는 않을 것입니다.
 
-Questions like these are among the most
-exciting applications of machine learning
-and they are instances of *sequence learning*.
-They require a model either to ingest sequences of inputs
-or to emit sequences of outputs (or both).
-Specifically, *sequence-to-sequence learning* considers problems
-where both inputs and outputs consist of variable-length sequences.
-Examples include machine translation
-and speech-to-text transcription.
-While it is impossible to consider
-all types of sequence transformations,
-the following special cases are worth mentioning.
+이런 질문들은 머신러닝의 가장 흥미로운
+응용에 속하며,
+*시퀀스 학습*의 사례입니다.
+이들은 모델이 입력 시퀀스를 받아들이거나
+출력 시퀀스를 방출하거나(또는 둘 다)
+해야 합니다.
+구체적으로, *시퀀스-투-시퀀스 학습*은
+입력과 출력이 모두 가변 길이 시퀀스로 구성된
+문제를 고려합니다.
+예로는 기계 번역과
+음성-텍스트 전사가 있습니다.
+모든 유형의 시퀀스 변환을 고려하는 것은 불가능하지만,
+다음 특수 사례들은 언급할 가치가 있습니다.
 
-**Tagging and Parsing**.
-This involves annotating a text sequence with attributes.
-Here, the inputs and outputs are *aligned*,
-i.e., they are of the same number
-and occur in a corresponding order.
-For instance, in *part-of-speech (PoS) tagging*,
-we annotate every word in a sentence
-with the corresponding part of speech,
-i.e., "noun" or "direct object".
-Alternatively, we might want to know
-which groups of contiguous words refer to named entities,
-like *people*, *places*, or *organizations*.
-In the cartoonishly simple example below,
-we might just want to indicate whether or not any word in the sentence is part of a named entity (tagged as "Ent").
+**태깅과 파싱**.
+이는 텍스트 시퀀스에 속성을 주석하는 것을 포함합니다.
+여기서, 입력과 출력은 *정렬*되어 있습니다.
+즉, 같은 수이고
+대응되는 순서로 나타납니다.
+예를 들어, *품사(PoS) 태깅*에서,
+저희는 문장의 모든 단어에
+해당하는 품사,
+즉 "명사" 또는 "직접 목적어"를 주석합니다.
+또는, 어떤 연속된 단어 그룹이
+*사람*, *장소*, *조직* 같은 명명된 개체를 가리키는지
+알고 싶을 수도 있습니다.
+아래의 만화처럼 단순한 예시에서,
+저희는 문장의 어떤 단어가 명명된 개체의 일부인지 아닌지("Ent"로 태깅)를
+나타내고 싶을 수 있습니다.
 
 ```text
 Tom has dinner in Washington with Sally
@@ -986,45 +938,41 @@ Ent  -    -    -     Ent      -    Ent
 ```
 
 
-**Automatic Speech Recognition**.
-With speech recognition, the input sequence
-is an audio recording of a speaker (:numref:`fig_speech`),
-and the output is a transcript of what the speaker said.
-The challenge is that there are many more audio frames
-(sound is typically sampled at 8kHz or 16kHz)
-than text, i.e., there is no 1:1 correspondence between audio and text,
-since thousands of samples may
-correspond to a single spoken word.
-These are sequence-to-sequence learning problems,
-where the output is much shorter than the input.
-While humans are remarkably good at recognizing speech,
-even from low-quality audio,
-getting computers to perform the same feat
-is a formidable challenge.
+**자동 음성 인식**.
+음성 인식의 경우, 입력 시퀀스는
+화자의 오디오 녹음이고(:numref:`fig_speech`),
+출력은 화자가 말한 것의 전사입니다.
+도전 과제는 텍스트보다 훨씬 더 많은 오디오 프레임이 있다는 것입니다
+(소리는 일반적으로 8kHz 또는 16kHz로 샘플링됩니다).
+즉, 수천 개의 샘플이 하나의 발화된 단어에 해당할 수 있으므로,
+오디오와 텍스트 사이에 1:1 대응이 없습니다.
+이들은 출력이 입력보다 훨씬 짧은
+시퀀스-투-시퀀스 학습 문제입니다.
+인간은 저품질 오디오에서도
+음성을 인식하는 데 놀랍도록 능숙하지만,
+컴퓨터로 같은 위업을 수행하게 하는 것은
+가공할 도전 과제입니다.
 
-![`-D-e-e-p- L-ea-r-ni-ng-` in an audio recording.](../img/speech.png)
+![오디오 녹음 속의 `-D-e-e-p- L-ea-r-ni-ng-`.](../img/speech.png)
 :width:`700px`
 :label:`fig_speech`
 
-**Text to Speech**.
-This is the inverse of automatic speech recognition.
-Here, the input is text and the output is an audio file.
-In this case, the output is much longer than the input.
+**음성 합성**.
+이는 자동 음성 인식의 역입니다.
+여기서, 입력은 텍스트이고 출력은 오디오 파일입니다.
+이 경우, 출력이 입력보다 훨씬 깁니다.
 
-**Machine Translation**.
-Unlike the case of speech recognition,
-where corresponding inputs and outputs
-occur in the same order,
-in machine translation,
-unaligned data poses a new challenge.
-Here the input and output sequences
-can have different lengths,
-and the corresponding regions
-of the respective sequences
-may appear in a different order.
-Consider the following illustrative example
-of the peculiar tendency of Germans
-to place the verbs at the end of sentences:
+**기계 번역**.
+대응되는 입력과 출력이 같은 순서로 나타나는
+음성 인식의 경우와 달리,
+기계 번역에서는
+정렬되지 않은 데이터가 새로운 도전 과제를 제기합니다.
+여기서 입력 및 출력 시퀀스는
+서로 다른 길이를 가질 수 있고,
+각 시퀀스의 대응되는 영역은
+다른 순서로 나타날 수 있습니다.
+독일인이 동사를 문장 끝에 배치하는
+특이한 경향의 다음 예시를 살펴봅시다.
 
 ```text
 German:           Haben Sie sich schon dieses grossartige Lehrwerk angeschaut?
@@ -1033,847 +981,795 @@ Wrong alignment:  Have you yourself already this excellent textbook looked at?
 ```
 
 
-Many related problems pop up in other learning tasks.
-For instance, determining the order in which a user
-reads a webpage is a two-dimensional layout analysis problem.
-Dialogue problems exhibit all kinds of additional complications,
-where determining what to say next requires taking into account
-real-world knowledge and the prior state of the conversation
-across long temporal distances.
-Such topics are active areas of research.
+많은 관련 문제가 다른 학습 과제에서 등장합니다.
+예를 들어, 사용자가 웹페이지를 읽는 순서를 결정하는 것은
+2차원 레이아웃 분석 문제입니다.
+대화 문제는 온갖 추가적 복잡성을 보이는데,
+다음에 무엇을 말할지 결정하는 데는
+실세계 지식과 긴 시간적 거리에 걸친
+대화의 이전 상태를 고려해야 합니다.
+이런 주제들은 활발한 연구 분야입니다.
 
-### Unsupervised and Self-Supervised Learning
+### 비지도 학습과 자기지도 학습
 
-The previous examples focused on supervised learning,
-where we feed the model a giant dataset
-containing both the features and corresponding label values.
-You could think of the supervised learner as having
-an extremely specialized job and an extremely dictatorial boss.
-The boss stands over the learner's shoulder and tells them exactly what to do
-in every situation until they learn to map from situations to actions.
-Working for such a boss sounds pretty lame.
-On the other hand, pleasing such a boss is pretty easy.
-You just recognize the pattern as quickly as possible
-and imitate the boss's actions.
+이전 예시들은 지도 학습에 초점을 맞췄습니다.
+지도 학습에서는 특징과 그에 해당하는 레이블 값을 모두 포함하는
+거대한 데이터셋을 모델에 공급합니다.
+지도 학습자는 극도로 전문화된 일과
+극도로 독재적인 상사를 가진 것으로 생각할 수 있습니다.
+상사는 학습자의 어깨 너머로 서서 모든 상황에서 정확히 무엇을 할지
+일러주고, 결국 학습자가 상황에서 행동으로의 사상을 학습할 때까지 그렇게 합니다.
+이런 상사 밑에서 일하는 것은 꽤나 시시하게 들립니다.
+다른 한편, 이런 상사를 만족시키는 것은 꽤 쉽습니다.
+가능한 한 빨리 패턴을 인식하고
+상사의 행동을 모방하기만 하면 됩니다.
 
-Considering the opposite situation,
-it could be frustrating to work for a boss
-who has no idea what they want you to do.
-However, if you plan to be a data scientist,
-you had better get used to it.
-The boss might just hand you a giant dump of data
-and tell you to *do some data science with it!*
-This sounds vague because it is vague.
-We call this class of problems *unsupervised learning*,
-and the type and number of questions we can ask
-is limited only by our creativity.
-We will address unsupervised learning techniques
-in later chapters.
-To whet your appetite for now,
-we describe a few of the following questions you might ask.
+반대 상황을 고려해 보면,
+무엇을 하기를 원하는지 전혀 모르는 상사 밑에서 일하는 것은
+좌절스러울 수 있습니다.
+하지만, 데이터 과학자가 되려고 한다면,
+이런 일에 익숙해지는 것이 좋습니다.
+상사는 그저 거대한 데이터 더미를 건네주며
+*그걸로 데이터 과학을 좀 해 봐!*라고 할 수도 있습니다.
+이는 모호하게 들리는데, 실제로 모호하기 때문입니다.
+저희는 이런 부류의 문제를 *비지도 학습*이라고 부르며,
+저희가 던질 수 있는 질문의 유형과 수는
+오직 저희의 창의성에 의해서만 제한됩니다.
+저희는 이후 장에서 비지도 학습 기법을
+다룰 것입니다.
+지금 여러분의 식욕을 돋우기 위해,
+저희는 여러분이 던질 수 있는 다음과 같은 몇 가지 질문을 기술합니다.
 
-* Can we find a small number of prototypes
-that accurately summarize the data?
-Given a set of photos, can we group them into landscape photos,
-pictures of dogs, babies, cats, and mountain peaks?
-Likewise, given a collection of users' browsing activities,
-can we group them into users with similar behavior?
-This problem is typically known as *clustering*.
-* Can we find a small number of parameters
-that accurately capture the relevant properties of the data?
-The trajectories of a ball are well described
-by velocity, diameter, and mass of the ball.
-Tailors have developed a small number of parameters
-that describe human body shape fairly accurately
-for the purpose of fitting clothes.
-These problems are referred to as *subspace estimation*.
-If the dependence is linear, it is called *principal component analysis*.
-* Is there a representation of (arbitrarily structured) objects
-in Euclidean space
-such that symbolic properties can be well matched?
-This can be used to describe entities and their relations,
-such as "Rome" $-$ "Italy" $+$ "France" $=$ "Paris".
-* Is there a description of the root causes
-of much of the data that we observe?
-For instance, if we have demographic data
-about house prices, pollution, crime, location,
-education, and salaries, can we discover
-how they are related simply based on empirical data?
-The fields concerned with *causality* and
-*probabilistic graphical models* tackle such questions.
-* Another important and exciting recent development in unsupervised learning
-is the advent of *deep generative models*.
-These models estimate the density of the data,
-either explicitly or *implicitly*.
-Once trained, we can use a generative model
-either to score examples according to how likely they are,
-or to sample synthetic examples from the learned distribution.
-Early deep learning breakthroughs in generative modeling
-came with the invention of *variational autoencoders* :cite:`Kingma.Welling.2014,rezende2014stochastic`
-and continued with the development of *generative adversarial networks* :cite:`Goodfellow.Pouget-Abadie.Mirza.ea.2014`.
-More recent advances include normalizing flows :cite:`dinh2014nice,dinh2017density` and
-diffusion models :cite:`sohl2015deep,song2019generative,ho2020denoising,song2021score`.
-
-
-
-A further development in unsupervised learning
-has been the rise of *self-supervised learning*,
-techniques that leverage some aspect of the unlabeled data
-to provide supervision.
-For text, we can train models
-to "fill in the blanks"
-by predicting randomly masked words
-using their surrounding words (contexts)
-in big corpora without any labeling effort :cite:`Devlin.Chang.Lee.ea.2018`!
-For images, we may train models
-to tell the relative position
-between two cropped regions
-of the same image :cite:`Doersch.Gupta.Efros.2015`,
-to predict an occluded part of an image
-based on the remaining portions of the image,
-or to predict whether two examples
-are perturbed versions of the same underlying image.
-Self-supervised models often learn representations
-that are subsequently leveraged
-by fine-tuning the resulting models
-on some downstream task of interest.
+* 데이터를 정확하게 요약하는 적은 수의 원형을
+찾을 수 있을까요?
+사진 집합이 주어졌을 때, 풍경 사진,
+개 사진, 아기 사진, 고양이 사진, 산봉우리 사진으로 그룹화할 수 있을까요?
+마찬가지로, 사용자들의 브라우징 활동의 모음이 주어졌을 때,
+유사한 행동을 가진 사용자들로 그룹화할 수 있을까요?
+이 문제는 일반적으로 *클러스터링*으로 알려져 있습니다.
+* 데이터의 관련 속성을 정확하게 포착하는 적은 수의 파라미터를
+찾을 수 있을까요?
+공의 궤적은
+공의 속도, 직경, 질량으로 잘 기술됩니다.
+재단사들은 옷을 맞추기 위해
+사람 몸 형태를 꽤 정확하게 기술하는
+적은 수의 파라미터를 개발했습니다.
+이런 문제를 *부분공간 추정*이라고 합니다.
+의존성이 선형이라면, *주성분 분석*이라고 합니다.
+* (임의로 구조화된) 객체를 유클리드 공간에서
+표현하여 기호적 속성이 잘 일치할 수 있도록 하는
+표현이 존재할까요?
+이는 "Rome" $-$ "Italy" $+$ "France" $=$ "Paris"와 같이
+개체와 그 관계를 기술하는 데 사용될 수 있습니다.
+* 저희가 관측하는 데이터 중 많은 부분의 근본 원인에 대한
+기술이 있을까요?
+예를 들어, 주택 가격, 오염, 범죄, 위치,
+교육, 급여에 대한 인구통계 데이터가 있다면,
+경험적 데이터만을 기반으로 그것들이 어떻게 관련되어 있는지
+발견할 수 있을까요?
+*인과성*과 *확률적 그래프 모델*에 관심을 둔
+분야들은 이런 질문을 다룹니다.
+* 비지도 학습에서 또 다른 중요하고 흥미로운 최근 발전은
+*심층 생성 모델*의 등장입니다.
+이런 모델들은 명시적으로 또는 *암묵적으로*
+데이터의 밀도를 추정합니다.
+일단 훈련되면, 저희는 생성 모델을 사용하여
+얼마나 가능성이 있는지에 따라 예시에 점수를 매기거나,
+학습된 분포에서 합성 예시를 샘플링할 수 있습니다.
+생성 모델링에서의 초기 딥러닝 돌파구는
+*변분 오토인코더*의 발명 :cite:`Kingma.Welling.2014,rezende2014stochastic`와 함께 왔고,
+*생성적 적대 신경망*의 개발 :cite:`Goodfellow.Pouget-Abadie.Mirza.ea.2014`로 이어졌습니다.
+더 최근의 진전에는 정규화 흐름(normalizing flows) :cite:`dinh2014nice,dinh2017density`과
+확산 모델(diffusion models) :cite:`sohl2015deep,song2019generative,ho2020denoising,song2021score`이 있습니다.
 
 
-### Interacting with an Environment
 
-So far, we have not discussed where data actually comes from,
-or what actually happens when a machine learning model generates an output.
-That is because supervised learning and unsupervised learning
-do not address these issues in a very sophisticated way.
-In each case, we grab a big pile of data upfront,
-then set our pattern recognition machines in motion
-without ever interacting with the environment again.
-Because all the learning takes place
-after the algorithm is disconnected from the environment,
-this is sometimes called *offline learning*.
-For example, supervised learning assumes
-the simple interaction pattern
-depicted in :numref:`fig_data_collection`.
+비지도 학습의 또 다른 발전은
+레이블이 없는 데이터의 어떤 측면을 활용하여
+감독을 제공하는 기법인 *자기지도 학습*의 부상이었습니다.
+텍스트의 경우, 저희는 어떠한 레이블링 노력도 없이 큰 말뭉치에서
+주변 단어(맥락)를 사용해 무작위로 가려진 단어를 예측함으로써
+모델이 "빈칸 채우기"를 하도록 훈련시킬 수 있습니다 :cite:`Devlin.Chang.Lee.ea.2018`!
+이미지의 경우, 같은 이미지의 두 잘린 영역 사이의
+상대적 위치를 알려주거나 :cite:`Doersch.Gupta.Efros.2015`,
+이미지의 나머지 부분을 기반으로 가려진 부분을 예측하거나,
+두 예시가 같은 기저 이미지의 섭동된 버전인지를
+예측하도록 모델을 훈련시킬 수 있습니다.
+자기지도 모델은 종종 표현을 학습하는데,
+이 표현은 이후 관심 있는 일부 하류 과제에 대해
+결과 모델을 미세 조정함으로써 활용됩니다.
 
-![Collecting data for supervised learning from an environment.](../img/data-collection.svg)
+
+### 환경과 상호작용하기
+
+지금까지, 저희는 데이터가 실제로 어디서 오는지,
+또는 머신러닝 모델이 출력을 생성할 때 실제로 무슨 일이 일어나는지에 대해
+논의하지 않았습니다.
+이는 지도 학습과 비지도 학습이
+이런 문제를 매우 정교한 방식으로 다루지 않기 때문입니다.
+각 경우에, 저희는 미리 큰 데이터 더미를 가져오고,
+환경과 다시 상호작용하지 않은 채로
+패턴 인식 기계를 작동시킵니다.
+모든 학습이 알고리즘이 환경에서 분리된 후에 일어나기 때문에,
+이를 때때로 *오프라인 학습*이라고 부릅니다.
+예를 들어, 지도 학습은
+:numref:`fig_data_collection`에 묘사된 단순한 상호작용 패턴을
+가정합니다.
+
+![환경으로부터 지도 학습을 위한 데이터 수집.](../img/data-collection.svg)
 :label:`fig_data_collection`
 
-This simplicity of offline learning has its charms.
-The upside is that we can worry
-about pattern recognition in isolation,
-with no concern about complications arising
-from interactions with a dynamic environment.
-But this problem formulation is limiting.
-If you grew up reading Asimov's Robot novels,
-then you probably picture artificially intelligent agents
-capable not only of making predictions,
-but also of taking actions in the world.
-We want to think about intelligent *agents*,
-not just predictive models.
-This means that we need to think about choosing *actions*,
-not just making predictions.
-In contrast to mere predictions,
-actions actually impact the environment.
-If we want to train an intelligent agent,
-we must account for the way its actions might
-impact the future observations of the agent, and so offline learning is inappropriate.
+이런 오프라인 학습의 단순함은 그 나름의 매력이 있습니다.
+좋은 점은 동적 환경과의 상호작용에서 발생하는 복잡성에 대한 걱정 없이,
+패턴 인식 자체에만 집중할 수 있다는 것입니다.
+하지만 이런 문제 정식화는 제한적입니다.
+아시모프의 로봇 소설을 읽으며 자랐다면,
+여러분은 아마 예측을 할 수 있을 뿐 아니라
+세상에서 행동도 취할 수 있는
+인공지능 에이전트를 그릴 것입니다.
+저희는 단순한 예측 모델이 아니라
+지능적인 *에이전트*에 대해 생각하고 싶습니다.
+이는 단지 예측을 하는 것이 아니라
+*행동*을 선택하는 것에 대해 생각해야 함을 의미합니다.
+단순한 예측과 달리,
+행동은 실제로 환경에 영향을 미칩니다.
+지능적인 에이전트를 훈련시키고 싶다면,
+저희는 그 행동이 에이전트의 미래 관측에
+어떤 영향을 미칠지를 고려해야 하므로,
+오프라인 학습은 부적절합니다.
 
-Considering the interaction with an environment
-opens a whole set of new modeling questions.
-The following are just a few examples.
+환경과의 상호작용을 고려하면
+완전히 새로운 모델링 질문들의 집합이 열립니다.
+다음은 몇 가지 예시일 뿐입니다.
 
-* Does the environment remember what we did previously?
-* Does the environment want to help us, e.g., a user reading text into a speech recognizer?
-* Does the environment want to beat us, e.g., spammers adapting their emails to evade spam filters?
-* Does the environment have shifting dynamics? For example, would future data always resemble the past or would the patterns change over time, either naturally or in response to our automated tools?
+* 환경이 저희가 이전에 한 일을 기억할까요?
+* 환경이 저희를 돕고 싶어 할까요, 예컨대 사용자가 음성 인식기에 텍스트를 읽어주는 것처럼?
+* 환경이 저희를 이기고 싶어 할까요, 예컨대 스팸 필터를 회피하기 위해 이메일을 적응시키는 스팸 발송자처럼?
+* 환경이 변화하는 동역학을 가지고 있을까요? 예를 들어, 미래 데이터가 항상 과거와 비슷할까요, 아니면 자연스럽게 또는 저희의 자동화 도구에 반응하여 패턴이 시간에 따라 변할까요?
 
-These questions raise the problem of *distribution shift*,
-where training and test data are different.
-An example of this, that many of us may have met, is when taking exams written by a lecturer,
-while the homework was composed by their teaching assistants.
-Next, we briefly describe reinforcement learning,
-a rich framework for posing learning problems in which
-an agent interacts with an environment.
+이런 질문들은 훈련 데이터와 테스트 데이터가 다른
+*분포 이동*의 문제를 제기합니다.
+저희 중 많은 사람이 마주쳤을 법한 이런 예시는,
+숙제는 조교가 작성했지만 시험은 강사가 출제한 것을 풀 때입니다.
+다음으로, 저희는 에이전트가 환경과 상호작용하는
+학습 문제를 제기하기 위한 풍부한 프레임워크인
+강화 학습을 간단히 기술합니다.
 
 
-### Reinforcement Learning
+### 강화 학습
 
-If you are interested in using machine learning
-to develop an agent that interacts with an environment
-and takes actions, then you are probably going to wind up
-focusing on *reinforcement learning*.
-This might include applications to robotics,
-to dialogue systems,
-and even to developing artificial intelligence (AI)
-for video games.
-*Deep reinforcement learning*, which applies
-deep learning to reinforcement learning problems,
-has surged in popularity.
-The breakthrough deep Q-network, that beat humans
-at Atari games using only the visual input :cite:`mnih2015human`,
-and the AlphaGo program, which dethroned the world champion
-at the board game Go :cite:`Silver.Huang.Maddison.ea.2016`,
-are two prominent examples.
+환경과 상호작용하고 행동을 취하는 에이전트를 개발하기 위해
+머신러닝을 사용하는 데 관심이 있다면,
+여러분은 아마 결국 *강화 학습*에 초점을 맞추게 될 것입니다.
+이는 로보틱스, 대화 시스템, 그리고
+비디오 게임을 위한 인공지능(AI) 개발에 이르는
+응용을 포함할 수 있습니다.
+딥러닝을 강화 학습 문제에 적용하는
+*심층 강화 학습*은 인기가 급상승했습니다.
+시각 입력만을 사용해 Atari 게임에서 인간을 이긴
+획기적인 심층 Q-네트워크 :cite:`mnih2015human`와,
+보드 게임 바둑에서 세계 챔피언을 폐위시킨
+AlphaGo 프로그램 :cite:`Silver.Huang.Maddison.ea.2016`이
+두 가지 두드러진 예시입니다.
 
-Reinforcement learning gives a very general statement of a problem
-in which an agent interacts with an environment over a series of time steps.
-At each time step, the agent receives some *observation*
-from the environment and must choose an *action*
-that is subsequently transmitted back to the environment
-via some mechanism (sometimes called an *actuator*), when, after each loop, 
-the agent receives a reward from the environment.
-This process is illustrated in :numref:`fig_rl-environment`.
-The agent then receives a subsequent observation,
-and chooses a subsequent action, and so on.
-The behavior of a reinforcement learning agent is governed by a *policy*.
-In brief, a *policy* is just a function that maps
-from observations of the environment to actions.
-The goal of reinforcement learning is to produce good policies.
+강화 학습은 에이전트가 일련의 시간 단계에 걸쳐
+환경과 상호작용하는 문제에 대한 매우 일반적인 진술을 제공합니다.
+각 시간 단계에서, 에이전트는 환경으로부터 어떤 *관측*을 받고
+어떤 *행동*을 선택해야 하는데,
+이 행동은 이후 어떤 메커니즘(때로 *액추에이터*라고 함)을 통해
+환경에 다시 전송되며, 각 루프 후에 에이전트는 환경으로부터 보상을 받습니다.
+이 과정이 :numref:`fig_rl-environment`에 묘사되어 있습니다.
+그 후 에이전트는 후속 관측을 받고,
+후속 행동을 선택하며, 이런 식으로 계속됩니다.
+강화 학습 에이전트의 행동은 *정책*에 의해 좌우됩니다.
+간단히 말해, *정책*은 환경의 관측에서 행동으로 사상하는
+함수일 뿐입니다.
+강화 학습의 목표는 좋은 정책을 만들어내는 것입니다.
 
-![The interaction between reinforcement learning and an environment.](../img/rl-environment.svg)
+![강화 학습과 환경 사이의 상호작용.](../img/rl-environment.svg)
 :label:`fig_rl-environment`
 
-It is hard to overstate the generality
-of the reinforcement learning framework.
-For example, supervised learning
-can be recast as reinforcement learning.
-Say we had a classification problem.
-We could create a reinforcement learning agent
-with one action corresponding to each class.
-We could then create an environment which gave a reward
-that was exactly equal to the loss function
-from the original supervised learning problem.
+강화 학습 프레임워크의 일반성은
+아무리 강조해도 지나치지 않습니다.
+예를 들어, 지도 학습은
+강화 학습으로 재구성될 수 있습니다.
+저희가 분류 문제를 가지고 있다고 합시다.
+저희는 각 클래스에 해당하는 행동을 하나씩 가진
+강화 학습 에이전트를 만들 수 있을 것입니다.
+그런 다음 원래 지도 학습 문제의 손실 함수와
+정확히 같은 보상을 주는
+환경을 만들 수 있을 것입니다.
 
-Further, reinforcement learning
-can also address many problems
-that supervised learning cannot.
-For example, in supervised learning,
-we always expect that the training input
-comes associated with the correct label.
-But in reinforcement learning,
-we do not assume that, for each observation
-the environment tells us the optimal action.
-In general, we just get some reward.
-Moreover, the environment may not even tell us
-which actions led to the reward.
+게다가, 강화 학습은
+지도 학습으로는 다룰 수 없는
+많은 문제도 다룰 수 있습니다.
+예를 들어, 지도 학습에서는
+저희는 항상 훈련 입력이 올바른 레이블과 함께 온다고
+기대합니다.
+하지만 강화 학습에서는,
+각 관측에 대해
+환경이 최적 행동을 알려준다고 가정하지 않습니다.
+일반적으로, 저희는 그저 어떤 보상을 받을 뿐입니다.
+게다가, 환경은 어떤 행동이 보상으로 이어졌는지조차
+저희에게 알려주지 않을 수 있습니다.
 
-Consider the game of chess.
-The only real reward signal comes at the end of the game
-when we either win, earning a reward of, say, $1$,
-or when we lose, receiving a reward of, say, $-1$.
-So reinforcement learners must deal
-with the *credit assignment* problem:
-determining which actions to credit or blame for an outcome.
-The same goes for an employee
-who gets a promotion on October 11.
-That promotion likely reflects a number
-of well-chosen actions over the previous year.
-Getting promoted in the future requires figuring out
-which actions along the way led to the earlier promotions.
+체스 게임을 생각해 봅시다.
+유일한 실제 보상 신호는 게임 끝에 옵니다.
+저희가 이기면, 예컨대 $1$의 보상을 얻거나,
+지면 예컨대 $-1$의 보상을 받습니다.
+따라서 강화 학습자는
+*신용 할당*(credit assignment) 문제를 다루어야 합니다.
+즉, 어떤 행동이 결과에 대해 공로 또는 책임을 받을지 결정하는 일입니다.
+10월 11일에 승진하는 직원의 경우도 마찬가지입니다.
+그 승진은 아마 지난 1년 동안 잘 선택된
+많은 행동들을 반영할 것입니다.
+미래에 승진하려면 그 길에서 어떤 행동이
+앞선 승진으로 이어졌는지 알아내야 합니다.
 
-Reinforcement learners may also have to deal
-with the problem of partial observability.
-That is, the current observation might not
-tell you everything about your current state.
-Say your cleaning robot found itself trapped
-in one of many identical closets in your house.
-Rescuing the robot involves inferring
-its precise location which might require considering earlier observations prior to it entering the closet.
+강화 학습자는 또한 부분 관측 가능성의 문제도
+다루어야 할 수 있습니다.
+즉, 현재 관측이 현재 상태에 대해 모든 것을
+알려주지 않을 수도 있습니다.
+청소 로봇이 집 안의 여러 동일한 벽장 중 하나에 갇혔다고
+가정해 봅시다.
+로봇을 구출하는 일은 그 정확한 위치를 추론하는 것을 수반하며,
+이는 로봇이 벽장에 들어가기 전의 이전 관측을 고려해야 할 수도 있습니다.
 
-Finally, at any given point, reinforcement learners
-might know of one good policy,
-but there might be many other better policies
-that the agent has never tried.
-The reinforcement learner must constantly choose
-whether to *exploit* the best (currently) known strategy as a policy,
-or to *explore* the space of strategies,
-potentially giving up some short-term reward
-in exchange for knowledge.
+마지막으로, 임의의 시점에 강화 학습자는
+하나의 좋은 정책을 알고 있을 수 있지만,
+에이전트가 한 번도 시도해 보지 않은
+더 나은 정책이 많이 있을 수 있습니다.
+강화 학습자는 (현재까지) 알려진 최선의 전략을 정책으로 *활용*(exploit)할지,
+아니면 잠재적으로 단기 보상의 일부를 지식과 맞바꾸어
+전략 공간을 *탐색*(explore)할지를
+끊임없이 선택해야 합니다.
 
-The general reinforcement learning problem
-has a very general setting.
-Actions affect subsequent observations.
-Rewards are only observed when they correspond to the chosen actions.
-The environment may be either fully or partially observed.
-Accounting for all this complexity at once may be asking too much.
-Moreover, not every practical problem exhibits all this complexity.
-As a result, researchers have studied a number of
-special cases of reinforcement learning problems.
+일반적인 강화 학습 문제는
+매우 일반적인 설정을 가지고 있습니다.
+행동은 후속 관측에 영향을 미칩니다.
+보상은 선택된 행동에 대응할 때만 관측됩니다.
+환경은 완전히 또는 부분적으로 관측될 수 있습니다.
+이 모든 복잡성을 한꺼번에 고려하는 것은 너무 많은 것을 요구하는 일일 수 있습니다.
+게다가, 모든 실용적 문제가 이 모든 복잡성을 보이는 것은 아닙니다.
+결과적으로, 연구자들은 강화 학습 문제의
+여러 특수 사례를 연구해 왔습니다.
 
-When the environment is fully observed,
-we call the reinforcement learning problem a *Markov decision process*.
-When the state does not depend on the previous actions,
-we call it a *contextual bandit problem*.
-When there is no state, just a set of available actions
-with initially unknown rewards, we have the classic *multi-armed bandit problem*.
+환경이 완전히 관측될 때,
+저희는 강화 학습 문제를 *마르코프 결정 과정*(Markov decision process)이라고 부릅니다.
+상태가 이전 행동에 의존하지 않을 때,
+저희는 이를 *맥락적 밴딧 문제*(contextual bandit problem)라고 부릅니다.
+상태가 없고, 초기에는 미지의 보상을 가진 가용한 행동의 집합만 있을 때,
+저희는 고전적인 *다중 슬롯머신 문제*(multi-armed bandit problem)를 가지게 됩니다.
 
-## Roots
+## 뿌리
 
-We have just reviewed a small subset of problems
-that machine learning can address.
-For a diverse set of machine learning problems,
-deep learning provides powerful tools for their solution.
-Although many deep learning methods are recent inventions,
-the core ideas behind learning from data
-have been studied for centuries.
-In fact, humans have held the desire to analyze data
-and to predict future outcomes for 
-ages, and it is this desire that is at the root of much of natural science and mathematics.
-Two examples are the Bernoulli distribution, named after
-[Jacob Bernoulli (1655--1705)](https://en.wikipedia.org/wiki/Jacob_Bernoulli),
-and the Gaussian distribution discovered
-by [Carl Friedrich Gauss (1777--1855)](https://en.wikipedia.org/wiki/Carl_Friedrich_Gauss).
-Gauss invented, for instance, the least mean squares algorithm,
-which is still used today for a multitude of problems
-from insurance calculations to medical diagnostics.
-Such tools enhanced the experimental approach
-in the natural sciences---for instance, Ohm's law
-relating current and voltage in a resistor
-is perfectly described by a linear model.
+저희는 머신러닝이 다룰 수 있는 문제들의
+작은 부분집합을 방금 검토했습니다.
+다양한 머신러닝 문제 집합에 대해,
+딥러닝은 그 해법을 위한 강력한 도구를 제공합니다.
+많은 딥러닝 방법은 최근의 발명이지만,
+데이터로부터의 학습 뒤에 있는 핵심 아이디어는
+수 세기 동안 연구되어 왔습니다.
+사실, 인간은 오래도록 데이터를 분석하고
+미래 결과를 예측하려는 욕망을 품어왔으며,
+이 욕망이야말로 자연과학과 수학의 대부분의 뿌리에 자리합니다.
+두 가지 예시는 [Jacob Bernoulli (1655--1705)](https://en.wikipedia.org/wiki/Jacob_Bernoulli)의 이름을 딴 베르누이 분포와,
+[Carl Friedrich Gauss (1777--1855)](https://en.wikipedia.org/wiki/Carl_Friedrich_Gauss)가 발견한
+가우시안 분포입니다.
+예컨대 가우스는 오늘날에도 보험 계산에서 의학 진단에 이르는
+수많은 문제에 여전히 사용되는
+최소 평균 제곱 알고리즘을 발명했습니다.
+이런 도구들은 자연과학에서 실험적 접근을 강화했습니다.
+예를 들어, 저항기에서 전류와 전압을 관계 짓는
+옴의 법칙은 선형 모델로 완벽하게 기술됩니다.
 
-Even in the middle ages, mathematicians
-had a keen intuition of estimates.
-For instance, the geometry book of [Jacob Köbel (1460--1533)](https://www.maa.org/press/periodicals/convergence/mathematical-treasures-jacob-kobels-geometry)
-illustrates averaging the length of 16 adult men's feet
-to estimate the typical foot length in the population (:numref:`fig_koebel`).
+중세에도, 수학자들은
+추정에 대한 예리한 직관을 가지고 있었습니다.
+예를 들어, [Jacob Köbel (1460--1533)](https://www.maa.org/press/periodicals/convergence/mathematical-treasures-jacob-kobels-geometry)의 기하학 책은
+인구의 전형적인 발 길이를 추정하기 위해 성인 남성 16명의 발 길이를 평균 내는 일을
+설명합니다 (:numref:`fig_koebel`).
 
-![Estimating the length of a foot.](../img/koebel.jpg)
+![발 길이를 추정하기.](../img/koebel.jpg)
 :width:`500px`
 :label:`fig_koebel`
 
 
-As a group of individuals exited a church,
-16 adult men were asked to line up in a row
-and have their feet measured.
-The sum of these measurements was then divided by 16
-to obtain an estimate for what now is called one foot.
-This "algorithm" was later improved
-to deal with misshapen feet;
-The two men with the shortest and longest feet were sent away,
-averaging only over the remainder.
-This is among the earliest examples
-of a trimmed mean estimate.
+한 무리의 사람들이 교회를 나설 때,
+성인 남성 16명에게 한 줄로 서서
+발 길이를 측정받도록 요청했습니다.
+이 측정값들의 합계를 16으로 나누어
+지금 1피트라고 불리는 것의 추정치를 얻었습니다.
+이 "알고리즘"은 나중에 기형의 발을 다루기 위해 개선되었습니다.
+가장 짧은 발과 가장 긴 발을 가진 두 사람을 보내고,
+나머지에 대해서만 평균을 냈습니다.
+이는 절사 평균 추정의 가장 초기 예시들 중 하나입니다.
 
-Statistics really took off with the availability and collection of data.
-One of its pioneers, [Ronald Fisher (1890--1962)](https://en.wikipedia.org/wiki/Ronald_Fisher),
-contributed significantly to its theory
-and also its applications in genetics.
-Many of his algorithms (such as linear discriminant analysis)
-and concepts (such as the Fisher information matrix)
-still hold a prominent place
-in the foundations of modern statistics.
-Even his data resources had a lasting impact.
-The Iris dataset that Fisher released in 1936
-is still sometimes used to demonstrate
-machine learning algorithms.
-Fisher was also a proponent of eugenics,
-which should remind us that the morally dubious use of data science
-has as long and enduring a history as its productive use
-in industry and the natural sciences.
+통계학은 데이터의 가용성과 수집과 함께 본격적으로 도약했습니다.
+그 선구자 중 한 명인 [Ronald Fisher (1890--1962)](https://en.wikipedia.org/wiki/Ronald_Fisher)는
+그 이론뿐 아니라 유전학에서의 응용에도
+크게 기여했습니다.
+그의 많은 알고리즘(예: 선형 판별 분석)과
+개념(예: 피셔 정보 행렬)은
+오늘날에도 현대 통계학의 기초에서
+두드러진 자리를 차지하고 있습니다.
+그의 데이터 자원조차도 지속적인 영향을 미쳤습니다.
+Fisher가 1936년에 공개한 Iris 데이터셋은
+머신러닝 알고리즘을 시연하기 위해
+여전히 때때로 사용됩니다.
+Fisher는 또한 우생학의 옹호자였는데,
+이는 데이터 과학의 도덕적으로 의심스러운 사용이
+산업 및 자연과학에서의 생산적 사용만큼이나
+길고 지속적인 역사를 가지고 있다는 점을 우리에게 상기시켜야 합니다.
 
 
-Other influences for machine learning
-came from the information theory of
-[Claude Shannon (1916--2001)](https://en.wikipedia.org/wiki/Claude_Shannon)
-and the theory of computation proposed by
-[Alan Turing (1912--1954)](https://en.wikipedia.org/wiki/Alan_Turing).
-Turing posed the question "can machines think?”
-in his famous paper *Computing Machinery and Intelligence* :cite:`Turing.1950`.
-Describing what is now known as the Turing test, he proposed that a machine
-can be considered *intelligent* if it is difficult
-for a human evaluator to distinguish between the replies
-from a machine and those of a human, based purely on textual interactions.
+머신러닝에 대한 다른 영향은
+[Claude Shannon (1916--2001)](https://en.wikipedia.org/wiki/Claude_Shannon)의 정보 이론과
+[Alan Turing (1912--1954)](https://en.wikipedia.org/wiki/Alan_Turing)이 제안한 계산 이론에서 왔습니다.
+Turing은 그의 유명한 논문 *Computing Machinery and Intelligence* :cite:`Turing.1950`에서
+"기계가 생각할 수 있는가?"라는 질문을 제기했습니다.
+현재 튜링 테스트로 알려진 것을 기술하면서, 그는 순전히 텍스트 상호작용에 기반하여
+기계의 응답과 인간의 응답을 인간 평가자가 구별하기 어려울 때
+기계가 *지능적*이라고 간주될 수 있다고 제안했습니다.
 
-Further influences came from neuroscience and psychology.
-After all, humans clearly exhibit intelligent behavior.
-Many scholars have asked whether one could explain
-and possibly reverse engineer this capacity.
-One of the first biologically inspired algorithms
-was formulated by [Donald Hebb (1904--1985)](https://en.wikipedia.org/wiki/Donald_O._Hebb).
-In his groundbreaking book *The Organization of Behavior* :cite:`Hebb.1949`,
-he posited that neurons learn by positive reinforcement.
-This became known as the Hebbian learning rule.
-These ideas inspired later work, such as
-Rosenblatt's perceptron learning algorithm,
-and laid the foundations of many stochastic gradient descent algorithms
-that underpin deep learning today:
-reinforce desirable behavior and diminish undesirable behavior
-to obtain good settings of the parameters in a neural network.
+추가적인 영향은 신경과학과 심리학에서 왔습니다.
+결국, 인간은 분명히 지능적 행동을 보입니다.
+많은 학자들은 이 능력을 설명하고
+가능하면 역공학할 수 있는지 물어왔습니다.
+가장 초기의 생물학적 영감을 받은 알고리즘 중 하나는
+[Donald Hebb (1904--1985)](https://en.wikipedia.org/wiki/Donald_O._Hebb)에 의해 정식화되었습니다.
+그의 획기적인 책 *The Organization of Behavior* :cite:`Hebb.1949`에서,
+그는 뉴런이 양성 강화에 의해 학습한다고 주장했습니다.
+이는 Hebb 학습 규칙으로 알려지게 되었습니다.
+이 아이디어들은 Rosenblatt의 퍼셉트론 학습 알고리즘 같은 후기 작업에 영감을 주었고,
+오늘날 딥러닝을 떠받치는 많은 확률적 경사 하강법 알고리즘의 토대를 놓았습니다.
+즉, 신경망의 파라미터의 좋은 설정을 얻기 위해
+바람직한 행동을 강화하고 바람직하지 않은 행동을 감소시키는 것입니다.
 
-Biological inspiration is what gave *neural networks* their name.
-For over a century (dating back to the models of Alexander Bain, 1873,
-and James Sherrington, 1890), researchers have tried to assemble
-computational circuits that resemble networks of interacting neurons.
-Over time, the interpretation of biology has become less literal,
-but the name stuck. At its heart lie a few key principles
-that can be found in most networks today:
+생물학적 영감은 *신경망*에 그 이름을 부여한 것입니다.
+한 세기가 넘는 동안 (Alexander Bain의 1873년 모델과
+James Sherrington의 1890년 모델로 거슬러 올라감), 연구자들은 상호작용하는 뉴런의 네트워크를 닮은
+계산 회로를 조립하려 시도해 왔습니다.
+시간이 지나면서, 생물학의 해석은 덜 문자 그대로가 되었지만,
+이름은 남았습니다. 그 핵심에는 오늘날 대부분의 네트워크에서 찾을 수 있는
+몇 가지 핵심 원리들이 자리합니다.
 
-* The alternation of linear and nonlinear processing units, often referred to as *layers*.
-* The use of the chain rule (also known as *backpropagation*) for adjusting parameters in the entire network at once.
+* 종종 *층*이라고 불리는, 선형 및 비선형 처리 단위의 교대.
+* 전체 네트워크의 파라미터를 한꺼번에 조정하기 위한 연쇄 법칙(*역전파*라고도 함)의 사용.
 
-After initial rapid progress, research in neural networks
-languished from around 1995 until 2005.
-This was mainly due to two reasons.
-First, training a network is computationally very expensive.
-While random-access memory was plentiful at the end of the past century,
-computational power was scarce.
-Second, datasets were relatively small.
-In fact, Fisher's Iris dataset from 1936
-was still a popular tool for testing the efficacy of algorithms.
-The MNIST dataset with its 60,000 handwritten digits was considered huge.
+초기의 빠른 진보 이후, 신경망 연구는
+약 1995년부터 2005년까지 침체되었습니다.
+이는 주로 두 가지 이유 때문이었습니다.
+첫째, 네트워크를 훈련하는 것은 계산적으로 매우 비쌉니다.
+지난 세기 말 무렵 랜덤 액세스 메모리는 풍부했지만,
+계산 능력은 부족했습니다.
+둘째, 데이터셋은 상대적으로 작았습니다.
+사실, 1936년의 Fisher의 Iris 데이터셋은
+알고리즘의 효능을 테스트하기 위한 인기 있는 도구로
+여전히 남아 있었습니다.
+60,000개의 손글씨 숫자가 있는 MNIST 데이터셋은 거대하다고 여겨졌습니다.
 
-Given the scarcity of data and computation,
-strong statistical tools such as kernel methods,
-decision trees, and graphical models
-proved empirically superior in many applications.
-Moreover, unlike neural networks,
-they did not require weeks to train
-and provided predictable results
-with strong theoretical guarantees.
+데이터와 계산의 희소함을 감안하면,
+커널 방법, 결정 트리, 그래프 모델 같은
+강력한 통계 도구들이 많은 응용에서
+경험적으로 우월함이 증명되었습니다.
+게다가, 신경망과 달리,
+이들은 훈련하는 데 몇 주가 걸리지 않았고
+강력한 이론적 보장과 함께 예측 가능한 결과를
+제공했습니다.
 
 
-## The Road to Deep Learning
+## 딥러닝으로의 길
 
-Much of this changed with the availability
-of massive amounts of data,
-thanks to the World Wide Web,
-the advent of companies serving
-hundreds of millions of users online,
-a dissemination of low-cost, high-quality sensors,
-inexpensive data storage (Kryder's law),
-and cheap computation (Moore's law).
-In particular, the landscape of computation in deep learning
-was revolutionized by advances in GPUs that were originally engineered for computer gaming.
-Suddenly algorithms and models
-that seemed computationally infeasible
-were within reach.
-This is best illustrated in :numref:`tab_intro_decade`.
+월드 와이드 웹,
+온라인에서 수억 명의 사용자를 서비스하는 기업의 등장,
+저비용 고품질 센서의 보급,
+저렴한 데이터 저장(크라이더의 법칙),
+저렴한 계산(무어의 법칙) 덕분에
+대량의 데이터가 가용해지면서
+이 중 많은 것이 바뀌었습니다.
+특히, 딥러닝의 계산 지형은
+원래 컴퓨터 게이밍을 위해 설계된 GPU의 발전에 의해
+혁명적으로 변했습니다.
+갑자기 계산적으로 실현 불가능해 보였던
+알고리즘과 모델이
+손에 잡히는 곳에 있게 되었습니다.
+이는 :numref:`tab_intro_decade`에서 가장 잘 설명됩니다.
 
-:Dataset vs. computer memory and computational power
+:데이터셋 대 컴퓨터 메모리와 계산 능력
 :label:`tab_intro_decade`
 
-|Decade|Dataset|Memory|Floating point calculations per second|
+|연대|데이터셋|메모리|초당 부동소수점 연산|
 |:--|:-|:-|:-|
 |1970|100 (Iris)|1 KB|100 KF (Intel 8080)|
-|1980|1 K (house prices in Boston)|100 KB|1 MF (Intel 80186)|
-|1990|10 K (optical character recognition)|10 MB|10 MF (Intel 80486)|
-|2000|10 M (web pages)|100 MB|1 GF (Intel Core)|
-|2010|10 G (advertising)|1 GB|1 TF (NVIDIA C2050)|
-|2020|1 T (social network)|100 GB|1 PF (NVIDIA DGX-2)|
+|1980|1 K (보스턴 주택 가격)|100 KB|1 MF (Intel 80186)|
+|1990|10 K (광학 문자 인식)|10 MB|10 MF (Intel 80486)|
+|2000|10 M (웹 페이지)|100 MB|1 GF (Intel Core)|
+|2010|10 G (광고)|1 GB|1 TF (NVIDIA C2050)|
+|2020|1 T (소셜 네트워크)|100 GB|1 PF (NVIDIA DGX-2)|
 
 
-Note that random-access memory has not kept pace with the growth in data.
-At the same time, increases in computational power
-have outpaced the growth in datasets.
-This means that statistical models
-need to become more memory efficient,
-and so they are free to spend more computer cycles
-optimizing parameters, thanks to
-the increased compute budget.
-Consequently, the sweet spot in machine learning and statistics
-moved from (generalized) linear models and kernel methods
-to deep neural networks.
-This is also one of the reasons why many of the mainstays
-of deep learning, such as multilayer perceptrons
-:cite:`McCulloch.Pitts.1943`, convolutional neural networks
-:cite:`LeCun.Bottou.Bengio.ea.1998`, long short-term memory
-:cite:`Hochreiter.Schmidhuber.1997`,
-and Q-Learning :cite:`Watkins.Dayan.1992`,
-were essentially "rediscovered" in the past decade,
-after lying comparatively dormant for considerable time.
+랜덤 액세스 메모리는 데이터의 성장 속도를 따라잡지 못했음에 유의하십시오.
+동시에, 계산 능력의 증가는
+데이터셋의 성장을 능가했습니다.
+이는 통계 모델이
+더 메모리 효율적이어야 함을 의미하고,
+따라서 늘어난 계산 예산 덕분에
+파라미터를 최적화하는 데 더 많은 컴퓨터 사이클을
+자유롭게 쓸 수 있게 되었습니다.
+결과적으로, 머신러닝과 통계학의 스위트 스폿은
+(일반화된) 선형 모델과 커널 방법에서
+심층 신경망으로 옮겨갔습니다.
+이는 또한 다층 퍼셉트론 :cite:`McCulloch.Pitts.1943`,
+합성곱 신경망 :cite:`LeCun.Bottou.Bengio.ea.1998`,
+장단기 메모리 :cite:`Hochreiter.Schmidhuber.1997`,
+그리고 Q-러닝 :cite:`Watkins.Dayan.1992` 같은
+딥러닝의 많은 주축들이
+상당한 시간 동안 비교적 잠재해 있다가
+지난 10년에 본질적으로 "재발견"된 이유 중 하나입니다.
 
-The recent progress in statistical models, applications, and algorithms
-has sometimes been likened to the Cambrian explosion:
-a moment of rapid progress in the evolution of species.
-Indeed, the state of the art is not just a mere consequence
-of available resources applied to decades-old algorithms.
-Note that the list of ideas below barely scratches the surface
-of what has helped researchers achieve tremendous progress
-over the past decade.
+통계 모델, 응용, 알고리즘의 최근 진전은
+때때로 캄브리아기 폭발(종 진화에서 빠른 진보의 순간)에
+비유되어 왔습니다.
+실제로, 최첨단의 상태는 수십 년 된 알고리즘에 가용한 자원이 적용된
+단순한 결과만은 아닙니다.
+아래의 아이디어 목록은 지난 10년 동안 연구자들이 엄청난 진전을
+이루는 데 도움이 된 것의 표면을 거의 긁지 못한다는 점에 유의하십시오.
 
 
-* Novel methods for capacity control, such as *dropout*
-  :cite:`Srivastava.Hinton.Krizhevsky.ea.2014`,
-  have helped to mitigate overfitting.
-  Here, noise is injected :cite:`Bishop.1995`
-  throughout the neural network during training.
-* *Attention mechanisms* solved a second problem
-  that had plagued statistics for over a century:
-  how to increase the memory and complexity of a system without
-  increasing the number of learnable parameters.
-  Researchers found an elegant solution
-  by using what can only be viewed as
-  a *learnable pointer structure* :cite:`Bahdanau.Cho.Bengio.2014`.
-  Rather than having to remember an entire text sequence, e.g.,
-  for machine translation in a fixed-dimensional representation,
-  all that needed to be stored was a pointer to the intermediate state
-  of the translation process. This allowed for significantly
-  increased accuracy for long sequences, since the model
-  no longer needed to remember the entire sequence before
-  commencing the generation of a new one.
-* Built solely on attention mechanisms,
-  the *Transformer* architecture :cite:`Vaswani.Shazeer.Parmar.ea.2017` has demonstrated superior *scaling* behavior: it performs better with an increase in dataset size, model size, and amount of training compute :cite:`kaplan2020scaling`. This architecture has demonstrated compelling success in a wide range of areas,
-  such as natural language processing :cite:`Devlin.Chang.Lee.ea.2018,brown2020language`, computer vision :cite:`Dosovitskiy.Beyer.Kolesnikov.ea.2021,liu2021swin`, speech recognition :cite:`gulati2020conformer`, reinforcement learning :cite:`chen2021decision`, and graph neural networks :cite:`dwivedi2020generalization`. For example, a single Transformer pretrained on modalities
-  as diverse as text, images, joint torques, and button presses
-  can play Atari, caption images, chat,
-  and control a robot :cite:`reed2022generalist`.
-* Modeling probabilities of text sequences, *language models* can predict text given other text. Scaling up the data, model, and compute has unlocked a growing number of capabilities of language models to perform desired tasks via human-like text generation based on input text :cite:`brown2020language,rae2021scaling,hoffmann2022training,chowdhery2022palm,openai2023gpt4,anil2023palm,touvron2023llama,touvron2023llama2`. For instance, aligning language models with human intent :cite:`ouyang2022training`, OpenAI's [ChatGPT](https://chat.openai.com/) allows users to interact with it in a conversational way to solve problems, such as code debugging and creative writing.
-* Multi-stage designs, e.g., via the memory networks
-  :cite:`Sukhbaatar.Weston.Fergus.ea.2015`
-  and the neural programmer-interpreter :cite:`Reed.De-Freitas.2015`
-  permitted statistical modelers to describe iterative approaches to reasoning.
-  These tools allow for an internal state of the deep neural network
-  to be modified repeatedly,
-  thus carrying out subsequent steps
-  in a chain of reasoning, just as a processor
-  can modify memory for a computation.
-* A key development in *deep generative modeling* was the invention
-  of *generative adversarial networks*
+* *드롭아웃* :cite:`Srivastava.Hinton.Krizhevsky.ea.2014` 같은 용량 제어를 위한 새로운 방법은
+  과적합을 완화하는 데 도움을 주었습니다.
+  여기서는 훈련 동안 신경망 전체에
+  노이즈가 주입됩니다 :cite:`Bishop.1995`.
+* *어텐션 메커니즘*은 한 세기가 넘는 동안 통계학을 괴롭혀온
+  두 번째 문제를 해결했습니다.
+  즉, 학습 가능한 파라미터의 수를 늘리지 않으면서
+  시스템의 메모리와 복잡성을 어떻게 늘릴 것인가의 문제입니다.
+  연구자들은 *학습 가능한 포인터 구조*로밖에 볼 수 없는 것을
+  사용함으로써 우아한 해법을 찾았습니다 :cite:`Bahdanau.Cho.Bengio.2014`.
+  예컨대 기계 번역을 위해 전체 텍스트 시퀀스를
+  고정 차원 표현으로 기억할 필요 없이,
+  저장되어야 했던 것은 번역 과정의
+  중간 상태에 대한 포인터뿐이었습니다. 이는 모델이 새 시퀀스 생성을
+  시작하기 전에 전체 시퀀스를 기억할 필요가 더 이상 없었기 때문에,
+  긴 시퀀스에 대해 정확도를 크게 향상시킬 수 있게 했습니다.
+* 어텐션 메커니즘만으로 구축된
+  *트랜스포머*(Transformer) 아키텍처 :cite:`Vaswani.Shazeer.Parmar.ea.2017`는 우수한 *스케일링* 행동을 보여주었습니다. 데이터셋 크기, 모델 크기, 훈련 계산량의 증가에 따라 더 잘 수행됩니다 :cite:`kaplan2020scaling`. 이 아키텍처는 자연어 처리 :cite:`Devlin.Chang.Lee.ea.2018,brown2020language`, 컴퓨터 비전 :cite:`Dosovitskiy.Beyer.Kolesnikov.ea.2021,liu2021swin`, 음성 인식 :cite:`gulati2020conformer`, 강화 학습 :cite:`chen2021decision`, 그래프 신경망 :cite:`dwivedi2020generalization` 같은 광범위한 영역에서 강렬한 성공을 보여주었습니다. 예를 들어, 텍스트, 이미지, 관절 토크, 버튼 누름과 같이 다양한 양식으로 사전 훈련된 단일 트랜스포머는
+  Atari를 플레이하고, 이미지에 캡션을 달고, 채팅을 하고,
+  로봇을 제어할 수 있습니다 :cite:`reed2022generalist`.
+* 텍스트 시퀀스의 확률을 모델링하는 *언어 모델*은 다른 텍스트가 주어졌을 때 텍스트를 예측할 수 있습니다. 데이터, 모델, 계산의 규모를 키우는 것은 언어 모델이 입력 텍스트를 기반으로 인간과 유사한 텍스트 생성을 통해 원하는 작업을 수행하는 점점 더 많은 능력을 잠금 해제했습니다 :cite:`brown2020language,rae2021scaling,hoffmann2022training,chowdhery2022palm,openai2023gpt4,anil2023palm,touvron2023llama,touvron2023llama2`. 예를 들어, 언어 모델을 인간의 의도에 정렬한 :cite:`ouyang2022training`, OpenAI의 [ChatGPT](https://chat.openai.com/)는 사용자가 코드 디버깅이나 창의적 글쓰기 같은 문제를 해결하기 위해 대화 방식으로 상호작용할 수 있게 합니다.
+* 메모리 네트워크 :cite:`Sukhbaatar.Weston.Fergus.ea.2015`와
+  신경 프로그래머-인터프리터 :cite:`Reed.De-Freitas.2015`를 통한
+  다단계 설계는
+  통계 모델러가 추론에 대한 반복적 접근을 기술할 수 있게 했습니다.
+  이런 도구들은 심층 신경망의 내부 상태가
+  반복적으로 수정될 수 있게 하여,
+  프로세서가 계산을 위해 메모리를 수정할 수 있는 것처럼
+  추론의 연쇄에서 후속 단계를 수행할 수 있게 합니다.
+* *심층 생성 모델링*의 핵심 발전은
+  *생성적 적대 신경망*의 발명이었습니다
   :cite:`Goodfellow.Pouget-Abadie.Mirza.ea.2014`.
-  Traditionally, statistical methods for density estimation
-  and generative models focused on finding proper probability distributions
-  and (often approximate) algorithms for sampling from them.
-  As a result, these algorithms were largely limited by the lack of
-  flexibility inherent in the statistical models.
-  The crucial innovation in generative adversarial networks was to replace the sampler
-  by an arbitrary algorithm with differentiable parameters.
-  These are then adjusted in such a way that the discriminator
-  (effectively a two-sample test) cannot distinguish fake from real data.
-  Through the ability to use arbitrary algorithms to generate data,
-  density estimation was opened up to a wide variety of techniques.
-  Examples of galloping zebras :cite:`Zhu.Park.Isola.ea.2017`
-  and of fake celebrity faces :cite:`Karras.Aila.Laine.ea.2017`
-  are each testimony to this progress.
-  Even amateur doodlers can produce
-  photorealistic images just based on sketches describing the layout of a scene :cite:`Park.Liu.Wang.ea.2019`. 
-* Furthermore, while the diffusion process gradually adds random noise to data samples, *diffusion models* :cite:`sohl2015deep,ho2020denoising` learn the denoising process to gradually construct data samples from random noise, reversing the diffusion process. They have started to replace generative adversarial networks in more recent deep generative models, such as in DALL-E 2 :cite:`ramesh2022hierarchical` and Imagen :cite:`saharia2022photorealistic` for creative art and image generation based on text descriptions.
-* In many cases, a single GPU is insufficient for processing the large amounts of data available for training.
-  Over the past decade the ability to build parallel and
-  distributed training algorithms has improved significantly.
-  One of the key challenges in designing scalable algorithms
-  is that the workhorse of deep learning optimization,
-  stochastic gradient descent, relies on relatively
-  small minibatches of data to be processed.
-  At the same time, small batches limit the efficiency of GPUs.
-  Hence, training on 1,024 GPUs with a minibatch size of,
-  say, 32 images per batch amounts to an aggregate minibatch
-  of about 32,000 images. Work, first by :citet:`Li.2017`
-  and subsequently by :citet:`You.Gitman.Ginsburg.2017`
-  and :citet:`Jia.Song.He.ea.2018` pushed the size up to 64,000 observations,
-  reducing training time for the ResNet-50 model
-  on the ImageNet dataset to less than 7 minutes.
-  By comparison, training times were initially of the order of days.
-* The ability to parallelize computation
-  has also contributed to progress in *reinforcement learning*.
-  This has led to significant progress in computers achieving
-  superhuman performance on tasks like Go, Atari games,
-  Starcraft, and in physics simulations (e.g., using MuJoCo)
-  where environment simulators are available.
-  See, e.g., :citet:`Silver.Huang.Maddison.ea.2016` for a description
-  of such achievements in AlphaGo. In a nutshell,
-  reinforcement learning works best
-  if plenty of (state, action, reward) tuples are available.
-  Simulation provides such an avenue.
-* Deep learning frameworks have played a crucial role
-  in disseminating ideas.
-  The first generation of open-source frameworks
-  for neural network modeling consisted of
+  전통적으로, 밀도 추정과 생성 모델을 위한 통계적 방법은
+  적절한 확률 분포와 그것에서 샘플링하기 위한
+  (종종 근사) 알고리즘을 찾는 데 초점을 맞췄습니다.
+  그 결과, 이런 알고리즘들은 통계 모델에 내재된
+  유연성 부족에 의해 크게 제한되었습니다.
+  생성적 적대 신경망의 결정적 혁신은 샘플러를
+  미분 가능한 파라미터를 가진 임의의 알고리즘으로 대체한 것이었습니다.
+  그러고 나서 이것들은 판별자
+  (실질적으로 2-표본 검정)가 가짜와 실제 데이터를 구별할 수 없는
+  방식으로 조정됩니다.
+  데이터를 생성하기 위해 임의의 알고리즘을 사용할 수 있는 능력을 통해,
+  밀도 추정은 다양한 기법에 열렸습니다.
+  질주하는 얼룩말의 예시 :cite:`Zhu.Park.Isola.ea.2017`와
+  가짜 유명인 얼굴의 예시 :cite:`Karras.Aila.Laine.ea.2017`는
+  각각 이 진전의 증거입니다.
+  아마추어 낙서가조차도 장면의 레이아웃을 기술하는 스케치를 기반으로
+  사실적인 이미지를 만들어낼 수 있습니다 :cite:`Park.Liu.Wang.ea.2019`.
+* 더 나아가, 확산 과정이 데이터 샘플에 점진적으로 무작위 노이즈를 더하는 반면, *확산 모델* :cite:`sohl2015deep,ho2020denoising`은 확산 과정을 뒤집어 무작위 노이즈로부터 데이터 샘플을 점진적으로 구성하는 디노이징 과정을 학습합니다. 이들은 텍스트 기술을 기반으로 한 창의적 예술과 이미지 생성을 위한 DALL-E 2 :cite:`ramesh2022hierarchical`와 Imagen :cite:`saharia2022photorealistic` 같은 더 최근의 심층 생성 모델에서 생성적 적대 신경망을 대체하기 시작했습니다.
+* 많은 경우, 훈련을 위해 가용한 대량의 데이터를 처리하기에는 단일 GPU가 불충분합니다.
+  지난 10년 동안 병렬 및
+  분산 훈련 알고리즘을 구축할 수 있는 능력이 크게 향상되었습니다.
+  확장 가능한 알고리즘을 설계할 때의 핵심 도전 과제 중 하나는
+  딥러닝 최적화의 일꾼인
+  확률적 경사 하강법이 상대적으로
+  작은 미니배치 데이터가 처리되는 데 의존한다는 것입니다.
+  동시에, 작은 배치는 GPU의 효율성을 제한합니다.
+  따라서 배치당 32개 이미지의 미니배치 크기로
+  1,024개의 GPU에서 훈련하는 것은
+  약 32,000개 이미지의 집계 미니배치에 해당합니다. 먼저 :citet:`Li.2017`에 의해
+  그리고 이어서 :citet:`You.Gitman.Ginsburg.2017`와
+  :citet:`Jia.Song.He.ea.2018`의 작업은 크기를 64,000개 관측치로 끌어올렸고,
+  ImageNet 데이터셋에서 ResNet-50 모델의 훈련 시간을
+  7분 이내로 줄였습니다.
+  비교하자면, 훈련 시간은 처음에 며칠 단위였습니다.
+* 계산을 병렬화하는 능력은
+  *강화 학습*의 진전에도 기여해 왔습니다.
+  이는 환경 시뮬레이터가 가용한
+  바둑, Atari 게임, Starcraft, 그리고 (예: MuJoCo를 사용한) 물리 시뮬레이션 같은 작업에서
+  컴퓨터가 초인적 성능을 달성하는 데
+  상당한 진전을 가져왔습니다.
+  예를 들어, AlphaGo에서의 이런 성취에 대한 기술은 :citet:`Silver.Huang.Maddison.ea.2016`을 참조하십시오. 간단히 말해,
+  강화 학습은 (상태, 행동, 보상) 튜플이 충분히 가용할 때
+  가장 잘 작동합니다.
+  시뮬레이션은 그런 수단을 제공합니다.
+* 딥러닝 프레임워크는
+  아이디어 보급에 결정적인 역할을 해 왔습니다.
+  신경망 모델링을 위한 오픈소스 프레임워크의 1세대는
   [Caffe](https://github.com/BVLC/caffe),
-  [Torch](https://github.com/torch), and
-  [Theano](https://github.com/Theano/Theano).
-  Many seminal papers were written using these tools.
-  These have now been superseded by
-  [TensorFlow](https://github.com/tensorflow/tensorflow) (often used via its high-level API [Keras](https://github.com/keras-team/keras)), [CNTK](https://github.com/Microsoft/CNTK), [Caffe 2](https://github.com/caffe2/caffe2), and [Apache MXNet](https://github.com/apache/incubator-mxnet).
-  The third generation of frameworks consists
-  of so-called *imperative* tools for deep learning,
-  a trend that was arguably ignited by [Chainer](https://github.com/chainer/chainer),
-  which used a syntax similar to Python NumPy to describe models.
-  This idea was adopted by both [PyTorch](https://github.com/pytorch/pytorch),
-  the [Gluon API](https://github.com/apache/incubator-mxnet) of MXNet,
-  and [JAX](https://github.com/google/jax).
+  [Torch](https://github.com/torch),
+  [Theano](https://github.com/Theano/Theano)로 구성되었습니다.
+  많은 중요한 논문이 이런 도구들을 사용해 작성되었습니다.
+  이들은 이제 [TensorFlow](https://github.com/tensorflow/tensorflow) (종종 그것의 고수준 API [Keras](https://github.com/keras-team/keras)를 통해 사용됨), [CNTK](https://github.com/Microsoft/CNTK), [Caffe 2](https://github.com/caffe2/caffe2), [Apache MXNet](https://github.com/apache/incubator-mxnet)에 의해 대체되었습니다.
+  프레임워크의 3세대는
+  딥러닝을 위한 이른바 *명령형* 도구들로 구성되어 있는데,
+  이는 모델을 기술하기 위해 Python NumPy와 유사한 구문을 사용한
+  [Chainer](https://github.com/chainer/chainer)에 의해 점화되었다고 할 수 있는 흐름입니다.
+  이 아이디어는 [PyTorch](https://github.com/pytorch/pytorch),
+  MXNet의 [Gluon API](https://github.com/apache/incubator-mxnet),
+  그리고 [JAX](https://github.com/google/jax) 모두에 채택되었습니다.
 
 
-The division of labor between system researchers building better tools
-and statistical modelers building better neural networks
-has greatly simplified things. For instance,
-training a linear logistic regression model
-used to be a nontrivial homework problem,
-worthy to give to new machine learning
-Ph.D. students at Carnegie Mellon University in 2014.
-By now, this task can be accomplished
-with under 10 lines of code,
-putting it firmly within the reach of any programmer.
+더 나은 도구를 구축하는 시스템 연구자와
+더 나은 신경망을 구축하는 통계 모델러 사이의 분업은
+일을 크게 단순화했습니다. 예를 들어,
+선형 로지스틱 회귀 모델을 훈련하는 일은
+한때 자명하지 않은 숙제 문제였고,
+2014년 카네기 멜런 대학교의 신입 머신러닝 박사과정생에게
+줄 만한 가치가 있었습니다.
+이제, 이 작업은 10줄 미만의 코드로
+달성할 수 있어,
+어떤 프로그래머라도 확실히 손에 닿는 곳에 두게 되었습니다.
 
 
-## Success Stories
+## 성공 사례
 
-Artificial intelligence has a long history of delivering results
-that would be difficult to accomplish otherwise.
-For instance, mail sorting systems
-using optical character recognition
-have been deployed since the 1990s.
-This is, after all, the source
-of the famous MNIST dataset
-of handwritten digits.
-The same applies to reading checks for bank deposits and scoring
-creditworthiness of applicants.
-Financial transactions are checked for fraud automatically.
-This forms the backbone of many e-commerce payment systems,
-such as PayPal, Stripe, AliPay, WeChat, Apple, Visa, and MasterCard.
-Computer programs for chess have been competitive for decades.
-Machine learning feeds search, recommendation, personalization,
-and ranking on the Internet.
-In other words, machine learning is pervasive, albeit often hidden from sight.
+인공지능은 다른 방법으로는 달성하기 어려웠을 결과를
+제공해 온 오랜 역사를 가지고 있습니다.
+예를 들어, 광학 문자 인식을 사용한 우편물 분류 시스템은
+1990년대부터 배치되어 왔습니다.
+이것이 결국 손글씨 숫자의 유명한 MNIST 데이터셋의
+출처입니다.
+은행 입금을 위한 수표 판독과 신청자의 신용도 채점에도
+동일한 것이 적용됩니다.
+금융 거래는 자동으로 사기 여부가 검사됩니다.
+이것은 PayPal, Stripe, AliPay, WeChat, Apple, Visa, MasterCard 같은
+많은 전자상거래 결제 시스템의 중추를 형성합니다.
+체스를 위한 컴퓨터 프로그램은 수십 년 동안 경쟁력이 있었습니다.
+머신러닝은 인터넷에서 검색, 추천, 개인화, 순위 매기기를
+공급합니다.
+다시 말해, 머신러닝은 종종 시야에서 가려져 있긴 하지만, 어디에나 존재합니다.
 
-It is only recently that AI
-has been in the limelight, mostly due to
-solutions to problems
-that were considered intractable previously
-and that are directly related to consumers.
-Many of such advances are attributed to deep learning.
+AI가 각광받게 된 것은 최근에 와서야인데,
+이는 대부분 이전에는 다루기 어렵다고 여겨졌던
+그리고 소비자와 직접 관련된 문제들에 대한
+해법 덕분입니다.
+이런 진전의 다수는 딥러닝에 기인합니다.
 
-* Intelligent assistants, such as Apple's Siri,
-  Amazon's Alexa, and Google's assistant,
-  are able to respond to spoken requests
-  with a reasonable degree of accuracy.
-  This includes menial jobs, like turning on light switches,
-  and more complex tasks, such as arranging barber's appointments
-  and offering phone support dialog.
-  This is likely the most noticeable sign
-  that AI is affecting our lives.
-* A key ingredient in digital assistants
-  is their ability to recognize speech accurately.
-  The accuracy of such systems has gradually
-  increased to the point
-  of achieving parity with humans
-  for certain applications :cite:`Xiong.Wu.Alleva.ea.2018`.
-* Object recognition has likewise come a long way.
-  Identifying the object in a picture
-  was a fairly challenging task in 2010.
-  On the ImageNet benchmark researchers from NEC Labs
-  and University of Illinois at Urbana-Champaign
-  achieved a top-five error rate of 28% :cite:`Lin.Lv.Zhu.ea.2010`.
-  By 2017, this error rate was reduced to 2.25% :cite:`Hu.Shen.Sun.2018`.
-  Similarly, stunning results have been achieved
-  for identifying birdsong and for diagnosing skin cancer.
-* Prowess in games used to provide
-  a measuring stick for human ability.
-  Starting from TD-Gammon, a program for playing backgammon
-  using temporal difference reinforcement learning,
-  algorithmic and computational progress
-  has led to algorithms for a wide range of applications.
-  Compared with backgammon, chess has
-  a much more complex state space and set of actions.
-  DeepBlue beat Garry Kasparov using massive parallelism,
-  special-purpose hardware and efficient search
-  through the game tree :cite:`Campbell.Hoane-Jr.Hsu.2002`.
-  Go is more difficult still, due to its huge state space.
-  AlphaGo reached human parity in 2015,
-  using deep learning combined with Monte Carlo tree sampling :cite:`Silver.Huang.Maddison.ea.2016`.
-  The challenge in Poker was that the state space is large
-  and only partially observed
-  (we do not know the opponents' cards).
-  Libratus exceeded human performance in Poker
-  using efficiently structured strategies :cite:`Brown.Sandholm.2017`.
-* Another indication of progress in AI
-  is the advent of self-driving vehicles.
-  While full autonomy is not yet within reach,
-  excellent progress has been made in this direction,
-  with companies such as Tesla, NVIDIA,
-  and Waymo shipping products
-  that enable partial autonomy.
-  What makes full autonomy so challenging
-  is that proper driving requires
-  the ability to perceive, to reason
-  and to incorporate rules into a system.
-  At present, deep learning is used primarily
-  in the visual aspect of these problems.
-  The rest is heavily tuned by engineers.
+* Apple의 Siri, Amazon의 Alexa, Google의 어시스턴트 같은 지능형 어시스턴트는
+  음성 요청에 합리적인 수준의 정확도로
+  응답할 수 있습니다.
+  이는 전등 스위치를 켜는 것 같은 사소한 일과,
+  이발 약속을 잡고 전화 지원 대화를 제공하는 것 같은
+  더 복잡한 작업을 포함합니다.
+  이는 AI가 우리 삶에 영향을 미치고 있다는 가장 눈에 띄는
+  신호일 것입니다.
+* 디지털 어시스턴트의 핵심 요소는
+  음성을 정확하게 인식할 수 있는 능력입니다.
+  그런 시스템의 정확도는 특정 응용에서
+  인간과 동등한 수준에 도달할 정도로
+  점진적으로 증가했습니다 :cite:`Xiong.Wu.Alleva.ea.2018`.
+* 객체 인식도 마찬가지로 먼 길을 왔습니다.
+  사진에서 객체를 식별하는 것은
+  2010년에는 꽤 도전적인 작업이었습니다.
+  ImageNet 벤치마크에서 NEC Labs와
+  University of Illinois at Urbana-Champaign의 연구자들은
+  28%의 상위 5위 오류율을 달성했습니다 :cite:`Lin.Lv.Zhu.ea.2010`.
+  2017년까지 이 오류율은 2.25%로 감소했습니다 :cite:`Hu.Shen.Sun.2018`.
+  마찬가지로, 새소리를 식별하고 피부암을 진단하는 데도
+  놀라운 결과가 달성되었습니다.
+* 게임에서의 기량은 인간 능력의
+  측정 잣대를 제공하곤 했습니다.
+  시간차 강화 학습을 사용한 백개먼 플레이 프로그램인
+  TD-Gammon에서 시작하여,
+  알고리즘적 및 계산적 진전은
+  광범위한 응용을 위한 알고리즘으로 이어졌습니다.
+  백개먼과 비교하면, 체스는
+  훨씬 더 복잡한 상태 공간과 행동 집합을 가집니다.
+  DeepBlue는 대규모 병렬화,
+  특수 목적 하드웨어, 게임 트리를 통한 효율적 탐색을 사용하여
+  Garry Kasparov를 이겼습니다 :cite:`Campbell.Hoane-Jr.Hsu.2002`.
+  바둑은 거대한 상태 공간 때문에 훨씬 더 어렵습니다.
+  AlphaGo는 딥러닝과 몬테 카를로 트리 샘플링을 결합하여 사용하여
+  2015년에 인간과 동등한 수준에 도달했습니다 :cite:`Silver.Huang.Maddison.ea.2016`.
+  포커에서의 도전은 상태 공간이 크고
+  부분적으로만 관측된다는 것이었습니다
+  (우리는 상대의 카드를 모릅니다).
+  Libratus는 효율적으로 구조화된 전략을 사용하여
+  포커에서 인간의 성능을 능가했습니다 :cite:`Brown.Sandholm.2017`.
+* AI의 진전을 보여주는 또 다른 지표는
+  자율 주행 차량의 등장입니다.
+  완전한 자율성은 아직 손에 닿지 않지만,
+  Tesla, NVIDIA, Waymo 같은 기업들이
+  부분 자율성을 가능하게 하는 제품을 출시하면서
+  이 방향으로 훌륭한 진전이 이루어졌습니다.
+  완전한 자율성을 그토록 도전적으로 만드는 것은
+  적절한 운전이 인지, 추론,
+  그리고 규칙을 시스템에 통합하는 능력을 요구한다는 점입니다.
+  현재, 딥러닝은 이런 문제들의
+  시각적 측면에 주로 사용됩니다.
+  나머지는 엔지니어들에 의해 크게 조정됩니다.
 
 
 
-This barely scratches the surface
-of significant applications of machine learning.
-For instance, robotics, logistics, computational biology,
-particle physics, and astronomy
-owe some of their most impressive recent advances
-at least in parts to machine learning, which is thus becoming
-a ubiquitous tool for engineers and scientists.
+이는 머신러닝의 중요한 응용의
+표면을 거의 긁지 못합니다.
+예를 들어, 로보틱스, 물류, 계산 생물학,
+입자 물리학, 천문학은
+가장 인상적인 최근 발전 중 일부를
+적어도 부분적으로 머신러닝에 빚지고 있으며, 이로써 머신러닝은
+엔지니어와 과학자에게 어디에나 있는 도구가 되어가고 있습니다.
 
-Frequently, questions about a coming AI apocalypse
-and the plausibility of a *singularity*
-have been raised in non-technical articles.
-The fear is that somehow machine learning systems
-will become sentient and make decisions,
-independently of their programmers,
-that directly impact the lives of humans.
-To some extent, AI already affects
-the livelihood of humans in direct ways:
-creditworthiness is assessed automatically,
-autopilots mostly navigate vehicles, decisions about
-whether to grant bail use statistical data as input.
-More frivolously, we can ask Alexa to switch on the coffee machine.
+비기술적 기사에서는 다가오는 AI 종말과
+*특이점*의 그럴듯함에 관한
+질문이 자주 제기되어 왔습니다.
+두려움은 머신러닝 시스템이 어떻게든
+지각력을 갖게 되어 프로그래머와 독립적으로 결정을 내리고
+인간의 삶에 직접적으로 영향을 미칠 것이라는 점입니다.
+어느 정도, AI는 이미 직접적인 방식으로
+인간의 생계에 영향을 미치고 있습니다.
+신용도는 자동으로 평가되고,
+자동조종 장치는 대부분 차량을 운항하며,
+보석을 허가할지 여부에 대한 결정은 통계 데이터를 입력으로 사용합니다.
+좀 더 사소하게는, 우리는 Alexa에게 커피 머신을 켜달라고 요청할 수 있습니다.
 
-Fortunately, we are far from a sentient AI system
-that could deliberately manipulate its human creators.
-First, AI systems are engineered,
-trained, and deployed
-in a specific, goal-oriented manner.
-While their behavior might give the illusion
-of general intelligence, it is a combination of rules, heuristics
-and statistical models that underlie the design.
-Second, at present, there are simply no tools for *artificial general intelligence*
-that are able to improve themselves,
-reason about themselves, and that are able to modify,
-extend, and improve their own architecture
-while trying to solve general tasks.
+다행스럽게도, 우리는 인간 창조자를 의도적으로 조작할 수 있는
+지각 있는 AI 시스템과는 거리가 멉니다.
+첫째, AI 시스템은 특정한 목표 지향적 방식으로
+엔지니어링되고, 훈련되고, 배포됩니다.
+그들의 행동이 일반 지능의 환상을 줄 수도 있지만,
+설계의 기저에는 규칙, 휴리스틱, 통계 모델의 조합이 있습니다.
+둘째, 현재, 일반 작업을 해결하려 시도하면서
+자신을 개선하고, 자신에 대해 추론하고, 자신의 아키텍처를
+수정하고, 확장하고, 개선할 수 있는
+*인공 일반 지능*을 위한 도구는 그저 존재하지 않습니다.
 
-A much more pressing concern is how AI is being used in our daily lives.
-It is likely that many routine tasks, currently fulfilled by humans, can and will be automated.
-Farm robots will likely reduce the costs for organic farmers
-but they will also automate harvesting operations.
-This phase of the industrial revolution
-may have profound consequences for large swaths of society,
-since menial jobs provide much employment 
-in many countries.
-Furthermore, statistical models, when applied without care,
-can lead to racial, gender, or age bias and raise
-reasonable concerns about procedural fairness
-if automated to drive consequential decisions.
-It is important to ensure that these algorithms are used with care.
-With what we know today, this strikes us as a much more pressing concern
-than the potential of malevolent superintelligence for destroying humanity.
+훨씬 더 시급한 우려는 AI가 우리의 일상생활에서 어떻게 사용되고 있는가입니다.
+현재 인간이 수행하는 많은 일상적 작업이 자동화될 수 있고, 자동화될 가능성이 높습니다.
+농장 로봇은 유기농 농부들의 비용을 줄일 가능성이 높지만,
+수확 작업도 자동화할 것입니다.
+산업 혁명의 이 단계는
+사회의 광범위한 영역에 심오한 결과를 가져올 수 있는데,
+많은 국가에서 사소한 일자리가
+많은 고용을 제공하기 때문입니다.
+게다가, 통계 모델은 주의 없이 적용될 경우
+인종, 성별, 연령 편향으로 이어질 수 있고,
+중요한 결정을 자동으로 내리도록 적용된다면 절차적 공정성에 대한
+합리적인 우려를 불러일으킵니다.
+이런 알고리즘들이 주의 깊게 사용되도록 보장하는 것이 중요합니다.
+오늘날 우리가 아는 것으로 볼 때, 이는 악의적인 초지능이
+인류를 파괴할 가능성보다 훨씬 더 시급한 우려로 보입니다.
 
 
-## The Essence of Deep Learning
+## 딥러닝의 본질
 
-Thus far, we have talked in broad terms about machine learning.
-Deep learning is the subset of machine learning
-concerned with models based on many-layered neural networks.
-It is *deep* in precisely the sense that its models
-learn many *layers* of transformations.
-While this might sound narrow,
-deep learning has given rise
-to a dizzying array of models, techniques,
-problem formulations, and applications.
-Many intuitions have been developed
-to explain the benefits of depth.
-Arguably, all machine learning
-has many layers of computation,
-the first consisting of feature processing steps.
-What differentiates deep learning is that
-the operations learned at each of the many layers
-of representations are learned jointly from data.
+지금까지, 저희는 머신러닝에 대해 폭넓게 이야기했습니다.
+딥러닝은 다층 신경망에 기반한 모델과 관련된
+머신러닝의 부분집합입니다.
+그 모델이 많은 *층*의 변환을 학습한다는
+바로 그런 의미에서 *깊습니다*.
+이것이 좁게 들릴 수 있지만,
+딥러닝은 어지러울 정도로 다양한 모델, 기법,
+문제 정식화, 응용을 낳았습니다.
+깊이의 이점을 설명하기 위해
+많은 직관이 개발되었습니다.
+사실, 모든 머신러닝은
+많은 층의 계산을 가지고 있다고 할 수 있는데,
+첫 번째는 특징 처리 단계로 구성됩니다.
+딥러닝을 차별화하는 것은
+표현의 많은 층 각각에서 학습되는 연산이
+데이터로부터 함께 학습된다는 점입니다.
 
-The problems that we have discussed so far,
-such as learning from the raw audio signal,
-the raw pixel values of images,
-or mapping between sentences of arbitrary lengths and
-their counterparts in foreign languages,
-are those where deep learning excels
-and traditional methods falter.
-It turns out that these many-layered models
-are capable of addressing low-level perceptual data
-in a way that previous tools could not.
-Arguably the most significant commonality
-in deep learning methods is *end-to-end training*.
-That is, rather than assembling a system
-based on components that are individually tuned,
-one builds the system and then tunes their performance jointly.
-For instance, in computer vision scientists
-used to separate the process of *feature engineering*
-from the process of building machine learning models.
-The Canny edge detector :cite:`Canny.1987`
-and Lowe's SIFT feature extractor :cite:`Lowe.2004`
-reigned supreme for over a decade as algorithms
-for mapping images into feature vectors.
-In bygone days, the crucial part of applying machine learning to these problems
-consisted of coming up with manually-engineered ways
-of transforming the data into some form amenable to shallow models.
-Unfortunately, there is only so much that humans can accomplish
-by ingenuity in comparison with a consistent evaluation
-over millions of choices carried out automatically by an algorithm.
-When deep learning took over,
-these feature extractors were replaced
-by automatically tuned filters that yielded superior accuracy.
+지금까지 저희가 논의했던 문제들,
+예컨대 원시 오디오 신호로부터의 학습,
+이미지의 원시 픽셀 값으로부터의 학습,
+임의 길이의 문장과 다른 언어에서의 그 대응물 사이의
+사상 같은 것들은,
+딥러닝이 뛰어나고 전통적 방법이 흔들리는
+문제들입니다.
+이런 다층 모델들이 이전 도구들로는 할 수 없었던 방식으로
+저수준 지각 데이터를 다룰 수 있다는 것이 드러났습니다.
+딥러닝 방법에서 가장 중요한 공통점은
+*종단 간 훈련*(end-to-end training)이라고 할 수 있습니다.
+즉, 개별적으로 조정된 구성 요소들에 기반하여
+시스템을 조립하는 것이 아니라,
+시스템을 구축하고 나서 그것들의 성능을 함께 조정합니다.
+예를 들어, 컴퓨터 비전에서 과학자들은
+*특징 공학*(feature engineering) 과정을 머신러닝 모델 구축 과정과
+분리하곤 했습니다.
+Canny 에지 검출기 :cite:`Canny.1987`와
+Lowe의 SIFT 특징 추출기 :cite:`Lowe.2004`는
+10년 넘게 이미지를 특징 벡터로 사상하는 알고리즘으로서
+지배적이었습니다.
+지난날에는, 이런 문제들에 머신러닝을 적용하는 핵심 부분이
+데이터를 얕은 모델에 적합한 어떤 형태로 변환하는
+수동으로 공학화된 방법을 고안하는 것으로 구성되었습니다.
+불행히도, 알고리즘에 의해 자동으로 수행되는 수백만 가지 선택지에 대한
+일관된 평가에 비하면, 인간이 독창성으로 이룰 수 있는 것은 한정되어 있습니다.
+딥러닝이 자리잡았을 때,
+이런 특징 추출기들은
+우월한 정확도를 산출하는 자동 조정된 필터들로 대체되었습니다.
 
-Thus, one key advantage of deep learning is that it replaces
-not only the shallow models at the end of traditional learning pipelines,
-but also the labor-intensive process of feature engineering.
-Moreover, by replacing much of the domain-specific preprocessing,
-deep learning has eliminated many of the boundaries
-that previously separated computer vision, speech recognition,
-natural language processing, medical informatics, and other application areas,
-thereby offering a unified set of tools for tackling diverse problems.
+따라서, 딥러닝의 한 가지 핵심 장점은 전통적 학습 파이프라인 끝의
+얕은 모델뿐 아니라
+노동 집약적인 특징 공학 과정도 대체한다는 것입니다.
+게다가, 도메인 특화 전처리의 많은 부분을 대체함으로써,
+딥러닝은 이전에 컴퓨터 비전, 음성 인식,
+자연어 처리, 의학 정보학, 그리고 다른 응용 영역들을
+분리했던 많은 경계들을 제거했고,
+이로써 다양한 문제에 도전하기 위한 통합된 도구 집합을 제공합니다.
 
-Beyond end-to-end training, we are experiencing a transition
-from parametric statistical descriptions to fully nonparametric models.
-When data is scarce, one needs to rely on simplifying assumptions about reality
-in order to obtain useful models.
-When data is abundant, these can be replaced
-by nonparametric models that better fit the data.
-To some extent, this mirrors the progress
-that physics experienced in the middle of the previous century
-with the availability of computers.
-Rather than solving by hand parametric approximations of how electrons behave,
-one can now resort to numerical simulations of the associated partial differential equations.
-This has led to much more accurate models,
-albeit often at the expense of interpretation.
+종단 간 훈련을 넘어, 우리는 모수적 통계 기술에서
+완전히 비모수적 모델로의 전환을 경험하고 있습니다.
+데이터가 부족할 때, 유용한 모델을 얻기 위해서는
+실세계에 대한 단순화하는 가정에 의존해야 합니다.
+데이터가 풍부할 때, 이것들은 데이터에 더 잘 들어맞는
+비모수적 모델로 대체될 수 있습니다.
+어느 정도, 이는 컴퓨터의 가용성과 함께 지난 세기 중반에
+물리학이 경험한 진전을 반영합니다.
+전자가 어떻게 행동하는지에 대한 모수적 근사를 손으로 푸는 대신,
+이제 관련 편미분 방정식의 수치 시뮬레이션에 의존할 수 있습니다.
+이는 종종 해석의 희생을 대가로 하지만,
+훨씬 더 정확한 모델로 이어졌습니다.
 
-Another difference from previous work is the acceptance of suboptimal solutions,
-dealing with nonconvex nonlinear optimization problems,
-and the willingness to try things before proving them.
-This new-found empiricism in dealing with statistical problems,
-combined with a rapid influx of talent has led
-to rapid progress in the development of practical algorithms,
-albeit in many cases at the expense of modifying
-and re-inventing tools that existed for decades.
+이전 작업과의 또 다른 차이점은 비최적 해법의 수용,
+비볼록 비선형 최적화 문제 다루기,
+그리고 증명하기 전에 시도해 보려는 의지입니다.
+통계 문제를 다루는 데서의 이 새로 발견된 경험주의는,
+인재의 급속한 유입과 결합되어,
+많은 경우에 수십 년 동안 존재했던 도구를 수정하고 재발명하는 비용을 치르면서이긴 해도,
+실용적 알고리즘 개발에서의 빠른 진전으로 이어졌습니다.
 
-In the end, the deep learning community prides itself
-on sharing tools across academic and corporate boundaries,
-releasing many excellent libraries, statistical models,
-and trained networks as open source.
-It is in this spirit that the notebooks forming this book
-are freely available for distribution and use.
-We have worked hard to lower the barriers of access
-for anyone wishing to learn about deep learning
-and we hope that our readers will benefit from this.
+결국, 딥러닝 공동체는 학계와 기업의 경계를 넘어 도구를 공유하는 것을
+자랑스러워하며, 많은 훌륭한 라이브러리, 통계 모델,
+훈련된 네트워크를 오픈소스로 공개합니다.
+이런 정신에서 이 책을 이루는 노트북들은
+배포와 사용에 자유롭게 가용합니다.
+저희는 딥러닝에 대해 배우고자 하는 모든 사람의 접근 장벽을 낮추기 위해
+열심히 일해 왔으며, 저희의 독자들이 이것의 혜택을 받기를 바랍니다.
 
 
-## Summary
+## 요약
 
-Machine learning studies how computer systems
-can leverage experience (often data)
-to improve performance at specific tasks.
-It combines ideas from statistics, data mining, and optimization.
-Often, it is used as a means of implementing AI solutions.
-As a class of machine learning, representational learning
-focuses on how to automatically find
-the appropriate way to represent data.
-Considered as multi-level representation learning
-through learning many layers of transformations,
-deep learning replaces not only the shallow models
-at the end of traditional machine learning pipelines,
-but also the labor-intensive process of feature engineering.
-Much of the recent progress in deep learning
-has been triggered by an abundance of data
-arising from cheap sensors and Internet-scale applications,
-and by significant progress in computation, mostly through GPUs.
-Furthermore, the availability of efficient deep learning frameworks
-has made design and implementation of whole system optimization significantly easier,
-and this is a key component in obtaining high performance.
+머신러닝은 컴퓨터 시스템이 특정 작업에서의 성능을 향상시키기 위해
+경험(종종 데이터)을 어떻게 활용할 수 있는지를 연구합니다.
+이는 통계학, 데이터 마이닝, 최적화의 아이디어를 결합합니다.
+종종, AI 해법을 구현하기 위한 수단으로 사용됩니다.
+머신러닝의 한 부류로서, 표현 학습(representational learning)은
+데이터를 표현하는 적절한 방법을
+자동으로 찾는 데 초점을 맞춥니다.
+많은 층의 변환을 학습함으로써 이루어지는
+다단계 표현 학습으로 간주되는,
+딥러닝은 전통적 머신러닝 파이프라인 끝의
+얕은 모델뿐 아니라
+노동 집약적인 특징 공학 과정도 대체합니다.
+딥러닝에서의 최근 진전의 많은 부분은
+저렴한 센서와 인터넷 규모의 응용에서 발생한
+풍부한 데이터, 그리고 주로 GPU를 통한
+계산의 상당한 진전에 의해 촉발되었습니다.
+게다가, 효율적인 딥러닝 프레임워크의 가용성은
+전체 시스템 최적화의 설계와 구현을 상당히 더 쉽게 만들었으며,
+이는 높은 성능을 얻는 데 핵심적인 구성 요소입니다.
 
-## Exercises
+## 연습문제
 
-1. Which parts of code that you are currently writing could be "learned",
-   i.e., improved by learning and automatically determining design choices
-   that are made in your code?
-   Does your code include heuristic design choices?
-   What data might you need to learn the desired behavior?
-1. Which problems that you encounter have many examples for their solution,
-   yet no specific way for automating them?
-   These may be prime candidates for using deep learning.
-1. Describe the relationships between algorithms, data, and computation. How do characteristics of the data and the current available computational resources influence the appropriateness of various algorithms?
-1. Name some settings where end-to-end training is not currently the default approach but where it might be useful.
+1. 여러분이 현재 작성하고 있는 코드 중 어느 부분이 "학습될" 수 있을까요,
+   즉 학습을 통해 향상되고 코드에서 내려지는 설계 결정을 자동으로 결정할 수 있을까요?
+   여러분의 코드는 휴리스틱한 설계 결정을 포함하나요?
+   원하는 동작을 학습하려면 어떤 데이터가 필요할까요?
+1. 여러분이 마주치는 문제들 중 어떤 것이 해법을 위한 많은 예시를 가지고 있지만,
+   그것들을 자동화하는 구체적인 방법이 없는 문제일까요?
+   이런 것들이 딥러닝 사용의 주요 후보일 수 있습니다.
+1. 알고리즘, 데이터, 계산 사이의 관계를 기술하시오. 데이터의 특성과 현재 가용한 계산 자원이 다양한 알고리즘의 적절성에 어떻게 영향을 미치나요?
+1. 종단 간 훈련이 현재 기본 접근법이 아니지만 유용할 수 있는 일부 설정을 거명하시오.
 
 [Discussions](https://discuss.d2l.ai/t/22)

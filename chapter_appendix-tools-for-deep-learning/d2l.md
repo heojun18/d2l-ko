@@ -1,8 +1,8 @@
-# The `d2l` API Document
+# `d2l` API 문서
 :label:`sec_d2l`
 
-This section displays classes and functions (sorted alphabetically) in the `d2l` package, showing where they are defined in the book so you can find more detailed implementations and explanations. 
-See also the source code on the [GitHub repository](https://github.com/d2l-ai/d2l-en/tree/master/d2l).
+이 절에서는 `d2l` 패키지의 클래스와 함수(알파벳순으로 정렬)를 보여 주며, 더 자세한 구현과 설명을 찾을 수 있도록 책에서 어디에 정의되어 있는지를 표시합니다.
+[GitHub 저장소](https://github.com/d2l-ai/d2l-en/tree/master/d2l)의 소스 코드도 참조하세요.
 
 :begin_tab:`pytorch`
 
@@ -34,7 +34,7 @@ See also the source code on the [GitHub repository](https://github.com/d2l-ai/d2
 
 :end_tab:
 
-## Classes
+## 클래스
 
 ```eval_rst 
 
@@ -151,7 +151,7 @@ See also the source code on the [GitHub repository](https://github.com/d2l-ai/d2
 ```
 
 
-## Functions
+## 함수
 
 ```eval_rst 
 

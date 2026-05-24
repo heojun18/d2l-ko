@@ -1,358 +1,320 @@
-# Environment and Distribution Shift
+# 환경과 분포 변화
 :label:`sec_environment-and-distribution-shift`
 
-In the previous sections, we worked through
-a number of hands-on applications of machine learning,
-fitting models to a variety of datasets.
-And yet, we never stopped to contemplate
-either where data came from in the first place
-or what we ultimately plan to do
-with the outputs from our models.
-Too often, machine learning developers
-in possession of data rush to develop models
-without pausing to consider these fundamental issues.
+이전 절들에서, 저희는 머신러닝의
+실제 응용 사례 여러 가지를 다루면서
+다양한 데이터셋에 모델을 적합시켰습니다.
+그런데도, 저희는 애초에 데이터가 어디서 왔는지,
+또는 저희가 궁극적으로 모델의 출력으로 무엇을 할 계획인지에
+관해 한 번도 멈춰 숙고한 적이 없습니다.
+데이터를 손에 쥔 머신러닝 개발자들은
+너무 자주 이 근본적인 문제를 고려하기 위해 잠시 멈추지 않고
+모델 개발로 돌진합니다.
 
-Many failed machine learning deployments
-can be traced back to this failure.
-Sometimes models appear to perform marvelously
-as measured by test set accuracy
-but fail catastrophically in deployment
-when the distribution of data suddenly shifts.
-More insidiously, sometimes the very deployment of a model
-can be the catalyst that perturbs the data distribution.
-Say, for example, that we trained a model
-to predict who will repay rather than default on a loan,
-finding that an applicant's choice of footwear
-was associated with the risk of default
-(Oxfords indicate repayment, sneakers indicate default).
-We might be inclined 
-thereafter to grant a loan
-to any applicant wearing Oxfords
-and to deny all applicants wearing sneakers.
+실패한 머신러닝 배포 중 다수는
+이 실패로 거슬러 올라갈 수 있습니다.
+때때로 모델은 테스트 셋 정확도로 측정될 때
+훌륭하게 수행되는 것처럼 보이지만,
+데이터의 분포가 갑자기 변할 때
+배포에서 처참하게 실패합니다.
+더 교활하게도, 때때로 모델의 배포 자체가
+데이터 분포를 교란하는 촉매가 될 수 있습니다.
+예를 들어, 누가 대출을 상환하고 누가 채무 불이행을 할지
+예측하는 모델을 학습했다고 가정해 봅시다.
+신청자의 신발 선택이
+채무 불이행 위험과 관련이 있다는 것을 발견했습니다
+(옥스퍼드 구두는 상환을, 운동화는 채무 불이행을 나타냅니다).
+이후 옥스퍼드 구두를 신은 모든 신청자에게는 대출을 승인하고
+운동화를 신은 모든 신청자에게는 거부하고 싶어질 수 있습니다.
 
-In this case, our ill-considered leap from
-pattern recognition to decision-making
-and our failure to critically consider the environment
-might have disastrous consequences.
-For starters, as soon as we began
-making decisions based on footwear,
-customers would catch on and change their behavior.
-Before long, all applicants would be wearing Oxfords,
-without any coincident improvement in credit-worthiness.
-Take a minute to digest this because similar issues abound
-in many applications of machine learning:
-by introducing our model-based decisions to the environment,
-we might break the model.
+이 경우, 패턴 인식에서 의사 결정으로의
+부주의한 도약과 환경을 비판적으로 고려하지 못한 저희의 실패는
+재앙적인 결과를 초래할 수 있습니다.
+우선, 저희가 신발에 기반한 결정을 내리기 시작하자마자,
+고객들은 알아채고 행동을 바꿀 것입니다.
+오래 지나지 않아, 신용도의 동시 개선 없이
+모든 신청자가 옥스퍼드 구두를 신게 될 것입니다.
+잠시 시간을 내어 이를 음미해 보시기 바랍니다. 머신러닝의 많은 응용 사례에서
+유사한 문제가 만연하기 때문입니다.
+모델 기반 결정을 환경에 도입함으로써,
+저희는 모델을 망가뜨릴 수도 있습니다.
 
-While we cannot possibly give these topics
-a complete treatment in one section,
-we aim here to expose some common concerns,
-and to stimulate the critical thinking
-required to detect such situations early,
-mitigate damage, and use machine learning responsibly.
-Some of the solutions are simple
-(ask for the "right" data),
-some are technically difficult
-(implement a reinforcement learning system),
-and others require that we step outside the realm of
-statistical prediction altogether and
-grapple with difficult philosophical questions
-concerning the ethical application of algorithms.
+이러한 주제들을 한 절에서 완전히 다룰 수는 없지만,
+여기서는 일부 흔한 우려 사항을 드러내고,
+그러한 상황을 조기에 감지하고, 피해를 완화하고,
+머신러닝을 책임감 있게 사용하는 데 필요한
+비판적 사고를 자극하는 것을 목표로 합니다.
+일부 해결책은 단순하고
+("올바른" 데이터를 요청하기),
+일부는 기술적으로 어려우며
+(강화 학습 시스템을 구현하기),
+다른 것들은 통계적 예측의 영역을 벗어나
+알고리즘의 윤리적 적용에 관한
+어려운 철학적 질문과 씨름할 것을 요구합니다.
 
-## Types of Distribution Shift
+## 분포 변화의 유형
 
-To begin, we stick with the passive prediction setting
-considering the various ways that data distributions might shift
-and what might be done to salvage model performance.
-In one classic setup, we assume that our training data
-was sampled from some distribution $p_S(\mathbf{x},y)$
-but that our test data will consist
-of unlabeled examples drawn from
-some different distribution $p_T(\mathbf{x},y)$.
-Already, we must confront a sobering reality.
-Absent any assumptions on how $p_S$
-and $p_T$ relate to each other,
-learning a robust classifier is impossible.
+시작하기 위해, 저희는 데이터 분포가 어떤 다양한 방식으로 변할 수 있는지와
+모델 성능을 구해내기 위해 무엇을 할 수 있는지를 고려하면서
+수동적 예측 설정에 머무릅니다.
+한 가지 고전적인 설정에서, 저희는 학습 데이터가
+어떤 분포 $p_S(\mathbf{x},y)$에서 표집되었지만,
+테스트 데이터는 어떤 다른 분포 $p_T(\mathbf{x},y)$에서 추출된
+레이블이 없는 예제로 구성된다고 가정합니다.
+이미 저희는 정신이 번쩍 드는 현실에 직면해야 합니다.
+$p_S$와 $p_T$가 서로 어떻게 관련되는지에 대한 어떤 가정도 없이는,
+강건한 분류기를 학습하는 것은 불가능합니다.
 
-Consider a binary classification problem,
-where we wish to distinguish between dogs and cats.
-If the distribution can shift in arbitrary ways,
-then our setup permits the pathological case
-in which the distribution over inputs remains
-constant: $p_S(\mathbf{x}) = p_T(\mathbf{x})$,
-but the labels are all flipped:
+이진 분류 문제를 생각해 봅시다.
+저희가 개와 고양이를 구별하고자 한다고 합시다.
+분포가 임의의 방식으로 변할 수 있다면,
+저희 설정은 다음과 같은 병적인 경우를 허용합니다.
+입력에 대한 분포는 일정하게 유지되지만($p_S(\mathbf{x}) = p_T(\mathbf{x})$),
+레이블이 모두 뒤집힌 경우입니다.
 $p_S(y \mid \mathbf{x}) = 1 - p_T(y \mid \mathbf{x})$.
-In other words, if God can suddenly decide
-that in the future all "cats" are now dogs
-and what we previously called "dogs" are now cats---without
-any change in the distribution of inputs $p(\mathbf{x})$,
-then we cannot possibly distinguish this setting
-from one in which the distribution did not change at all.
+다시 말해, 신이 갑자기 미래의 모든 "고양이"가 이제 개이고
+저희가 이전에 "개"라고 부르던 것이 이제 고양이라고 결정할 수 있다면(입력 $p(\mathbf{x})$의
+분포에는 어떠한 변화도 없이),
+저희는 이 설정을 분포가 전혀 변하지 않은 설정과
+구별할 수 없을 것입니다.
 
-Fortunately, under some restricted assumptions
-on the ways our data might change in the future,
-principled algorithms can detect shift
-and sometimes even adapt on the fly,
-improving on the accuracy of the original classifier.
+다행스럽게도, 데이터가 미래에 어떻게 변할 수 있는지에 대한
+일부 제한된 가정하에서,
+원칙 있는 알고리즘은 변화를 감지하고
+때로는 즉석에서 적응하여
+원래 분류기의 정확도를 개선할 수도 있습니다.
 
-### Covariate Shift
+### 공변량 변화
 
-Among categories of distribution shift,
-covariate shift may be the most widely studied.
-Here, we assume that while the distribution of inputs
-may change over time, the labeling function,
-i.e., the conditional distribution
-$P(y \mid \mathbf{x})$ does not change.
-Statisticians call this *covariate shift*
-because the problem arises due to a
-shift in the distribution of the covariates (features).
-While we can sometimes reason about distribution shift
-without invoking causality, we note that covariate shift
-is the natural assumption to invoke in settings
-where we believe that $\mathbf{x}$ causes $y$.
+분포 변화의 범주 중에서,
+공변량 변화(covariate shift)는 가장 널리 연구된 것일 수 있습니다.
+여기서, 저희는 입력의 분포가
+시간이 지남에 따라 변할 수 있지만, 레이블링 함수,
+즉 조건부 분포 $P(y \mid \mathbf{x})$는 변하지 않는다고
+가정합니다.
+통계학자들은 이를 *공변량 변화*라고 부르는데,
+이는 공변량(특성)의 분포에서의 변화 때문에
+문제가 발생하기 때문입니다.
+저희가 때때로 인과 관계를 끌어들이지 않고 분포 변화에 대해 추론할 수 있긴 하지만,
+공변량 변화는 $\mathbf{x}$가 $y$를 야기한다고 믿는 환경에서
+끌어들이기에 자연스러운 가정이라는 점에 주목합니다.
 
-Consider the challenge of distinguishing cats and dogs.
-Our training data might consist of images of the kind in :numref:`fig_cat-dog-train`.
+고양이와 개를 구별하는 도전을 생각해 봅시다.
+저희의 학습 데이터는 :numref:`fig_cat-dog-train`과 같은 종류의 이미지로 구성될 수 있습니다.
 
-![Training data for distinguishing cats and dogs (illustrations: Lafeez Hossain / 500px / Getty Images; ilkermetinkursova / iStock / Getty Images Plus; GlobalP / iStock / Getty Images Plus; Musthafa Aboobakuru / 500px / Getty Images).](../img/cat-dog-train.png)
+![고양이와 개를 구별하기 위한 학습 데이터 (그림: Lafeez Hossain / 500px / Getty Images; ilkermetinkursova / iStock / Getty Images Plus; GlobalP / iStock / Getty Images Plus; Musthafa Aboobakuru / 500px / Getty Images).](../img/cat-dog-train.png)
 :label:`fig_cat-dog-train`
 
 
-At test time we are asked to classify the images in :numref:`fig_cat-dog-test`.
+테스트 시간에 저희는 :numref:`fig_cat-dog-test`의 이미지를 분류하도록 요청받습니다.
 
-![Test data for distinguishing cats and dogs (illustrations: SIBAS_minich / iStock / Getty Images Plus; Ghrzuzudu / iStock / Getty Images Plus; id-work / DigitalVision Vectors / Getty Images; Yime / iStock / Getty Images Plus).](../img/cat-dog-test.png)
+![고양이와 개를 구별하기 위한 테스트 데이터 (그림: SIBAS_minich / iStock / Getty Images Plus; Ghrzuzudu / iStock / Getty Images Plus; id-work / DigitalVision Vectors / Getty Images; Yime / iStock / Getty Images Plus).](../img/cat-dog-test.png)
 :label:`fig_cat-dog-test`
 
-The training set consists of photos,
-while the test set contains only cartoons.
-Training on a dataset with substantially different
-characteristics from the test set
-can spell trouble absent a coherent plan
-for how to adapt to the new domain.
+학습 셋은 사진으로 구성되어 있는 반면,
+테스트 셋은 만화만 포함합니다.
+테스트 셋과 실질적으로 다른 특성을 가진 데이터셋에서 학습하는 것은
+새로운 도메인에 적응하는 방법에 대한 일관된 계획이 없다면
+곤란을 야기할 수 있습니다.
 
-### Label Shift
+### 레이블 변화
 
-*Label shift* describes the converse problem.
-Here, we assume that the label marginal $P(y)$
-can change
-but the class-conditional distribution
-$P(\mathbf{x} \mid y)$ remains fixed across domains.
-Label shift is a reasonable assumption to make
-when we believe that $y$ causes $\mathbf{x}$.
-For example, we may want to predict diagnoses
-given their symptoms (or other manifestations),
-even as the relative prevalence of diagnoses
-are changing over time.
-Label shift is the appropriate assumption here
-because diseases cause symptoms.
-In some degenerate cases the label shift
-and covariate shift assumptions can hold simultaneously.
-For example, when the label is deterministic,
-the covariate shift assumption will be satisfied,
-even when $y$ causes $\mathbf{x}$.
-Interestingly, in these cases,
-it is often advantageous to work with methods
-that flow from the label shift assumption.
-That is because these methods tend
-to involve manipulating objects that look like labels (often low-dimensional),
-as opposed to objects that look like inputs,
-which tend to be high-dimensional in deep learning.
+*레이블 변화(Label shift)*는 반대 문제를 기술합니다.
+여기서, 저희는 레이블 주변 분포 $P(y)$는
+변할 수 있지만, 클래스 조건부 분포
+$P(\mathbf{x} \mid y)$는 도메인 전반에 걸쳐 고정된 채로 유지된다고 가정합니다.
+레이블 변화는 $y$가 $\mathbf{x}$를 야기한다고 믿을 때
+하기에 합리적인 가정입니다.
+예를 들어, 진단의 상대적 유병률이 시간이 지남에 따라 변할지라도,
+저희는 증상(또는 다른 발현)이 주어졌을 때 진단을 예측하고 싶을 수 있습니다.
+질병이 증상을 야기하기 때문에 레이블 변화는 여기서 적절한 가정입니다.
+일부 퇴화된(degenerate) 경우에는 레이블 변화와
+공변량 변화 가정이 동시에 성립할 수 있습니다.
+예를 들어, 레이블이 결정론적일 때,
+$y$가 $\mathbf{x}$를 야기하더라도
+공변량 변화 가정이 만족될 것입니다.
+흥미롭게도, 이러한 경우에는
+레이블 변화 가정에서 흘러나오는 방법으로 작업하는 것이
+유리한 경우가 종종 있습니다.
+이는 이러한 방법이 딥러닝에서 고차원인 경향이 있는 입력처럼 보이는 객체와는 달리
+레이블처럼 보이는 객체(종종 저차원)를 조작하는 것을
+포함하는 경향이 있기 때문입니다.
 
-### Concept Shift
+### 개념 변화
 
-We may also encounter the related problem of *concept shift*,
-which arises when the very definitions of labels can change.
-This sounds weird---a *cat* is a *cat*, no?
-However, other categories are subject to changes in usage over time.
-Diagnostic criteria for mental illness,
-what passes for fashionable, and job titles,
-are all subject to considerable
-amounts of concept shift.
-It turns out that if we navigate around the United States,
-shifting the source of our data by geography,
-we will find considerable concept shift regarding
-the distribution of names for *soft drinks*
-as shown in :numref:`fig_popvssoda`.
+저희는 또한 *개념 변화(concept shift)*라는 관련 문제를 만날 수 있습니다.
+이는 레이블의 정의 자체가 변할 수 있을 때 발생합니다.
+이것은 이상하게 들립니다(*고양이*는 *고양이*인데, 그렇지 않나요?).
+그러나 다른 범주들은 시간이 지남에 따라 사용에서 변화를 겪습니다.
+정신 질환의 진단 기준,
+유행하는 것으로 통하는 것, 그리고 직책은
+모두 상당한 양의 개념 변화의 대상이 됩니다.
+미국 전역을 돌아다니면서
+지리에 의해 데이터의 출처를 바꾸면,
+:numref:`fig_popvssoda`에서 보여지듯이 *청량음료*에 대한 이름의 분포에 관해
+상당한 개념 변화를 발견할 것입니다.
 
-![Concept shift for soft drink names in the United States (CC-BY: Alan McConchie, PopVsSoda.com).](../img/popvssoda.png)
+![미국의 청량음료 이름에 대한 개념 변화 (CC-BY: Alan McConchie, PopVsSoda.com).](../img/popvssoda.png)
 :width:`400px`
 :label:`fig_popvssoda`
 
-If we were to build a machine translation system,
-the distribution $P(y \mid \mathbf{x})$ might be different
-depending on our location.
-This problem can be tricky to spot.
-We might hope to exploit knowledge
-that shift only takes place gradually
-either in a temporal or geographic sense.
+저희가 기계 번역 시스템을 구축한다면,
+저희의 위치에 따라 분포 $P(y \mid \mathbf{x})$는
+다를 수 있습니다.
+이 문제는 발견하기 까다로울 수 있습니다.
+저희는 변화가 시간적 또는 지리적 의미에서
+점진적으로만 일어난다는 지식을 활용하기를 바랄 수 있습니다.
 
-## Examples of Distribution Shift
+## 분포 변화의 예
 
-Before delving into formalism and algorithms,
-we can discuss some concrete situations
-where covariate or concept shift might not be obvious.
+형식주의와 알고리즘으로 파고들기 전에,
+공변량 또는 개념 변화가 명백하지 않을 수도 있는
+일부 구체적인 상황들을 논의할 수 있습니다.
 
 
-### Medical Diagnostics
+### 의료 진단
 
-Imagine that you want to design an algorithm to detect cancer.
-You collect data from healthy and sick people
-and you train your algorithm.
-It works fine, giving you high accuracy
-and you conclude that you are ready
-for a successful career in medical diagnostics.
-*Not so fast.*
+암을 감지하는 알고리즘을 설계하고자 한다고 상상해 봅시다.
+건강한 사람들과 아픈 사람들로부터 데이터를 수집하고
+알고리즘을 학습합니다.
+잘 작동하여 높은 정확도를 제공하고,
+이제 의료 진단 분야에서 성공적인 경력을 쌓을 준비가 되었다고 결론을 내립니다.
+*그렇게 빠르지는 않습니다.*
 
-The distributions that gave rise to the training data
-and those you will encounter in the wild might differ considerably.
-This happened to an unfortunate startup
-that some of we authors worked with years ago.
-They were developing a blood test for a disease
-that predominantly affects older men
-and hoped to study it using blood samples
-that they had collected from patients.
-However, it is considerably more difficult
-to obtain blood samples from healthy men
-than from sick patients already in the system.
-To compensate, the startup solicited
-blood donations from students on a university campus
-to serve as healthy controls in developing their test.
-Then they asked whether we could help them
-to build a classifier for detecting the disease.
+학습 데이터를 생성한 분포와 야생에서 만날 분포는 상당히 다를 수 있습니다.
+이는 저희 저자 중 일부가 몇 년 전 함께 일했던
+운 나쁜 스타트업에 일어난 일입니다.
+그들은 주로 노년 남성에게 영향을 미치는 질병에 대한
+혈액 검사를 개발하고 있었고
+환자들로부터 수집한 혈액 샘플을 사용하여 이를 연구하기를 희망했습니다.
+그러나, 이미 시스템에 들어와 있는 아픈 환자들로부터보다
+건강한 남성들로부터 혈액 샘플을 얻는 것이
+상당히 더 어렵습니다.
+이를 보완하기 위해, 스타트업은 검사를 개발할 때
+건강한 대조군의 역할을 할 목적으로 대학 캠퍼스의 학생들로부터
+혈액 기증을 모집했습니다.
+그러고 나서 그들은 저희에게 질병을 감지하기 위한
+분류기를 구축하는 데 도움을 줄 수 있는지 물었습니다.
 
-As we explained to them,
-it would indeed be easy to distinguish
-between the healthy and sick cohorts
-with near-perfect accuracy.
-However, that is because the test subjects
-differed in age, hormone levels,
-physical activity, diet, alcohol consumption,
-and many more factors unrelated to the disease.
-This was unlikely to be the case with real patients.
-Due to their sampling procedure,
-we could expect to encounter extreme covariate shift.
-Moreover, this case was unlikely to be
-correctable via conventional methods.
-In short, they wasted a significant sum of money.
+저희가 그들에게 설명했듯이,
+거의 완벽한 정확도로 건강한 코호트와 아픈 코호트를
+구별하는 것은 실제로 쉬울 것입니다.
+그러나, 이는 검사 대상자들이 질병과 관련 없는
+나이, 호르몬 수준, 신체 활동, 식단, 음주
+등 많은 요소에서 달랐기 때문입니다.
+이는 실제 환자들의 경우에는 그러할 가능성이 낮았습니다.
+그들의 표집 절차로 인해,
+저희는 극단적인 공변량 변화를 만날 것으로 예상할 수 있었습니다.
+더욱이, 이 경우는 관례적인 방법으로
+교정될 가능성이 낮았습니다.
+요컨대, 그들은 상당한 금액을 낭비했습니다.
 
 
 
-### Self-Driving Cars
+### 자율 주행 자동차
 
-Say a company wanted to leverage machine learning
-for developing self-driving cars.
-One key component here is a roadside detector.
-Since real annotated data is expensive to get,
-they had the (smart and questionable) idea
-to use synthetic data from a game rendering engine
-as additional training data.
-This worked really well on "test data"
-drawn from the rendering engine.
-Alas, inside a real car it was a disaster.
-As it turned out, the roadside had been rendered
-with a very simplistic texture.
-More importantly, *all* the roadside had been rendered
-with the *same* texture and the roadside detector
-learned about this "feature" very quickly.
+어떤 회사가 자율 주행 자동차를 개발하기 위해
+머신러닝을 활용하고 싶어 한다고 가정해 봅시다.
+여기서 한 가지 핵심 구성 요소는 노변(roadside) 감지기입니다.
+실제 주석이 달린 데이터는 얻기 비싸므로,
+그들은 추가 학습 데이터로 게임 렌더링 엔진의
+합성 데이터를 사용하는 (똑똑하고도 의심스러운) 아이디어를 가졌습니다.
+이는 렌더링 엔진에서 추출한 "테스트 데이터"에서 정말 잘 작동했습니다.
+아아, 실제 자동차 안에서는 재앙이었습니다.
+알고 보니, 노변이 매우 단순한 텍스처로 렌더링되어 있었습니다.
+더 중요하게도, *모든* 노변이 *같은* 텍스처로 렌더링되어 있었고
+노변 감지기는 이 "특성"을 매우 빠르게 학습했습니다.
 
-A similar thing happened to the US Army
-when they first tried to detect tanks in the forest.
-They took aerial photographs of the forest without tanks,
-then drove the tanks into the forest
-and took another set of pictures.
-The classifier appeared to work *perfectly*.
-Unfortunately, it had merely learned
-how to distinguish trees with shadows
-from trees without shadows---the first set
-of pictures was taken in the early morning,
-the second set at noon.
+미국 육군이 처음 숲에서 탱크를 감지하려고 했을 때
+비슷한 일이 일어났습니다.
+그들은 탱크가 없는 숲의 항공 사진을 찍은 다음,
+탱크를 숲으로 운전해 들어가서 또 다른 사진 세트를 찍었습니다.
+분류기는 *완벽하게* 작동하는 것처럼 보였습니다.
+불행히도, 그것은 그저 그림자가 있는 나무와 그림자가 없는 나무를
+구별하는 방법을 배운 것에 불과했습니다(첫 번째 사진 세트는
+이른 아침에, 두 번째 세트는 정오에 찍혔습니다).
 
-### Nonstationary Distributions
+### 비정상(Nonstationary) 분포
 
-A much more subtle situation arises
-when the distribution changes slowly
-(also known as *nonstationary distribution*)
-and the model is not updated adequately.
-Below are some typical cases.
+분포가 천천히 변하고
+(*비정상 분포(nonstationary distribution)*로도 알려짐)
+모델이 적절하게 업데이트되지 않을 때,
+훨씬 더 미묘한 상황이 발생합니다.
+다음은 몇 가지 전형적인 사례들입니다.
 
-* We train a computational advertising model and then fail to update it frequently (e.g., we forget to incorporate that an obscure new device called an iPad was just launched).
-* We build a spam filter. It works well at detecting all spam that we have seen so far. But then the spammers wise up and craft new messages that look unlike anything we have seen before.
-* We build a product recommendation system. It works throughout the winter but then continues to recommend Santa hats long after Christmas.
+* 저희는 계산 광고 모델을 학습한 다음, 이를 자주 업데이트하지 못합니다(예: iPad라는 무명의 새 기기가 막 출시되었다는 것을 통합하는 것을 잊습니다).
+* 저희는 스팸 필터를 구축합니다. 지금까지 본 모든 스팸을 감지하는 데는 잘 작동합니다. 그러나 그러면 스패머들이 영리해져서 이전에 본 적이 없는 형태의 새로운 메시지를 만들어 냅니다.
+* 저희는 제품 추천 시스템을 구축합니다. 겨울 내내 작동하지만 크리스마스가 한참 지난 후에도 산타 모자를 계속 추천합니다.
 
-### More Anecdotes
+### 추가 일화들
 
-* We build a face detector. It works well on all benchmarks. Unfortunately it fails on test data---the offending examples are close-ups where the face fills the entire image (no such data was in the training set).
-* We build a web search engine for the US market and want to deploy it in the UK.
-* We train an image classifier by compiling a large dataset where each among a large set of classes is equally represented in the dataset, say 1000 categories, represented by 1000 images each. Then we deploy the system in the real world, where the actual label distribution of photographs is decidedly non-uniform.
+* 저희는 얼굴 감지기를 구축합니다. 모든 벤치마크에서 잘 작동합니다. 불행히도 테스트 데이터에서 실패합니다. 문제가 되는 예제들은 얼굴이 이미지 전체를 채우는 클로즈업입니다(그러한 데이터는 학습 셋에 없었습니다).
+* 저희는 미국 시장을 위한 웹 검색 엔진을 구축하고 영국에 배포하고자 합니다.
+* 저희는 1000개의 큰 클래스 집합 각각이 데이터셋에 동등하게 표현되는 큰 데이터셋을 모아 이미지 분류기를 학습합니다. 예를 들어, 각 1000개의 이미지로 표현되는 1000개의 범주입니다. 그런 다음 저희는 시스템을 실세계에 배포하는데, 거기서 사진의 실제 레이블 분포는 결정적으로 비균일합니다.
 
 
 
 
 
 
-## Correction of Distribution Shift
+## 분포 변화의 교정
 
-As we have discussed, there are many cases
-where training and test distributions
-$P(\mathbf{x}, y)$ are different.
-In some cases, we get lucky and the models work
-despite covariate, label, or concept shift.
-In other cases, we can do better by employing
-principled strategies to cope with the shift.
-The remainder of this section grows considerably more technical.
-The impatient reader could continue on to the next section
-as this material is not prerequisite to subsequent concepts.
+저희가 논의했듯이, 학습과 테스트 분포 $P(\mathbf{x}, y)$가
+다른 많은 경우가 있습니다.
+어떤 경우에는, 운이 좋아 공변량, 레이블, 또는 개념 변화에도 불구하고
+모델이 작동합니다.
+다른 경우에는, 변화에 대처하기 위한 원칙 있는 전략을 사용함으로써
+더 잘할 수 있습니다.
+이 절의 나머지 부분은 훨씬 더 기술적인 내용으로 깊어집니다.
+이 자료는 이후 개념의 선행 요건이 아니므로
+참을성 없는 독자는 다음 절로 넘어가도 됩니다.
 
-### Empirical Risk and  Risk
+### 경험적 위험과 위험
 :label:`subsec_empirical-risk-and-risk`
 
-Let's first reflect on what exactly
-is happening during model training:
-we iterate over features and associated labels
-of training data
-$\{(\mathbf{x}_1, y_1), \ldots, (\mathbf{x}_n, y_n)\}$
-and update the parameters of a model $f$ after every minibatch.
-For simplicity we do not consider regularization,
-so we largely minimize the loss on the training:
+먼저 모델 학습 중에 정확히 무슨 일이 일어나는지를 되돌아봅시다.
+저희는 학습 데이터
+$\{(\mathbf{x}_1, y_1), \ldots, (\mathbf{x}_n, y_n)\}$의
+특성과 관련된 레이블을 반복하고
+매 미니배치 후에 모델 $f$의 파라미터를 업데이트합니다.
+단순함을 위해 저희는 정규화는 고려하지 않으므로,
+주로 학습에서 손실을 최소화합니다.
 
 $$\mathop{\mathrm{minimize}}_f \frac{1}{n} \sum_{i=1}^n l(f(\mathbf{x}_i), y_i),$$
 :eqlabel:`eq_empirical-risk-min`
 
-where $l$ is the loss function
-measuring "how bad" the prediction $f(\mathbf{x}_i)$ is given the associated label $y_i$.
-Statisticians call the term in :eqref:`eq_empirical-risk-min` *empirical risk*.
-The *empirical risk* is an average loss over the training data
-for approximating the *risk*,
-which is the
-expectation of the loss over the entire population of data drawn from their true distribution
-$p(\mathbf{x},y)$:
+여기서 $l$은 관련된 레이블 $y_i$가 주어졌을 때 예측 $f(\mathbf{x}_i)$가
+"얼마나 나쁜지"를 측정하는 손실 함수입니다.
+통계학자들은 :eqref:`eq_empirical-risk-min`의 항을 *경험적 위험(empirical risk)*이라고 부릅니다.
+*경험적 위험*은 *위험(risk)*을 근사하기 위한
+학습 데이터에 대한 평균 손실입니다.
+*위험*은 데이터의 참 분포 $p(\mathbf{x},y)$에서 추출된
+전체 데이터 모집단에 대한 손실의 기댓값입니다.
 
 $$E_{p(\mathbf{x}, y)} [l(f(\mathbf{x}), y)] = \int\int l(f(\mathbf{x}), y) p(\mathbf{x}, y) \;d\mathbf{x}dy.$$
 :eqlabel:`eq_true-risk`
 
-However, in practice we typically cannot obtain the entire population of data.
-Thus, *empirical risk minimization*,
-which is minimizing the empirical risk in :eqref:`eq_empirical-risk-min`,
-is a practical strategy for machine learning,
-with the hope of approximately
-minimizing the risk.
+그러나 실제로 저희는 일반적으로 전체 데이터 모집단을 얻을 수 없습니다.
+따라서 :eqref:`eq_empirical-risk-min`에서 경험적 위험을 최소화하는
+*경험적 위험 최소화(empirical risk minimization)*는
+위험을 근사적으로 최소화하기를 바라며 머신러닝을 위한
+실용적인 전략입니다.
 
 
 
-### Covariate Shift Correction
+### 공변량 변화 교정
 :label:`subsec_covariate-shift-correction`
 
-Assume that we want to estimate
-some dependency $P(y \mid \mathbf{x})$
-for which we have labeled data $(\mathbf{x}_i, y_i)$.
-Unfortunately, the observations $\mathbf{x}_i$ are drawn
-from some *source distribution* $q(\mathbf{x})$
-rather than the *target distribution* $p(\mathbf{x})$.
-Fortunately,
-the dependency assumption means
-that the conditional distribution does not change: $p(y \mid \mathbf{x}) = q(y \mid \mathbf{x})$.
-If the source distribution $q(\mathbf{x})$ is "wrong",
-we can correct for that by using the following simple identity in the risk:
+저희가 레이블이 붙은 데이터 $(\mathbf{x}_i, y_i)$를 가진
+어떤 의존성 $P(y \mid \mathbf{x})$를 추정하고자 한다고 가정합시다.
+불행히도, 관측값 $\mathbf{x}_i$는
+*목표 분포(target distribution)* $p(\mathbf{x})$가 아닌
+어떤 *원본 분포(source distribution)* $q(\mathbf{x})$에서 추출됩니다.
+다행스럽게도, 의존성 가정은
+조건부 분포가 변하지 않음을 의미합니다.
+$p(y \mid \mathbf{x}) = q(y \mid \mathbf{x})$.
+원본 분포 $q(\mathbf{x})$가 "잘못"되었다면,
+위험에서 다음의 간단한 항등식을 사용함으로써 이를 교정할 수 있습니다.
 
 $$
 \begin{aligned}
@@ -361,120 +323,104 @@ $$
 \end{aligned}
 $$
 
-In other words, we need to reweigh each data example
-by the ratio of the
-probability
-that it would have been drawn from the correct distribution to that from the wrong one:
+다시 말해, 각 데이터 예제를
+잘못된 분포가 아닌 올바른 분포에서 추출되었을 확률의 비율로
+재가중치해야 합니다.
 
 $$\beta_i \stackrel{\textrm{def}}{=} \frac{p(\mathbf{x}_i)}{q(\mathbf{x}_i)}.$$
 
-Plugging in the weight $\beta_i$ for
-each data example $(\mathbf{x}_i, y_i)$
-we can train our model using
-*weighted empirical risk minimization*:
+각 데이터 예제 $(\mathbf{x}_i, y_i)$에 대해
+가중치 $\beta_i$를 대입하여
+*가중 경험적 위험 최소화(weighted empirical risk minimization)*를 사용해 모델을 학습할 수 있습니다.
 
 $$\mathop{\mathrm{minimize}}_f \frac{1}{n} \sum_{i=1}^n \beta_i l(f(\mathbf{x}_i), y_i).$$
 :eqlabel:`eq_weighted-empirical-risk-min`
 
 
 
-Alas, we do not know that ratio,
-so before we can do anything useful we need to estimate it.
-Many methods are available,
-including some fancy operator-theoretic approaches
-that attempt to recalibrate the expectation operator directly
-using a minimum-norm or a maximum entropy principle.
-Note that for any such approach, we need samples
-drawn from both distributions---the "true" $p$, e.g.,
-by access to test data, and the one used
-for generating the training set $q$ (the latter is trivially available).
-Note however, that we only need features $\mathbf{x} \sim p(\mathbf{x})$;
-we do not need to access labels $y \sim p(y)$.
+아아, 저희는 그 비율을 모르므로,
+유용한 어떤 일을 하기 전에 이를 추정해야 합니다.
+최소 노름(minimum-norm)이나 최대 엔트로피 원리를 사용하여
+기댓값 연산자를 직접 재교정하려고 시도하는 일부 화려한
+연산자-이론적 접근법을 포함하여, 많은 방법이 사용 가능합니다.
+그러한 어떤 접근법에서든, 저희는 두 분포 모두에서 추출된 표본이 필요함에 유의하시기 바랍니다.
+즉, "참" $p$(예: 테스트 데이터에 접근함으로써)와
+학습 셋을 생성하는 데 사용된 분포 $q$(후자는 자명하게 사용 가능)에서요.
+그러나 저희는 특성 $\mathbf{x} \sim p(\mathbf{x})$만 필요하다는 점에 유의하시기 바랍니다.
+저희는 레이블 $y \sim p(y)$에 접근할 필요는 없습니다.
 
-In this case, there exists a very effective approach
-that will give almost as good results as the original: namely, logistic regression,
-which is a special case of softmax regression (see :numref:`sec_softmax`)
-for binary classification.
-This is all that is needed to compute estimated probability ratios.
-We learn a classifier to distinguish
-between data drawn from $p(\mathbf{x})$
-and data drawn from $q(\mathbf{x})$.
-If it is impossible to distinguish
-between the two distributions
-then it means that the associated instances
-are equally likely to come from
-either one of those two distributions.
-On the other hand, any instances
-that can be well discriminated
-should be significantly overweighted
-or underweighted accordingly.
+이 경우, 원본과 거의 비슷한 결과를 제공할 매우 효과적인 접근법이 존재합니다.
+바로 로지스틱 회귀(logistic regression)인데,
+이는 이진 분류를 위한 소프트맥스 회귀(:numref:`sec_softmax` 참고)의
+특수한 경우입니다.
+이것이 추정된 확률 비율을 계산하는 데 필요한 전부입니다.
+저희는 $p(\mathbf{x})$에서 추출된 데이터와
+$q(\mathbf{x})$에서 추출된 데이터를 구별하는
+분류기를 학습합니다.
+두 분포를 구별하는 것이 불가능하다면
+이는 관련된 인스턴스들이 두 분포 중
+어느 하나에서 나올 가능성이 동등함을 의미합니다.
+다른 한편으로, 잘 식별될 수 있는 어떤 인스턴스도
+그에 따라 상당히 더 많은 가중치를 받거나
+더 적은 가중치를 받아야 합니다.
 
-For simplicity's sake assume that we have
-an equal number of instances from both distributions
-$p(\mathbf{x})$
-and $q(\mathbf{x})$, respectively.
-Now denote by $z$ labels that are $1$
-for data drawn from $p$ and $-1$ for data drawn from $q$.
-Then the probability in a mixed dataset is given by
+단순함을 위해 두 분포 $p(\mathbf{x})$와 $q(\mathbf{x})$에서
+각각 동일한 수의 인스턴스가 있다고 가정합시다.
+이제 $p$에서 추출된 데이터에 대해 $1$이고
+$q$에서 추출된 데이터에 대해 $-1$인 레이블을 $z$로 표기합니다.
+그러면 혼합된 데이터셋에서의 확률은 다음과 같이 주어집니다.
 
 $$P(z=1 \mid \mathbf{x}) = \frac{p(\mathbf{x})}{p(\mathbf{x})+q(\mathbf{x})} \textrm{ and hence } \frac{P(z=1 \mid \mathbf{x})}{P(z=-1 \mid \mathbf{x})} = \frac{p(\mathbf{x})}{q(\mathbf{x})}.$$
 
-Thus, if we use a logistic regression approach,
-where $P(z=1 \mid \mathbf{x})=\frac{1}{1+\exp(-h(\mathbf{x}))}$ ($h$ is a parametrized function),
-it follows that
+따라서, 저희가 로지스틱 회귀 접근법을 사용한다면,
+여기서 $P(z=1 \mid \mathbf{x})=\frac{1}{1+\exp(-h(\mathbf{x}))}$ ($h$는 파라미터화된 함수)인 경우,
+다음이 따라옵니다.
 
 $$
 \beta_i = \frac{1/(1 + \exp(-h(\mathbf{x}_i)))}{\exp(-h(\mathbf{x}_i))/(1 + \exp(-h(\mathbf{x}_i)))} = \exp(h(\mathbf{x}_i)).
 $$
 
-As a result, we need to solve two problems:
-the first, to distinguish between
-data drawn from both distributions,
-and then a weighted empirical risk minimization problem
-in :eqref:`eq_weighted-empirical-risk-min`
-where we weigh terms by $\beta_i$.
+결과적으로, 저희는 두 가지 문제를 풀어야 합니다.
+첫 번째는 두 분포에서 추출된 데이터를 구별하는 것이고,
+그런 다음 항을 $\beta_i$로 가중하는
+:eqref:`eq_weighted-empirical-risk-min`의
+가중 경험적 위험 최소화 문제입니다.
 
-Now we are ready to describe a correction algorithm.
-Suppose that we have a training set $\{(\mathbf{x}_1, y_1), \ldots, (\mathbf{x}_n, y_n)\}$ and an unlabeled test set $\{\mathbf{u}_1, \ldots, \mathbf{u}_m\}$.
-For covariate shift,
-we assume that $\mathbf{x}_i$ for all $1 \leq i \leq n$ are drawn from some source distribution
-and $\mathbf{u}_i$ for all $1 \leq i \leq m$
-are drawn from the target distribution.
-Here is a prototypical algorithm
-for correcting covariate shift:
+이제 저희는 교정 알고리즘을 기술할 준비가 되었습니다.
+저희가 학습 셋 $\{(\mathbf{x}_1, y_1), \ldots, (\mathbf{x}_n, y_n)\}$과 레이블이 없는 테스트 셋 $\{\mathbf{u}_1, \ldots, \mathbf{u}_m\}$을 가지고 있다고 가정합시다.
+공변량 변화에서, 저희는 모든 $1 \leq i \leq n$에 대한 $\mathbf{x}_i$가
+어떤 원본 분포에서 추출되고
+모든 $1 \leq i \leq m$에 대한 $\mathbf{u}_i$가
+목표 분포에서 추출된다고 가정합니다.
+공변량 변화를 교정하기 위한 전형적인 알고리즘은 다음과 같습니다.
 
-1. Create a binary-classification training set: $\{(\mathbf{x}_1, -1), \ldots, (\mathbf{x}_n, -1), (\mathbf{u}_1, 1), \ldots, (\mathbf{u}_m, 1)\}$.
-1. Train a binary classifier using logistic regression to get the function $h$.
-1. Weigh training data using $\beta_i = \exp(h(\mathbf{x}_i))$ or better $\beta_i = \min(\exp(h(\mathbf{x}_i)), c)$ for some constant $c$.
-1. Use weights $\beta_i$ for training on $\{(\mathbf{x}_1, y_1), \ldots, (\mathbf{x}_n, y_n)\}$ in :eqref:`eq_weighted-empirical-risk-min`.
+1. 이진 분류 학습 셋을 만듭니다: $\{(\mathbf{x}_1, -1), \ldots, (\mathbf{x}_n, -1), (\mathbf{u}_1, 1), \ldots, (\mathbf{u}_m, 1)\}$.
+1. 함수 $h$를 얻기 위해 로지스틱 회귀를 사용하여 이진 분류기를 학습합니다.
+1. $\beta_i = \exp(h(\mathbf{x}_i))$를 사용하거나 더 나은 어떤 상수 $c$에 대해 $\beta_i = \min(\exp(h(\mathbf{x}_i)), c)$를 사용하여 학습 데이터를 가중합니다.
+1. :eqref:`eq_weighted-empirical-risk-min`에서 $\{(\mathbf{x}_1, y_1), \ldots, (\mathbf{x}_n, y_n)\}$에 대한 학습에 가중치 $\beta_i$를 사용합니다.
 
-Note that the above algorithm relies on a crucial assumption.
-For this scheme to work, we need that each data example
-in the target (e.g., test time) distribution
-had nonzero probability of occurring at training time.
-If we find a point where $p(\mathbf{x}) > 0$ but $q(\mathbf{x}) = 0$,
-then the corresponding importance weight should be infinity.
+위 알고리즘이 결정적인 가정에 의존한다는 점에 유의하시기 바랍니다.
+이 체계가 작동하려면, 목표(예: 테스트 시간) 분포의 각 데이터 예제가
+학습 시간에 발생할 0이 아닌 확률을 가져야 합니다.
+$p(\mathbf{x}) > 0$이지만 $q(\mathbf{x}) = 0$인 점을 발견한다면,
+대응되는 중요도 가중치는 무한대가 되어야 합니다.
 
 
 
 
 
 
-### Label Shift Correction
+### 레이블 변화 교정
 
-Assume that we are dealing with a
-classification task with $k$ categories.
-Using the same notation in :numref:`subsec_covariate-shift-correction`,
-$q$ and $p$ are the source distribution (e.g., training time) and target distribution (e.g., test time), respectively.
-Assume that the distribution of labels shifts over time:
-$q(y) \neq p(y)$, but the class-conditional distribution
-stays the same: $q(\mathbf{x} \mid y)=p(\mathbf{x} \mid y)$.
-If the source distribution $q(y)$ is "wrong",
-we can correct for that
-according to
-the following identity in the risk
-as defined in
-:eqref:`eq_true-risk`:
+$k$개의 범주를 가진 분류 작업을 다루고 있다고 가정합시다.
+:numref:`subsec_covariate-shift-correction`에서 동일한 표기를 사용하여,
+$q$와 $p$는 각각 원본 분포(예: 학습 시간)와 목표 분포(예: 테스트 시간)입니다.
+레이블의 분포가 시간에 따라 변한다고 가정합시다.
+$q(y) \neq p(y)$이지만, 클래스 조건부 분포는
+동일하게 유지됩니다: $q(\mathbf{x} \mid y)=p(\mathbf{x} \mid y)$.
+원본 분포 $q(y)$가 "잘못"되었다면,
+:eqref:`eq_true-risk`에서 정의된 위험에서
+다음 항등식에 따라 이를 교정할 수 있습니다.
 
 $$
 \begin{aligned}
@@ -485,205 +431,205 @@ $$
 
 
 
-Here, our importance weights will correspond to the
-label likelihood ratios:
+여기서, 저희의 중요도 가중치는
+레이블 가능도 비율에 해당할 것입니다.
 
 $$\beta_i \stackrel{\textrm{def}}{=} \frac{p(y_i)}{q(y_i)}.$$
 
-One nice thing about label shift is that
-if we have a reasonably good model
-on the source distribution,
-then we can get consistent estimates of these weights
-without ever having to deal with the ambient dimension.
-In deep learning, the inputs tend
-to be high-dimensional objects like images,
-while the labels are often simpler objects like categories.
+레이블 변화의 한 가지 좋은 점은
+원본 분포에 대해 합리적으로 좋은 모델을 가지고 있다면,
+주변 차원(ambient dimension)을 다룰 필요 없이
+이러한 가중치의 일관된 추정값을 얻을 수 있다는 것입니다.
+딥러닝에서, 입력은 이미지처럼 고차원 객체인 경향이 있는 반면,
+레이블은 종종 범주처럼 더 단순한 객체입니다.
 
-To estimate the target label distribution,
-we first take our reasonably good off-the-shelf classifier
-(typically trained on the training data)
-and compute its "confusion" matrix using the validation set
-(also from the training distribution).
-The *confusion matrix*, $\mathbf{C}$, is simply a $k \times k$ matrix,
-where each column corresponds to the label category (ground truth)
-and each row corresponds to our model's predicted category.
-Each cell's value $c_{ij}$ is the fraction of total predictions on the validation set
-where the true label was $j$ and our model predicted $i$.
+목표 레이블 분포를 추정하기 위해,
+저희는 먼저 합리적으로 좋은 기성품 분류기(일반적으로 학습 데이터에서 학습됨)를 가지고
+검증 셋(역시 학습 분포에서 옴)을 사용하여
+그 "혼동(confusion)" 행렬을 계산합니다.
+*혼동 행렬(confusion matrix)* $\mathbf{C}$는 단순히 $k \times k$ 행렬이며,
+각 열은 레이블 범주(실제값)에 해당하고
+각 행은 저희 모델의 예측된 범주에 해당합니다.
+각 셀의 값 $c_{ij}$는 실제 레이블이 $j$이고 저희 모델이 $i$로 예측한
+검증 셋의 전체 예측에서 차지하는 비율입니다.
 
-Now, we cannot calculate the confusion matrix
-on the target data directly
-because we do not get to see the labels for the examples
-that we see in the wild,
-unless we invest in a complex real-time annotation pipeline.
-What we can do, however, is average all of our model's predictions
-at test time together, yielding the mean model outputs $\mu(\hat{\mathbf{y}}) \in \mathbb{R}^k$,
-where the $i^\textrm{th}$ element $\mu(\hat{y}_i)$
-is the fraction of the total predictions on the test set
-where our model predicted $i$.
+이제, 저희는 목표 데이터에 대한 혼동 행렬을 직접 계산할 수 없습니다.
+복잡한 실시간 주석 파이프라인에 투자하지 않는 한,
+야생에서 보는 예제에 대한 레이블을 볼 수 없기 때문입니다.
+그러나 저희가 할 수 있는 것은 테스트 시간에 저희 모델의 모든 예측을
+평균 내어, 평균 모델 출력 $\mu(\hat{\mathbf{y}}) \in \mathbb{R}^k$를 산출하는 것입니다.
+여기서 $i^\textrm{th}$ 원소 $\mu(\hat{y}_i)$는
+저희 모델이 $i$로 예측한 테스트 셋에 대한 전체 예측의 비율입니다.
 
-It turns out that under some mild conditions---if
-our classifier was reasonably accurate in the first place,
-and if the target data contains only categories
-that we have seen before,
-and if the label shift assumption holds in the first place
-(the strongest assumption here)---we can estimate the test set label distribution
-by solving a simple linear system
+일부 가벼운 조건들 하에서(저희 분류기가 애초에 합리적으로 정확했다면,
+목표 데이터가 저희가 이전에 본 범주만 포함한다면,
+그리고 레이블 변화 가정이 애초에 성립한다면(여기서 가장 강한 가정)),
+저희는 간단한 선형 시스템을 풀어
+테스트 셋 레이블 분포를 추정할 수 있는 것으로 밝혀졌습니다.
 
 $$\mathbf{C} p(\mathbf{y}) = \mu(\hat{\mathbf{y}}),$$
 
-because as an estimate $\sum_{j=1}^k c_{ij} p(y_j) = \mu(\hat{y}_i)$ holds for all $1 \leq i \leq k$,
-where $p(y_j)$ is the $j^\textrm{th}$ element of the $k$-dimensional label distribution vector $p(\mathbf{y})$.
-If our classifier is sufficiently accurate to begin with,
-then the confusion matrix $\mathbf{C}$ will be invertible,
-and we get a solution $p(\mathbf{y}) = \mathbf{C}^{-1} \mu(\hat{\mathbf{y}})$.
+이는 추정값으로서 모든 $1 \leq i \leq k$에 대해
+$\sum_{j=1}^k c_{ij} p(y_j) = \mu(\hat{y}_i)$가 성립하기 때문입니다.
+여기서 $p(y_j)$는 $k$차원 레이블 분포 벡터 $p(\mathbf{y})$의 $j^\textrm{th}$ 원소입니다.
+저희 분류기가 애초에 충분히 정확하다면,
+혼동 행렬 $\mathbf{C}$는 가역적일 것이고,
+저희는 해 $p(\mathbf{y}) = \mathbf{C}^{-1} \mu(\hat{\mathbf{y}})$를 얻습니다.
 
-Because we observe the labels on the source data,
-it is easy to estimate the distribution $q(y)$.
-Then, for any training example $i$ with label $y_i$,
-we can take the ratio of our estimated $p(y_i)/q(y_i)$
-to calculate the weight $\beta_i$,
-and plug this into weighted empirical risk minimization
-in :eqref:`eq_weighted-empirical-risk-min`.
-
-
-### Concept Shift Correction
-
-Concept shift is much harder to fix in a principled manner.
-For instance, in a situation where suddenly the problem changes
-from distinguishing cats from dogs to one of
-distinguishing white from black animals,
-it will be unreasonable to assume
-that we can do much better than just collecting new labels
-and training from scratch.
-Fortunately, in practice, such extreme shifts are rare.
-Instead, what usually happens is that the task keeps on changing slowly.
-To make things more concrete, here are some examples:
-
-* In computational advertising, new products are launched,
-old products become less popular. This means that the distribution over ads and their popularity changes gradually and any click-through rate predictor needs to change gradually with it.
-* Traffic camera lenses degrade gradually due to environmental wear, affecting image quality progressively.
-* News content changes gradually (i.e., most of the news remains unchanged but new stories appear).
-
-In such cases, we can use the same approach that we used for training networks to make them adapt to the change in the data. In other words, we use the existing network weights and simply perform a few update steps with the new data rather than training from scratch.
+저희는 원본 데이터에 대한 레이블을 관측하므로,
+분포 $q(y)$를 추정하는 것은 쉽습니다.
+그러면, 레이블 $y_i$를 가진 학습 예제 $i$에 대해,
+추정된 $p(y_i)/q(y_i)$의 비율을 취하여
+가중치 $\beta_i$를 계산하고,
+이를 :eqref:`eq_weighted-empirical-risk-min`의
+가중 경험적 위험 최소화에 대입할 수 있습니다.
 
 
-## A Taxonomy of Learning Problems
+### 개념 변화 교정
 
-Armed with knowledge about how to deal with changes in distributions, we can now consider some other aspects of machine learning problem formulation.
+개념 변화는 원칙적인 방식으로 고치기가 훨씬 더 어렵습니다.
+예를 들어, 갑자기 문제가
+고양이와 개를 구별하는 것에서
+흰색과 검은색 동물을 구별하는 것으로 변하는 상황에서는,
+새로운 레이블을 수집하고 처음부터 학습하는 것 이상으로
+훨씬 더 잘할 수 있다고 가정하는 것은 불합리할 것입니다.
+다행스럽게도, 실제로는 그러한 극단적인 변화는 드뭅니다.
+대신, 일반적으로 일어나는 일은 작업이 천천히 계속 변하는 것입니다.
+이를 더 구체적으로 만들기 위해, 여기 몇 가지 예가 있습니다.
+
+* 계산 광고에서, 새로운 제품이 출시되고,
+오래된 제품은 인기가 줄어듭니다. 이는 광고와 그 인기에 대한 분포가 점진적으로 변하고 어떤 클릭률 예측기도 그와 함께 점진적으로 변해야 함을 의미합니다.
+* 교통 카메라 렌즈는 환경적 마모로 인해 점진적으로 저하되어, 이미지 품질에 점진적으로 영향을 미칩니다.
+* 뉴스 내용은 점진적으로 변합니다(즉, 대부분의 뉴스는 변하지 않지만 새로운 이야기가 나타납니다).
+
+이러한 경우에, 데이터의 변화에 적응하도록 만들기 위해 신경망을 학습하는 데 사용한 것과 같은 접근법을 사용할 수 있습니다. 다시 말해, 저희는 기존 신경망 가중치를 사용하고 처음부터 학습하는 대신 새로운 데이터로 단지 몇 번의 업데이트 단계만 수행합니다.
 
 
-### Batch Learning
+## 학습 문제의 분류 체계
 
-In *batch learning*, we have access to training features and labels $\{(\mathbf{x}_1, y_1), \ldots, (\mathbf{x}_n, y_n)\}$, which we use to train a model $f(\mathbf{x})$. Later on, we deploy this model to score new data $(\mathbf{x}, y)$ drawn from the same distribution. This is the default assumption for any of the problems that we discuss here. For instance, we might train a cat detector based on lots of pictures of cats and dogs. Once we have trained it, we ship it as part of a smart catdoor computer vision system that lets only cats in. This is then installed in a customer's home and is never updated again (barring extreme circumstances).
+분포의 변화를 다루는 방법에 대한 지식으로 무장하여, 이제 머신러닝 문제 정식화의 다른 측면들을 고려할 수 있습니다.
 
 
-### Online Learning
+### 배치 학습
 
-Now imagine that the data $(\mathbf{x}_i, y_i)$ arrives one sample at a time. More specifically, assume that we first observe $\mathbf{x}_i$, then we need to come up with an estimate $f(\mathbf{x}_i)$. Only once we have done this do we observe $y_i$ and so receive a reward or incur a loss, given our decision.
-Many real problems fall into this category. For example, we need to predict tomorrow's stock price, which allows us to trade based on that estimate and at the end of the day we find out whether our estimate made us a profit. In other words, in *online learning*, we have the following cycle where we are continuously improving our model given new observations:
+*배치 학습(batch learning)*에서, 저희는 학습 특성과 레이블 $\{(\mathbf{x}_1, y_1), \ldots, (\mathbf{x}_n, y_n)\}$에 접근할 수 있으며, 이를 사용하여 모델 $f(\mathbf{x})$를 학습합니다. 나중에, 저희는 동일한 분포에서 추출된 새로운 데이터 $(\mathbf{x}, y)$를 점수화하기 위해 이 모델을 배포합니다. 이는 여기서 논의하는 어떤 문제에 대해서도 기본 가정입니다. 예를 들어, 저희는 고양이와 개의 많은 사진을 기반으로 고양이 감지기를 학습할 수 있습니다. 일단 그것을 학습했다면, 저희는 그것을 고양이만 들여보내는 스마트 캣도어(catdoor) 컴퓨터 비전 시스템의 일부로 출하합니다. 이것은 그러고 나서 고객의 집에 설치되고 다시는 (극단적인 상황을 제외하고는) 업데이트되지 않습니다.
+
+
+### 온라인 학습
+
+이제 데이터 $(\mathbf{x}_i, y_i)$가 한 번에 하나의 표본씩 도착한다고 상상해 봅시다. 더 구체적으로, 저희가 먼저 $\mathbf{x}_i$를 관측한 다음, 추정값 $f(\mathbf{x}_i)$를 만들어 내야 한다고 가정합시다. 일단 이를 한 후에만 저희는 $y_i$를 관측하고 따라서 저희의 결정에 따라 보상을 받거나 손실을 떠안게 됩니다.
+많은 실제 문제가 이 범주에 속합니다. 예를 들어, 저희는 내일의 주가를 예측해야 하는데, 이는 그 추정값에 기반하여 거래할 수 있게 해 주며 하루가 끝날 때 저희는 추정값이 저희에게 이익을 가져다주었는지를 알게 됩니다. 다시 말해, *온라인 학습(online learning)*에서, 저희는 새로운 관측이 주어졌을 때 모델을 지속적으로 개선하는 다음 사이클을 가집니다.
 
 $$\begin{aligned}&\textrm{model } f_t \longrightarrow \textrm{data }  \mathbf{x}_t \longrightarrow \textrm{estimate } f_t(\mathbf{x}_t) \longrightarrow\\ \textrm{obs}&\textrm{ervation } y_t \longrightarrow \textrm{loss } l(y_t, f_t(\mathbf{x}_t)) \longrightarrow \textrm{model } f_{t+1}\end{aligned}$$
 
-### Bandits
+### 밴딧
 
-*Bandits* are a special case of the problem above. While in most learning problems we have a continuously parametrized function $f$ where we want to learn its parameters (e.g., a deep network), in a *bandit* problem we only have a finite number of arms that we can pull, i.e., a finite number of actions that we can take. It is not very surprising that for this simpler problem stronger theoretical guarantees in terms of optimality can be obtained. We list it mainly since this problem is often (confusingly) treated as if it were a distinct learning setting.
-
-
-### Control
-
-In many cases the environment remembers what we did. Not necessarily in an adversarial manner but it will just remember and the response will depend on what happened before. For instance, a coffee boiler controller will observe different temperatures depending on whether it was heating the boiler previously. PID (proportional-integral-derivative) controller algorithms are a popular choice there.
-Likewise, a user's behavior on a news site will depend on what we showed them previously (e.g., they will read most news only once). Many such algorithms form a model of the environment in which they act so as to make their decisions appear less random.
-Recently,
-control theory (e.g., PID variants) has also been used
-to automatically tune hyperparameters
-to achieve better disentangling and reconstruction quality,
-and improve the diversity of generated text and the reconstruction quality of generated images :cite:`Shao.Yao.Sun.ea.2020`.
+*밴딧(Bandit)*은 위 문제의 특수한 경우입니다. 대부분의 학습 문제에서 저희는 파라미터를 학습하고자 하는 연속적으로 파라미터화된 함수 $f$(예: 심층 신경망)를 가지지만, *밴딧* 문제에서 저희는 당길 수 있는 유한한 수의 팔, 즉 취할 수 있는 유한한 수의 행동만 가집니다. 이 더 단순한 문제에 대해 최적성 측면에서 더 강한 이론적 보장을 얻을 수 있다는 것은 그다지 놀랍지 않습니다. 저희는 이 문제가 종종 (혼란스럽게도) 별개의 학습 환경인 것처럼 다뤄지기 때문에 주로 이를 나열합니다.
 
 
+### 제어
 
-
-### Reinforcement Learning
-
-In the more general case of an environment with memory, we may encounter situations where the environment is trying to cooperate with us (cooperative games, in particular for non-zero-sum games), or others where the environment will try to win. Chess, Go, Backgammon, or StarCraft are some of the cases in *reinforcement learning*. Likewise, we might want to build a good controller for autonomous cars. Other cars are likely to respond to the autonomous car's driving style in nontrivial ways, e.g., trying to avoid it, trying to cause an accident, or trying to cooperate with it.
-
-### Considering the Environment
-
-One key distinction between the different situations above is that a strategy that might have worked throughout in the case of a stationary environment, might not work throughout in an environment that can adapt. For instance, an arbitrage opportunity discovered by a trader is likely to disappear once it is exploited. The speed and manner at which the environment changes determines to a large extent the type of algorithms that we can bring to bear. For instance, if we know that things may only change slowly, we can force any estimate to change only slowly, too. If we know that the environment might change instantaneously, but only very infrequently, we can make allowances for that. These types of knowledge are crucial for the aspiring data scientist in dealing with concept shift, i.e., when the problem that is being solved can change over time.
+많은 경우에 환경은 저희가 한 일을 기억합니다. 반드시 적대적인 방식은 아니지만 단지 기억할 것이고 반응은 이전에 일어난 일에 의존할 것입니다. 예를 들어, 커피 보일러 컨트롤러는 이전에 보일러를 가열하고 있었는지에 따라 다른 온도를 관측할 것입니다. PID(비례-적분-미분) 컨트롤러 알고리즘이 거기서 인기 있는 선택입니다.
+마찬가지로, 뉴스 사이트에서 사용자의 행동은 저희가 이전에 그들에게 무엇을 보여주었는지에 의존할 것입니다(예: 그들은 대부분의 뉴스를 한 번만 읽을 것입니다). 이러한 많은 알고리즘은 행동하는 환경의 모델을 형성하여 그들의 결정이 덜 무작위로 보이도록 만듭니다.
+최근에,
+제어 이론(예: PID 변형)은
+더 나은 분리(disentangling)와 재구성 품질을 달성하고,
+생성된 텍스트의 다양성과 생성된 이미지의 재구성 품질을 개선하기 위해
+하이퍼파라미터를 자동으로 튜닝하는 데도 사용되어 왔습니다 :cite:`Shao.Yao.Sun.ea.2020`.
 
 
 
 
-## Fairness, Accountability, and Transparency in Machine Learning
+### 강화 학습
 
-Finally, it is important to remember
-that when you deploy machine learning systems
-you are not merely optimizing a predictive model---you
-are typically providing a tool that will
-be used to (partially or fully) automate decisions.
-These technical systems can impact the lives
-of individuals who are subject to the resulting decisions.
-The leap from considering predictions to making decisions
-raises not only new technical questions,
-but also a slew of ethical questions
-that must be carefully considered.
-If we are deploying a medical diagnostic system,
-we need to know for which populations
-it may work and for which it may not.
-Overlooking foreseeable risks to the welfare of
-a subpopulation could cause us to administer inferior care.
-Moreover, once we contemplate decision-making systems,
-we must step back and reconsider how we evaluate our technology.
-Among other consequences of this change of scope,
-we will find that *accuracy* is seldom the right measure.
-For instance, when translating predictions into actions,
-we will often want to take into account
-the potential cost sensitivity of erring in various ways.
-If one way of misclassifying an image
-could be perceived as a racial sleight of hand,
-while misclassification to a different category
-would be harmless, then we might want to adjust
-our thresholds accordingly, accounting for societal values
-in designing the decision-making protocol.
-We also want to be careful about
-how prediction systems can lead to feedback loops.
-For example, consider predictive policing systems,
-which allocate patrol officers
-to areas with high forecasted crime.
-It is easy to see how a worrying pattern can emerge:
+기억을 가진 환경의 더 일반적인 경우에서, 저희는 환경이 저희와 협력하려고 하는 상황(협력 게임, 특히 비영합 게임에서)이나 환경이 이기려고 하는 다른 상황을 만날 수 있습니다. 체스, 바둑, 백개먼, 또는 스타크래프트는 *강화 학습(reinforcement learning)*의 일부 사례입니다. 마찬가지로, 저희는 자율 주행 자동차를 위한 좋은 컨트롤러를 구축하고 싶을 수 있습니다. 다른 자동차들은 자율 주행 자동차의 운전 스타일에 자명하지 않은 방식으로 반응할 가능성이 있습니다. 예를 들어, 그것을 피하려고 하거나, 사고를 일으키려고 하거나, 그것과 협력하려고 할 수 있습니다.
 
- 1. Neighborhoods with more crime get more patrols.
- 1. Consequently, more crimes are discovered in these neighborhoods, entering the training data available for future iterations.
- 1. Exposed to more positives, the model predicts yet more crime in these neighborhoods.
- 1. In the next iteration, the updated model targets the same neighborhood even more heavily leading to yet more crimes discovered, etc.
+### 환경 고려
 
-Often, the various mechanisms by which
-a model's predictions become coupled to its training data
-are unaccounted for in the modeling process.
-This can lead to what researchers call *runaway feedback loops*.
-Additionally, we want to be careful about
-whether we are addressing the right problem in the first place.
-Predictive algorithms now play an outsize role
-in mediating the dissemination of information.
-Should the news that an individual encounters
-be determined by the set of Facebook pages they have *Liked*?
-These are just a few among the many pressing ethical dilemmas
-that you might encounter in a career in machine learning.
+위의 여러 상황들 사이의 한 가지 핵심 구분은
+정상(stationary) 환경의 경우에 줄곧 작동했을 전략이
+적응할 수 있는 환경에서는 줄곧 작동하지 않을 수 있다는 것입니다.
+예를 들어, 트레이더에 의해 발견된 차익 거래 기회는
+일단 이용되면 사라질 가능성이 있습니다.
+환경이 변하는 속도와 방식은
+저희가 활용할 수 있는 알고리즘의 유형을 크게 결정합니다.
+예를 들어, 저희가 일들이 천천히만 변할 수 있다는 것을 안다면,
+어떠한 추정값도 천천히만 변하도록 강제할 수 있습니다.
+환경이 즉각적으로 변할 수 있지만 매우 드물게만 변한다는 것을 안다면,
+그것에 대비할 수 있습니다.
+이러한 유형의 지식은 개념 변화, 즉 풀고 있는 문제가 시간이 지남에 따라 변할 수 있는 경우를 다루는 데 있어 야망 있는 데이터 과학자에게 결정적으로 중요합니다.
 
 
-## Summary
-
-In many cases training and test sets do not come from the same distribution. This is called distribution shift.
-The risk is the expectation of the loss over the entire population of data drawn from their true distribution. However, this entire population is usually unavailable. Empirical risk is an average loss over the training data to approximate the risk. In practice, we perform empirical risk minimization.
-
-Under the corresponding assumptions, covariate and label shift can be detected and corrected for at test time. Failure to account for this bias can become problematic at test time.
-In some cases, the environment may remember automated actions and respond in surprising ways. We must account for this possibility when building models and continue to monitor live systems, open to the possibility that our models and the environment will become entangled in unanticipated ways.
-
-## Exercises
-
-1. What could happen when we change the behavior of a search engine? What might the users do? What about the advertisers?
-1. Implement a covariate shift detector. Hint: build a classifier.
-1. Implement a covariate shift corrector.
-1. Besides distribution shift, what else could affect how the empirical risk approximates the risk?
 
 
-[Discussions](https://discuss.d2l.ai/t/105)
+## 머신러닝의 공정성, 책임성, 투명성
+
+마지막으로, 머신러닝 시스템을 배포할 때
+저희가 단순히 예측 모델을 최적화하고 있는 것이 아니라,
+일반적으로 의사 결정을 (부분적으로 또는 완전히) 자동화하는 데
+사용될 도구를 제공하고 있다는 점을 기억하는 것이 중요합니다.
+이러한 기술 시스템은 결과 결정의 대상이 되는 개인의
+삶에 영향을 미칠 수 있습니다.
+예측을 고려하는 것에서 의사 결정을 내리는 것으로의 도약은
+새로운 기술적 질문뿐만 아니라,
+신중하게 고려되어야 할
+일련의 윤리적 질문도 제기합니다.
+저희가 의료 진단 시스템을 배포한다면,
+저희는 어떤 모집단에 대해 작동하고 어떤 모집단에 대해
+작동하지 않을 수 있는지 알아야 합니다.
+하위 모집단의 복지에 대한 예측 가능한 위험을 간과하면
+저희가 열등한 치료를 시행하게 될 수 있습니다.
+더욱이, 일단 의사 결정 시스템을 숙고하게 되면,
+저희는 한 걸음 물러나 저희의 기술을 어떻게 평가하는지를 재고해야 합니다.
+이 범위 변화의 다른 결과들 중에서,
+저희는 *정확도*가 올바른 측정인 경우가 드물다는 것을 발견하게 될 것입니다.
+예를 들어, 예측을 행동으로 변환할 때,
+저희는 종종 다양한 방식으로 오류를 범하는 것의
+잠재적 비용 민감도를 고려하고자 할 것입니다.
+이미지를 잘못 분류하는 한 가지 방식이
+인종 차별적 술책으로 인식될 수 있는 반면,
+다른 범주로의 오분류는
+무해할 것이라면, 저희는 그에 따라
+임계값을 조정하여 의사 결정 프로토콜을 설계할 때
+사회적 가치를 고려하고자 할 수 있습니다.
+저희는 또한 예측 시스템이 어떻게 피드백 루프로 이어질 수 있는지에 대해서도
+주의해야 합니다.
+예를 들어, 예측된 범죄가 많은 지역에 순찰 경찰을 배치하는
+예측 치안 시스템을 생각해 봅시다.
+걱정스러운 패턴이 어떻게 나타날 수 있는지는 쉽게 알 수 있습니다.
+
+ 1. 범죄가 더 많은 지역은 더 많은 순찰을 받습니다.
+ 1. 결과적으로, 이러한 지역에서 더 많은 범죄가 발견되어, 향후 반복을 위해 사용 가능한 학습 데이터에 들어갑니다.
+ 1. 더 많은 양성에 노출되어, 모델은 이러한 지역에서 더 많은 범죄를 예측합니다.
+ 1. 다음 반복에서, 업데이트된 모델은 같은 지역을 더욱더 강력하게 타깃으로 삼아 훨씬 더 많은 범죄가 발견되도록 이어집니다 등등.
+
+종종, 모델의 예측이 학습 데이터에 연결되는 다양한 메커니즘이
+모델링 과정에서 고려되지 않습니다.
+이는 연구자들이 *폭주 피드백 루프(runaway feedback loops)*라고 부르는 것으로 이어질 수 있습니다.
+또한, 저희는 애초에 올바른 문제를 다루고 있는지에 대해서도
+주의해야 합니다.
+예측 알고리즘은 이제 정보 보급을 중재하는 데 있어 거대한
+역할을 합니다.
+개인이 접하는 뉴스는
+그들이 *좋아요*를 누른 페이스북 페이지의 집합에 의해 결정되어야 할까요?
+이것들은 머신러닝의 경력에서
+여러분이 만날 수 있는 많은 절박한 윤리적 딜레마 중 단지 일부에 불과합니다.
+
+
+## 요약
+
+많은 경우에 학습 셋과 테스트 셋이 동일한 분포에서 오지 않습니다. 이를 분포 변화(distribution shift)라고 합니다.
+위험은 데이터의 참 분포에서 추출된 전체 데이터 모집단에 대한 손실의 기댓값입니다. 그러나 이 전체 모집단은 보통 사용할 수 없습니다. 경험적 위험은 위험을 근사하기 위해 학습 데이터에 대한 평균 손실입니다. 실제로 저희는 경험적 위험 최소화를 수행합니다.
+
+대응되는 가정들 하에서, 공변량 및 레이블 변화는 테스트 시간에 감지되고 교정될 수 있습니다. 이 편향을 고려하지 못하면 테스트 시간에 문제가 될 수 있습니다.
+일부 경우에는, 환경이 자동화된 행동을 기억하고 놀라운 방식으로 반응할 수 있습니다. 저희는 모델을 구축할 때 이 가능성을 고려하고, 저희 모델과 환경이 예상치 못한 방식으로 얽힐 가능성에 열려 있는 채로 실시간 시스템을 계속 모니터링해야 합니다.
+
+## 연습문제
+
+1. 검색 엔진의 동작을 변경하면 어떤 일이 일어날 수 있을까요? 사용자들은 무엇을 할 수 있을까요? 광고주들은 어떨까요?
+1. 공변량 변화 감지기를 구현하시오. 힌트: 분류기를 만드시오.
+1. 공변량 변화 교정기를 구현하시오.
+1. 분포 변화 외에 무엇이 경험적 위험이 위험을 근사하는 방식에 영향을 미칠 수 있을까요?
+
+
+[토론](https://discuss.d2l.ai/t/105)

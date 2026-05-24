@@ -1,9 +1,9 @@
-# Concise Implementation for Multiple GPUs
+# 다중 GPU의 간결한 구현
 :label:`sec_multi_gpu_concise`
 
-Implementing parallelism from scratch for every new model is no fun. Moreover, there is significant benefit in optimizing synchronization tools for high performance. In the following we will show how to do this using high-level APIs of deep learning frameworks.
-The mathematics and the algorithms are the same as in :numref:`sec_multi_gpu`.
-Quite unsurprisingly you will need at least two GPUs to run code of this section.
+새로운 모델마다 처음부터 병렬화를 구현하는 것은 재미있는 일이 아닙니다. 게다가 고성능을 위해 동기화 도구를 최적화하는 것에는 상당한 이점이 있습니다. 다음에서 저희는 딥러닝 프레임워크의 고수준 API를 사용해 이를 어떻게 수행하는지 보여드리겠습니다.
+수학과 알고리즘은 :numref:`sec_multi_gpu`와 동일합니다.
+별로 놀랍지 않게도 이 절의 코드를 실행하려면 최소 두 개의 GPU가 필요합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -20,11 +20,11 @@ import torch
 from torch import nn
 ```
 
-## [**A Toy Network**]
+## [**간단한 네트워크**]
 
-Let's use a slightly more meaningful network than LeNet from :numref:`sec_multi_gpu` that is still sufficiently easy and quick to train.
-We pick a ResNet-18 variant :cite:`He.Zhang.Ren.ea.2016`. Since the input images are tiny we modify it slightly. In particular, the difference from :numref:`sec_resnet` is that we use a smaller convolution kernel, stride, and padding at the beginning.
-Moreover, we remove the max-pooling layer.
+여전히 학습하기 충분히 쉽고 빠른, :numref:`sec_multi_gpu`의 LeNet보다는 약간 더 의미 있는 네트워크를 사용해 보겠습니다.
+ResNet-18의 변형 :cite:`He.Zhang.Ren.ea.2016`을 선택합니다. 입력 이미지가 작으므로 약간 수정합니다. 특히, :numref:`sec_resnet`과의 차이는 시작 부분에서 더 작은 컨볼루션 커널, 스트라이드, 패딩을 사용한다는 점입니다.
+또한, 최대 풀링 층을 제거합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -86,16 +86,16 @@ def resnet18(num_classes, in_channels=1):
     return net
 ```
 
-## Network Initialization
+## 네트워크 초기화
 
 :begin_tab:`mxnet`
-The `initialize` function allows us to initialize parameters on a device of our choice.
-For a refresher on initialization methods see :numref:`sec_numerical_stability`. What is particularly convenient is that it also allows us to initialize the network on *multiple* devices simultaneously. Let's try how this works in practice.
+`initialize` 함수는 저희가 선택한 디바이스에서 파라미터를 초기화할 수 있게 해줍니다.
+초기화 방법에 대한 복습은 :numref:`sec_numerical_stability`를 참조하십시오. 특히 편리한 점은 *여러* 디바이스에서 동시에 네트워크를 초기화할 수도 있다는 것입니다. 실제로 이것이 어떻게 동작하는지 시도해 봅시다.
 :end_tab:
 
 :begin_tab:`pytorch`
-We will initialize the network inside the training loop.
-For a refresher on initialization methods see :numref:`sec_numerical_stability`.
+저희는 학습 루프 내부에서 네트워크를 초기화할 것입니다.
+초기화 방법에 대한 복습은 :numref:`sec_numerical_stability`를 참조하십시오.
 :end_tab:
 
 ```{.python .input}
@@ -116,7 +116,7 @@ devices = d2l.try_all_gpus()
 ```
 
 :begin_tab:`mxnet`
-Using the `split_and_load` function introduced in :numref:`sec_multi_gpu` we can divide a minibatch of data and copy portions to the list of devices provided by the `devices` variable. The network instance *automatically* uses the appropriate GPU to compute the value of the forward propagation. Here we generate 4 observations and split them over the GPUs.
+:numref:`sec_multi_gpu`에서 소개된 `split_and_load` 함수를 사용하여 데이터의 미니배치를 나누고 일부를 `devices` 변수에서 제공된 디바이스 리스트로 복사할 수 있습니다. 네트워크 인스턴스는 *자동으로* 순전파의 값을 계산하기 위해 적절한 GPU를 사용합니다. 여기서 저희는 4개의 관측치를 생성하고 GPU에 걸쳐 나눕니다.
 :end_tab:
 
 ```{.python .input}
@@ -127,8 +127,8 @@ net(x_shards[0]), net(x_shards[1])
 ```
 
 :begin_tab:`mxnet`
-Once data passes through the network, the corresponding parameters are initialized *on the device the data passed through*.
-This means that initialization happens on a per-device basis. Since we picked GPU 0 and GPU 1 for initialization, the network is initialized only there, and not on the CPU. In fact, the parameters do not even exist on the CPU. We can verify this by printing out the parameters and observing any errors that might arise.
+일단 데이터가 네트워크를 통과하면, 대응하는 파라미터는 *데이터가 통과한 디바이스에서* 초기화됩니다.
+이는 초기화가 디바이스 단위로 일어남을 의미합니다. 저희가 초기화에 GPU 0과 GPU 1을 선택했으므로, 네트워크는 거기에서만 초기화되며 CPU에서는 초기화되지 않습니다. 사실, 파라미터는 CPU에 존재하지조차 않습니다. 저희는 파라미터를 출력하고 발생할 수 있는 오류를 관찰함으로써 이를 검증할 수 있습니다.
 :end_tab:
 
 ```{.python .input}
@@ -143,7 +143,7 @@ weight.data(devices[0])[0], weight.data(devices[1])[0]
 ```
 
 :begin_tab:`mxnet`
-Next, let's replace the code to [**evaluate the accuracy**] by one that works (**in parallel across multiple devices**). This serves as a replacement of the `evaluate_accuracy_gpu` function from :numref:`sec_lenet`. The main difference is that we split a minibatch before invoking the network. All else is essentially identical.
+다음으로, [**정확도를 평가**]하는 코드를 (**여러 디바이스에 걸쳐 병렬로**) 동작하는 것으로 대체해 보겠습니다. 이는 :numref:`sec_lenet`의 `evaluate_accuracy_gpu` 함수를 대체하는 역할을 합니다. 주요 차이는 네트워크를 호출하기 전에 미니배치를 나눈다는 것입니다. 다른 모든 것은 본질적으로 동일합니다.
 :end_tab:
 
 ```{.python .input}
@@ -165,16 +165,16 @@ def evaluate_accuracy_gpus(net, data_iter, split_f=d2l.split_batch):
     return metric[0] / metric[1]
 ```
 
-## [**Training**]
+## [**학습**]
 
-As before, the training code needs to perform several basic functions for efficient parallelism:
+이전처럼, 효율적인 병렬화를 위해 학습 코드는 몇 가지 기본 기능을 수행해야 합니다.
 
-* Network parameters need to be initialized across all devices.
-* While iterating over the dataset minibatches are to be divided across all devices.
-* We compute the loss and its gradient in parallel across devices.
-* Gradients are aggregated and parameters are updated accordingly.
+* 네트워크 파라미터는 모든 디바이스에 걸쳐 초기화되어야 합니다.
+* 데이터셋을 순회하는 동안 미니배치는 모든 디바이스에 걸쳐 나뉘어야 합니다.
+* 저희는 디바이스에 걸쳐 병렬로 손실과 그 그레이디언트를 계산합니다.
+* 그레이디언트가 집계되고 파라미터가 그에 따라 업데이트됩니다.
 
-In the end we compute the accuracy (again in parallel) to report the final performance of the network. The training routine is quite similar to implementations in previous chapters, except that we need to split and aggregate data.
+마지막에 저희는 네트워크의 최종 성능을 보고하기 위해 (다시 병렬로) 정확도를 계산합니다. 학습 루틴은 데이터를 나누고 집계해야 한다는 점을 제외하면 이전 챕터의 구현과 상당히 유사합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -234,7 +234,7 @@ def train(net, num_gpus, batch_size, lr):
           f'on {str(devices)}')
 ```
 
-Let's see how this works in practice. As a warm-up we [**train the network on a single GPU.**]
+실제로 이것이 어떻게 동작하는지 봅시다. 워밍업으로 [**단일 GPU에서 네트워크를 학습시킵니다.**]
 
 ```{.python .input}
 #@tab mxnet
@@ -246,9 +246,8 @@ train(num_gpus=1, batch_size=256, lr=0.1)
 train(net, num_gpus=1, batch_size=256, lr=0.1)
 ```
 
-Next we [**use 2 GPUs for training**]. Compared with LeNet
-evaluated in :numref:`sec_multi_gpu`,
-the model for ResNet-18 is considerably more complex. This is where parallelization shows its advantage. The time for computation is meaningfully larger than the time for synchronizing parameters. This improves scalability since the overhead for parallelization is less relevant.
+다음으로 [**학습에 2개의 GPU를 사용**]합니다. :numref:`sec_multi_gpu`에서 평가된 LeNet과 비교하면,
+ResNet-18 모델은 상당히 더 복잡합니다. 이것이 병렬화가 그 이점을 보여주는 지점입니다. 계산 시간이 파라미터 동기화 시간보다 의미 있게 큽니다. 이는 병렬화의 오버헤드가 덜 관련 있게 되기 때문에 확장성을 향상시킵니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -260,36 +259,36 @@ train(num_gpus=2, batch_size=512, lr=0.2)
 train(net, num_gpus=2, batch_size=512, lr=0.2)
 ```
 
-## Summary
+## 요약
 
 :begin_tab:`mxnet`
-* Gluon provides primitives for model initialization across multiple devices by providing a context list.
+* Gluon은 컨텍스트 리스트를 제공함으로써 여러 디바이스에 걸친 모델 초기화를 위한 프리미티브를 제공합니다.
 :end_tab:
-* Data is automatically evaluated on the devices where the data can be found.
-* Take care to initialize the networks on each device before trying to access the parameters on that device. Otherwise you will encounter an error.
-* The optimization algorithms automatically aggregate over multiple GPUs.
+* 데이터는 데이터가 발견된 디바이스에서 자동으로 평가됩니다.
+* 디바이스의 파라미터에 접근하기 전에 각 디바이스에서 네트워크를 초기화하는 데 주의하십시오. 그렇지 않으면 오류를 만나게 될 것입니다.
+* 최적화 알고리즘은 자동으로 여러 GPU에 걸쳐 집계합니다.
 
 
 
-## Exercises
+## 연습문제
 
 :begin_tab:`mxnet`
-1. This section uses ResNet-18. Try different epochs, batch sizes, and learning rates. Use more GPUs for computation. What happens if you try this with 16 GPUs (e.g., on an AWS p2.16xlarge instance)?
-1. Sometimes, different devices provide different computing power. We could use the GPUs and the CPU at the same time. How should we divide the work? Is it worth the effort? Why? Why not?
-1. What happens if we drop `npx.waitall()`? How would you modify training such that you have an overlap of up to two steps for parallelism?
+1. 이 절에서는 ResNet-18을 사용합니다. 서로 다른 에포크, 배치 크기, 학습률을 시도해 보십시오. 계산에 더 많은 GPU를 사용하십시오. 16개의 GPU(예: AWS p2.16xlarge 인스턴스)로 이를 시도하면 어떻게 됩니까?
+1. 때때로 서로 다른 디바이스는 서로 다른 컴퓨팅 파워를 제공합니다. 저희는 GPU와 CPU를 동시에 사용할 수 있습니다. 작업을 어떻게 나눠야 합니까? 그만한 노력의 가치가 있습니까? 왜입니까? 왜 아닙니까?
+1. `npx.waitall()`을 제거하면 어떻게 됩니까? 병렬화를 위해 최대 두 단계의 오버랩을 갖도록 학습을 어떻게 수정하시겠습니까?
 :end_tab:
 
 :begin_tab:`pytorch`
-1. This section uses ResNet-18. Try different epochs, batch sizes, and learning rates. Use more GPUs for computation. What happens if you try this with 16 GPUs (e.g., on an AWS p2.16xlarge instance)?
-1. Sometimes, different devices provide different computing power. We could use the GPUs and the CPU at the same time. How should we divide the work? Is it worth the effort? Why? Why not?
+1. 이 절에서는 ResNet-18을 사용합니다. 서로 다른 에포크, 배치 크기, 학습률을 시도해 보십시오. 계산에 더 많은 GPU를 사용하십시오. 16개의 GPU(예: AWS p2.16xlarge 인스턴스)로 이를 시도하면 어떻게 됩니까?
+1. 때때로 서로 다른 디바이스는 서로 다른 컴퓨팅 파워를 제공합니다. 저희는 GPU와 CPU를 동시에 사용할 수 있습니다. 작업을 어떻게 나눠야 합니까? 그만한 노력의 가치가 있습니까? 왜입니까? 왜 아닙니까?
 :end_tab:
 
 
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/365)
+[토론](https://discuss.d2l.ai/t/365)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1403)
+[토론](https://discuss.d2l.ai/t/1403)
 :end_tab:

@@ -1,44 +1,40 @@
-# Overview of Recommender Systems
+# 추천 시스템 개요
 
 
 
-In the last decade, the Internet has evolved into a platform for large-scale online services, which profoundly changed the way we communicate, read news, buy products, and watch movies.  In the meanwhile, the unprecedented number of items (we use the term *item* to refer to movies, news, books, and products.) offered online requires a system that can help us discover items that we preferred. Recommender systems are therefore powerful information filtering tools that can facilitate personalized services and provide tailored experience to individual users. In short, recommender systems play a pivotal role in utilizing the wealth of data available to make choices manageable. Nowadays, recommender systems are at the core of a number of online services providers such as Amazon, Netflix, and YouTube. Recall the example of Deep learning books recommended by Amazon in :numref:`subsec_recommender_systems`. The benefits of employing recommender systems are two-folds: On the one hand, it can largely reduce users' effort in finding items and alleviate the issue of information overload. On the other hand, it can add business value to  online
-service providers and is an important source of revenue.  This chapter will introduce the fundamental concepts, classic models and recent advances with deep learning in the field of recommender systems, together with implemented examples.
+지난 10년간 인터넷은 대규모 온라인 서비스를 위한 플랫폼으로 진화하여 저희가 소통하고, 뉴스를 읽고, 제품을 구매하고, 영화를 보는 방식을 크게 변화시켰습니다. 그와 동시에, 온라인에서 제공되는 전례 없는 양의 아이템(저희는 영화, 뉴스, 책, 제품을 통칭하기 위해 *아이템*이라는 용어를 사용합니다)은 저희가 선호하는 아이템을 발견할 수 있도록 도와주는 시스템을 필요로 합니다. 따라서 추천 시스템은 개인화된 서비스를 가능하게 하고 개별 사용자에게 맞춤형 경험을 제공할 수 있는 강력한 정보 필터링 도구입니다. 간단히 말해, 추천 시스템은 사용 가능한 풍부한 데이터를 활용하여 선택을 관리 가능하게 만드는 데 중추적인 역할을 합니다. 오늘날 추천 시스템은 Amazon, Netflix, YouTube와 같은 여러 온라인 서비스 제공업체의 핵심에 있습니다. :numref:`subsec_recommender_systems`에서 Amazon이 추천한 딥러닝 서적의 예시를 떠올려 보십시오. 추천 시스템을 활용하는 이점은 두 가지입니다. 한편으로는 아이템을 찾는 데 드는 사용자의 노력을 크게 줄일 수 있고 정보 과부하 문제를 완화할 수 있습니다. 다른 한편으로는 온라인 서비스 제공업체에 비즈니스 가치를 더할 수 있으며 중요한 수익원이 됩니다. 이 장에서는 추천 시스템 분야의 기본 개념, 고전 모델 및 딥러닝을 활용한 최근의 발전사항을 구현된 예시와 함께 소개합니다.
 
-![Illustration of the Recommendation Process](../img/rec-intro.svg)
+![추천 프로세스 예시](../img/rec-intro.svg)
 
 
-## Collaborative Filtering
+## 협업 필터링
 
-We start the journey with the important concept in recommender systems---collaborative filtering
-(CF), which was first coined by the Tapestry system :cite:`Goldberg.Nichols.Oki.ea.1992`, referring to "people collaborate to help one another perform the filtering process  in order to handle the large amounts of email and messages posted to newsgroups". This term has been enriched with more senses. In a broad sense, it is the process of
-filtering for information or patterns using techniques involving collaboration among multiple users, agents, and data sources. CF has many forms and numerous CF methods proposed since its advent.
+저희는 추천 시스템의 중요한 개념인 협업 필터링(Collaborative Filtering, CF)으로 여정을 시작합니다. 협업 필터링은 Tapestry 시스템 :cite:`Goldberg.Nichols.Oki.ea.1992`에 의해 처음 만들어진 용어로, "뉴스그룹에 게시된 대량의 이메일과 메시지를 처리하기 위해 사람들이 협력하여 필터링 프로세스를 수행하는 것을 서로 돕는다"는 의미를 가리킵니다. 이 용어는 더 많은 의미로 확장되어 왔습니다. 넓은 의미에서는 여러 사용자, 에이전트, 데이터 소스 간의 협업을 포함하는 기법을 사용하여 정보나 패턴을 필터링하는 과정을 말합니다. CF는 다양한 형태를 가지며, 등장 이래로 수많은 CF 방법들이 제안되어 왔습니다.
 
-Overall, CF techniques can be categorized into: memory-based CF, model-based CF, and their hybrid :cite:`Su.Khoshgoftaar.2009`. Representative memory-based CF techniques are nearest neighbor-based CF such as user-based CF and item-based CF :cite:`Sarwar.Karypis.Konstan.ea.2001`.  Latent factor models such as matrix factorization are examples of model-based CF.  Memory-based CF has limitations in dealing with sparse and large-scale data since it computes the similarity values based on common items.  Model-based methods become more popular with its
-better capability in dealing with sparsity and scalability.  Many model-based CF approaches can be extended with neural networks, leading to more flexible and scalable models with the computation acceleration in deep learning :cite:`Zhang.Yao.Sun.ea.2019`.  In general, CF only uses the user-item interaction data to make predictions and recommendations. Besides CF, content-based and context-based recommender systems are also useful in incorporating the content descriptions of items/users and contextual signals such as timestamps and locations.  Obviously, we may need to adjust the model types/structures when different input data is available.
+전반적으로 CF 기법은 메모리 기반 CF, 모델 기반 CF, 그리고 이들의 하이브리드로 분류될 수 있습니다 :cite:`Su.Khoshgoftaar.2009`. 대표적인 메모리 기반 CF 기법으로는 사용자 기반 CF와 아이템 기반 CF와 같은 최근접 이웃 기반 CF가 있습니다 :cite:`Sarwar.Karypis.Konstan.ea.2001`. 행렬 분해와 같은 잠재 요인 모델은 모델 기반 CF의 예시입니다. 메모리 기반 CF는 공통 아이템을 기반으로 유사도 값을 계산하기 때문에 희소하고 대규모인 데이터를 다루는 데 한계가 있습니다. 모델 기반 방법은 희소성과 확장성을 다루는 더 나은 능력으로 더 인기를 얻고 있습니다. 많은 모델 기반 CF 접근법은 신경망으로 확장될 수 있으며, 이는 딥러닝의 계산 가속화와 함께 더 유연하고 확장 가능한 모델로 이어집니다 :cite:`Zhang.Yao.Sun.ea.2019`. 일반적으로 CF는 사용자-아이템 상호작용 데이터만 사용하여 예측과 추천을 수행합니다. CF 외에도 콘텐츠 기반 및 컨텍스트 기반 추천 시스템도 아이템/사용자의 콘텐츠 설명과 타임스탬프 및 위치와 같은 컨텍스트 신호를 통합하는 데 유용합니다. 분명히, 다양한 입력 데이터를 사용할 수 있을 때 저희는 모델 유형/구조를 조정해야 할 수 있습니다.
 
 
 
-## Explicit Feedback and Implicit Feedback
+## 명시적 피드백과 암묵적 피드백
 
-To learn the preference of users, the system shall collect feedback from them.  The feedback can be either explicit or implicit :cite:`Hu.Koren.Volinsky.2008`. For example, [IMDb](https://www.imdb.com/) collects star ratings ranging from one to ten stars for movies. YouTube provides the thumbs-up and thumbs-down buttons for users to show their preferences.  It is apparent that gathering explicit feedback requires users to indicate their interests proactively.  Nonetheless, explicit feedback is not always readily available as many users may be reluctant to rate products. Relatively speaking, implicit feedback is often readily available since it is mainly concerned with modeling implicit behavior such as user clicks. As such, many recommender systems are centered on implicit feedback which indirectly reflects user's opinion through observing user behavior.  There are diverse forms of implicit feedback including purchase history, browsing history, watches and even mouse movements. For example, a user that purchased many books by the same author probably likes that author.   Note that implicit feedback is inherently noisy.  We can only *guess* their preferences and true motives. A user watched a movie does not necessarily indicate a positive view of that movie.
-
-
-
-## Recommendation Tasks
-
-A number of recommendation tasks have been investigated in the past decades.  Based on the domain of applications, there are movies recommendation, news recommendations, point-of-interest recommendation :cite:`Ye.Yin.Lee.ea.2011` and so forth.  It is also possible to differentiate the tasks based on the types of feedback and input data, for example, the rating prediction task aims to predict the explicit ratings. Top-$n$ recommendation (item ranking) ranks all items for each user personally based on the implicit feedback. If time-stamp information is also included, we can build sequence-aware recommendation :cite:`Quadrana.Cremonesi.Jannach.2018`.  Another popular task is called click-through rate prediction, which is also based on implicit feedback, but various categorical features can be utilized. Recommending for new users and recommending new items to existing users are called cold-start recommendation :cite:`Schein.Popescul.Ungar.ea.2002`.
+사용자의 선호도를 학습하기 위해서는 시스템이 사용자로부터 피드백을 수집해야 합니다. 피드백은 명시적 또는 암묵적일 수 있습니다 :cite:`Hu.Koren.Volinsky.2008`. 예를 들어 [IMDb](https://www.imdb.com/)는 영화에 대해 1점에서 10점까지의 별점 평가를 수집합니다. YouTube는 사용자가 자신의 선호도를 나타낼 수 있도록 좋아요와 싫어요 버튼을 제공합니다. 분명히 명시적 피드백을 수집하려면 사용자가 자신의 관심사를 적극적으로 표시해야 합니다. 그럼에도 불구하고, 많은 사용자가 제품에 평점을 매기는 것을 꺼릴 수 있으므로 명시적 피드백을 항상 쉽게 얻을 수 있는 것은 아닙니다. 비교적, 암묵적 피드백은 주로 사용자 클릭과 같은 암묵적 행동을 모델링하는 것과 관련되기 때문에 쉽게 얻을 수 있는 경우가 많습니다. 이와 같이, 많은 추천 시스템은 사용자 행동을 관찰함으로써 사용자의 의견을 간접적으로 반영하는 암묵적 피드백을 중심으로 합니다. 암묵적 피드백에는 구매 기록, 검색 기록, 시청, 심지어 마우스 움직임까지 다양한 형태가 있습니다. 예를 들어 같은 작가의 책을 많이 구매한 사용자는 아마도 그 작가를 좋아할 것입니다. 암묵적 피드백은 본질적으로 잡음이 많다는 점에 유의하십시오. 저희는 사용자의 선호도와 진정한 동기를 *추측*할 수 있을 뿐입니다. 사용자가 영화를 봤다고 해서 반드시 그 영화에 대한 긍정적인 견해를 나타내는 것은 아닙니다.
 
 
 
-## Summary
+## 추천 작업
 
-* Recommender systems are important for individual users and industries. Collaborative filtering is a key concept in recommendation.
-* There are two types of feedbacks: implicit feedback and explicit feedback.  A number of recommendation tasks have been explored during the last decade.
+지난 수십 년 동안 다양한 추천 작업들이 연구되어 왔습니다. 응용 분야에 따라 영화 추천, 뉴스 추천, 관심 지점 추천 :cite:`Ye.Yin.Lee.ea.2011` 등이 있습니다. 또한 피드백과 입력 데이터의 유형에 따라 작업을 구분할 수 있으며, 예를 들어 평점 예측 작업은 명시적 평점을 예측하는 것을 목표로 합니다. Top-$n$ 추천(아이템 랭킹)은 암묵적 피드백을 기반으로 각 사용자별로 모든 아이템을 개인화하여 랭킹합니다. 타임스탬프 정보도 포함된다면, 저희는 시퀀스 인식 추천을 구축할 수 있습니다 :cite:`Quadrana.Cremonesi.Jannach.2018`. 또 다른 인기 있는 작업은 클릭률 예측이라고 불리며, 이는 또한 암묵적 피드백을 기반으로 하지만 다양한 범주형 특징을 활용할 수 있습니다. 신규 사용자를 위한 추천과 기존 사용자에게 새로운 아이템을 추천하는 것은 콜드 스타트 추천이라고 합니다 :cite:`Schein.Popescul.Ungar.ea.2002`.
 
-## Exercises
 
-1. Can you explain how recommender systems influence your daily life?
-2. What interesting recommendation tasks do you think can be investigated?
 
-[Discussions](https://discuss.d2l.ai/t/398)
+## 요약
+
+* 추천 시스템은 개별 사용자와 산업계에 중요합니다. 협업 필터링은 추천에서의 핵심 개념입니다.
+* 피드백에는 두 가지 유형이 있습니다: 암묵적 피드백과 명시적 피드백. 지난 10년 동안 다양한 추천 작업이 연구되어 왔습니다.
+
+## 연습문제
+
+1. 추천 시스템이 일상생활에 어떻게 영향을 미치는지 설명할 수 있습니까?
+2. 어떤 흥미로운 추천 작업이 연구될 수 있다고 생각하십니까?
+
+[토론](https://discuss.d2l.ai/t/398)

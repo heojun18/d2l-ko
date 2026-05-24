@@ -1,22 +1,22 @@
-# Attention Pooling by Similarity
+# 유사도에 의한 어텐션 풀링
 
 :label:`sec_attention-pooling`
 
-Now that we have introduced the primary components of the attention mechanism, let's use them in a rather classical setting, namely regression and classification via kernel density estimation :cite:`Nadaraya.1964,Watson.1964`. This detour simply provides additional background: it is entirely optional and can be skipped if needed. 
-At their core, Nadaraya--Watson estimators rely on some similarity kernel $\alpha(\mathbf{q}, \mathbf{k})$ relating queries $\mathbf{q}$ to keys $\mathbf{k}$. Some common kernels are
+이제 어텐션 메커니즘의 주요 구성 요소를 소개했으니, 그것들을 다소 고전적인 환경, 즉 커널 밀도 추정 :cite:`Nadaraya.1964,Watson.1964` 을 통한 회귀와 분류에 사용해 봅시다. 이 우회 경로는 단순히 추가 배경을 제공할 뿐입니다: 완전히 선택 사항이며 필요하면 건너뛸 수 있습니다.
+본질적으로 Nadaraya-Watson 추정기는 쿼리 $\mathbf{q}$ 를 키 $\mathbf{k}$ 와 연관시키는 어떤 유사도 커널 $\alpha(\mathbf{q}, \mathbf{k})$ 에 의존합니다. 일반적인 커널 몇 가지는 다음과 같습니다.
 
 $$\begin{aligned}
-\alpha(\mathbf{q}, \mathbf{k}) & = \exp\left(-\frac{1}{2} \|\mathbf{q} - \mathbf{k}\|^2 \right) && \textrm{Gaussian;} \\
+\alpha(\mathbf{q}, \mathbf{k}) & = \exp\left(-\frac{1}{2} \|\mathbf{q} - \mathbf{k}\|^2 \right) && \textrm{가우시안;} \\
 \alpha(\mathbf{q}, \mathbf{k}) & = 1 \textrm{ if } \|\mathbf{q} - \mathbf{k}\| \leq 1 && \textrm{Boxcar;} \\
 \alpha(\mathbf{q}, \mathbf{k}) & = \mathop{\mathrm{max}}\left(0, 1 - \|\mathbf{q} - \mathbf{k}\|\right) && \textrm{Epanechikov.}
 \end{aligned}
 $$
 
-There are many more choices that we could pick. See a [Wikipedia article](https://en.wikipedia.org/wiki/Kernel_(statistics)) for a more extensive review and how the choice of kernels is related to kernel density estimation, sometimes also called *Parzen Windows* :cite:`parzen1957consistent`. All of the kernels are heuristic and can be tuned. For instance, we can adjust the width, not only on a global basis but even on a per-coordinate basis. Regardless, all of them lead to the following equation for regression and classification alike:
+저희가 선택할 수 있는 더 많은 옵션이 있습니다. 보다 광범위한 검토와 커널의 선택이 때때로 *Parzen Windows* :cite:`parzen1957consistent` 라고도 불리는 커널 밀도 추정과 어떻게 관련되는지에 대해서는 [위키피디아 문서](https://en.wikipedia.org/wiki/Kernel_(statistics)) 를 참조하십시오. 모든 커널은 휴리스틱이며 튜닝될 수 있습니다. 예를 들어 저희는 전역 기준뿐만 아니라 좌표별 기준으로도 너비를 조정할 수 있습니다. 그럼에도 불구하고 그 모두는 회귀와 분류에서 동일하게 다음 방정식으로 이어집니다.
 
 $$f(\mathbf{q}) = \sum_i \mathbf{v}_i \frac{\alpha(\mathbf{q}, \mathbf{k}_i)}{\sum_j \alpha(\mathbf{q}, \mathbf{k}_j)}.$$
 
-In the case of a (scalar) regression with observations $(\mathbf{x}_i, y_i)$ for features and labels respectively, $\mathbf{v}_i = y_i$ are scalars, $\mathbf{k}_i = \mathbf{x}_i$ are vectors, and the query $\mathbf{q}$ denotes the new location where $f$ should be evaluated. In the case of (multiclass) classification, we use one-hot-encoding of $y_i$ to obtain $\mathbf{v}_i$. One of the convenient properties of this estimator is that it requires no training. Even more so, if we suitably narrow the kernel with increasing amounts of data, the approach is consistent :cite:`mack1982weak`, i.e., it will converge to some statistically optimal solution. Let's start by inspecting some kernels.
+특성과 레이블에 대해 각각 관측치 $(\mathbf{x}_i, y_i)$ 를 가진 (스칼라) 회귀의 경우, $\mathbf{v}_i = y_i$ 는 스칼라이고, $\mathbf{k}_i = \mathbf{x}_i$ 는 벡터이며, 쿼리 $\mathbf{q}$ 는 $f$ 가 평가되어야 할 새로운 위치를 나타냅니다. (다중 클래스) 분류의 경우, 저희는 $\mathbf{v}_i$ 를 얻기 위해 $y_i$ 의 원-핫 인코딩을 사용합니다. 이 추정기의 편리한 속성 중 하나는 학습이 필요하지 않다는 것입니다. 더 나아가, 데이터양이 증가함에 따라 적절히 커널을 좁히면 이 접근법은 일관적입니다 :cite:`mack1982weak`. 즉, 어떤 통계적으로 최적의 해로 수렴할 것입니다. 몇 가지 커널을 살펴보는 것으로 시작해 봅시다.
 
 ```{.python .input}
 %load_ext d2lbook.tab
@@ -60,9 +60,9 @@ from jax import numpy as jnp
 from flax import linen as nn
 ```
 
-## [**Kernels and Data**]
+## [**커널과 데이터**]
 
-All the kernels $\alpha(\mathbf{k}, \mathbf{q})$ defined in this section are *translation and rotation invariant*; that is, if we shift and rotate $\mathbf{k}$ and $\mathbf{q}$ in the same manner, the value of $\alpha$ remains unchanged. For simplicity we thus pick scalar arguments $k, q \in \mathbb{R}$ and pick the key $k = 0$ as the origin. This yields:
+이 절에 정의된 모든 커널 $\alpha(\mathbf{k}, \mathbf{q})$ 은 *평행이동 및 회전 불변(translation and rotation invariant)* 입니다. 즉, 저희가 $\mathbf{k}$ 와 $\mathbf{q}$ 를 같은 방식으로 이동하고 회전시키면 $\alpha$ 의 값은 변하지 않습니다. 단순화를 위해 저희는 스칼라 인수 $k, q \in \mathbb{R}$ 을 선택하고 키 $k = 0$ 을 원점으로 선택합니다. 이는 다음을 산출합니다.
 
 ```{.python .input}
 %%tab all
@@ -107,13 +107,13 @@ for kernel, name, ax in zip(kernels, names, axes):
 d2l.plt.show()
 ```
 
-Different kernels correspond to different notions of range and smoothness. For instance, the boxcar kernel only attends to observations within a distance of $1$ (or some otherwise defined hyperparameter) and does so indiscriminately. 
+서로 다른 커널은 서로 다른 범위와 매끄러움의 개념에 해당합니다. 예를 들어 Boxcar 커널은 $1$ (또는 다르게 정의된 어떤 초매개변수) 거리 이내의 관측치에만 주의를 기울이며 그것을 무차별적으로 합니다.
 
-To see Nadaraya--Watson estimation in action, let's define some training data. In the following we use the dependency
+Nadaraya-Watson 추정을 실제로 보기 위해, 몇 가지 학습 데이터를 정의해 봅시다. 다음에서 저희는 다음과 같은 의존성을 사용합니다.
 
 $$y_i = 2\sin(x_i) + x_i + \epsilon,$$
 
-where $\epsilon$ is drawn from a normal distribution with zero mean and unit variance. We draw 40 training examples.
+여기서 $\epsilon$ 은 평균이 0이고 분산이 1인 정규 분포에서 추출됩니다. 저희는 40개의 학습 예시를 추출합니다.
 
 ```{.python .input}
 %%tab all
@@ -137,11 +137,11 @@ x_val = d2l.arange(0, 5, 0.1)
 y_val = f(x_val)
 ```
 
-## [**Attention Pooling via Nadaraya--Watson Regression**]
+## [**Nadaraya-Watson 회귀를 통한 어텐션 풀링**]
 
-Now that we have data and kernels, all we need is a function that computes the kernel regression estimates. Note that we also want to obtain the relative kernel weights in order to perform some minor diagnostics. Hence we first compute the kernel between all training features (covariates) `x_train` and all validation features `x_val`. This yields a matrix, which we subsequently normalize. When multiplied with the training labels `y_train` we obtain the estimates.
+이제 저희에게 데이터와 커널이 있으므로, 필요한 것은 커널 회귀 추정치를 계산하는 함수입니다. 저희는 또한 약간의 진단을 수행하기 위해 상대적 커널 가중치를 얻고자 한다는 점에 유의하십시오. 따라서 저희는 먼저 모든 학습 특성(공변량) `x_train` 과 모든 검증 특성 `x_val` 사이의 커널을 계산합니다. 이는 행렬을 산출하고, 저희는 이어서 그것을 정규화합니다. 학습 레이블 `y_train` 과 곱했을 때 저희는 추정치를 얻습니다.
 
-Recall attention pooling in :eqref:`eq_attention_pooling`. Let each validation feature be a query, and each training feature--label pair be a key--value pair. As a result, the  normalized relative kernel weights (`attention_w` below) are the *attention weights*.
+:eqref:`eq_attention_pooling` 의 어텐션 풀링을 떠올려 보십시오. 각 검증 특성을 쿼리로, 각 학습 특성-레이블 쌍을 키-값 쌍으로 두십시오. 결과적으로 정규화된 상대적 커널 가중치(아래의 `attention_w`)는 *어텐션 가중치* 입니다.
 
 ```{.python .input}
 %%tab all
@@ -162,7 +162,7 @@ def nadaraya_watson(x_train, y_train, x_val, kernel):
     return y_hat, attention_w
 ```
 
-Let's have a look at the kind of estimates that the different kernels produce.
+다양한 커널이 어떤 종류의 추정치를 생성하는지 살펴봅시다.
 
 ```{.python .input}
 %%tab all
@@ -191,19 +191,19 @@ def plot(x_train, y_train, x_val, y_val, kernels, names, attention=False):
 plot(x_train, y_train, x_val, y_val, kernels, names)
 ```
 
-The first thing that stands out is that all three nontrivial kernels (Gaussian, Boxcar, and Epanechikov) produce fairly workable estimates that are not too far from the true function. Only the constant kernel that leads to the trivial estimate $f(x) = \frac{1}{n} \sum_i y_i$ produces a rather unrealistic result. Let's inspect the attention weighting a bit more closely:
+가장 먼저 두드러지는 것은 세 가지 비자명한 커널 모두(가우시안, Boxcar, Epanechikov)가 참 함수에서 그리 멀지 않은 상당히 실용적인 추정치를 생성한다는 점입니다. 자명한 추정치 $f(x) = \frac{1}{n} \sum_i y_i$ 로 이어지는 상수 커널만이 다소 비현실적인 결과를 생성합니다. 어텐션 가중치를 좀 더 자세히 살펴봅시다.
 
 ```{.python .input}
 %%tab all
 plot(x_train, y_train, x_val, y_val, kernels, names, attention=True)
 ```
 
-The visualization clearly shows why the estimates for Gaussian, Boxcar, and Epanechikov are very similar: after all, they are derived from very similar attention weights, despite the different functional form of the kernel. This raises the question as to whether this is always the case. 
+이 시각화는 가우시안, Boxcar, Epanechikov의 추정치가 왜 매우 유사한지 분명하게 보여줍니다: 결국 커널의 함수 형태가 다름에도 불구하고 그것들은 매우 유사한 어텐션 가중치로부터 도출됩니다. 이는 항상 그러한지에 대한 질문을 제기합니다.
 
-## [**Adapting Attention Pooling**]
+## [**어텐션 풀링 적응**]
 
-We could replace the Gaussian kernel with one of a different width. That is, we could use 
-$\alpha(\mathbf{q}, \mathbf{k}) = \exp\left(-\frac{1}{2 \sigma^2} \|\mathbf{q} - \mathbf{k}\|^2 \right)$ where $\sigma^2$ determines the width of the kernel. Let's see whether this affects the outcomes.
+저희는 가우시안 커널을 다른 너비의 커널로 대체할 수 있습니다. 즉, 저희는
+$\alpha(\mathbf{q}, \mathbf{k}) = \exp\left(-\frac{1}{2 \sigma^2} \|\mathbf{q} - \mathbf{k}\|^2 \right)$ 를 사용할 수 있는데, 여기서 $\sigma^2$ 는 커널의 너비를 결정합니다. 이것이 결과에 영향을 주는지 살펴봅시다.
 
 ```{.python .input}
 %%tab all
@@ -217,32 +217,32 @@ kernels = [gaussian_with_width(sigma) for sigma in sigmas]
 plot(x_train, y_train, x_val, y_val, kernels, names)
 ```
 
-Clearly, the narrower the kernel, the less smooth the estimate. At the same time, it adapts better to the local variations. Let's look at the corresponding attention weights.
+분명히 커널이 좁을수록 추정치는 덜 매끄럽습니다. 동시에 그것은 국소적인 변동에 더 잘 적응합니다. 이에 해당하는 어텐션 가중치를 살펴봅시다.
 
 ```{.python .input}
 %%tab all
 plot(x_train, y_train, x_val, y_val, kernels, names, attention=True)
 ```
 
-As we would expect, the narrower the kernel, the narrower the range of large attention weights. It is also clear that picking the same width might not be ideal. In fact, :citet:`Silverman86` proposed a heuristic that depends on the local density. Many more such "tricks" have been proposed. For instance, :citet:`norelli2022asif` used a similar nearest-neighbor interpolation technique for designing cross-modal image and text representations. 
+예상대로 커널이 좁을수록 큰 어텐션 가중치의 범위가 더 좁습니다. 또한 같은 너비를 선택하는 것이 이상적이지 않을 수 있다는 점도 분명합니다. 실제로 :citet:`Silverman86` 은 국소 밀도에 의존하는 휴리스틱을 제안했습니다. 훨씬 더 많은 그러한 "기법들"이 제안되어 왔습니다. 예를 들어 :citet:`norelli2022asif` 는 교차 모달 이미지와 텍스트 표현을 설계하기 위해 유사한 최근접 이웃 보간 기법을 사용했습니다.
 
-The astute reader might wonder why we are providing this deep dive for a method that is over half a century old. First, it is one of the earliest precursors of modern attention mechanisms. Second, it is great for visualization. Third, and just as importantly, it demonstrates the limits of hand-crafted attention mechanisms. A much better strategy is to *learn* the mechanism, by learning the representations for queries and keys. This is what we will embark on in the following sections.
+명민한 독자라면 저희가 왜 반세기가 넘은 방법에 대해 이렇게 깊이 다루는지 의아해할 수 있습니다. 첫째, 이는 현대 어텐션 메커니즘의 가장 초기 선구자 중 하나입니다. 둘째, 시각화에 훌륭합니다. 셋째, 그리고 마찬가지로 중요하게, 수작업으로 설계된 어텐션 메커니즘의 한계를 보여줍니다. 훨씬 더 나은 전략은 쿼리와 키에 대한 표현을 학습함으로써 이 메커니즘을 *학습* 하는 것입니다. 이것이 저희가 다음 절에서 시작할 일입니다.
 
 
-## Summary
+## 요약
 
-Nadaraya--Watson kernel regression is an early precursor of the current attention mechanisms. 
-It can be used directly with little to no training or tuning, either for classification or regression. 
-The attention weight is assigned according to the similarity (or distance) between query and key, and according to how many similar observations are available. 
+Nadaraya-Watson 커널 회귀는 현재 어텐션 메커니즘의 초기 선구자입니다.
+이는 분류든 회귀든 학습이나 튜닝이 거의 또는 전혀 없이 직접 사용될 수 있습니다.
+어텐션 가중치는 쿼리와 키 간의 유사도(또는 거리)에 따라, 그리고 유사한 관측치가 얼마나 많이 사용 가능한지에 따라 할당됩니다.
 
-## Exercises
+## 연습문제
 
-1. Parzen windows density estimates are given by $\hat{p}(\mathbf{x}) = \frac{1}{n} \sum_i k(\mathbf{x}, \mathbf{x}_i)$. Prove that for binary classification the function $\hat{p}(\mathbf{x}, y=1) - \hat{p}(\mathbf{x}, y=-1)$, as obtained by Parzen windows is equivalent to Nadaraya--Watson classification. 
-1. Implement stochastic gradient descent to learn a good value for kernel widths in Nadaraya--Watson regression. 
-    1. What happens if you just use the above estimates to minimize $(f(\mathbf{x_i}) - y_i)^2$ directly? Hint: $y_i$ is part of the terms used to compute $f$.
-    1. Remove $(\mathbf{x}_i, y_i)$ from the estimate for $f(\mathbf{x}_i)$ and optimize over the kernel widths. Do you still observe overfitting?
-1. Assume that all $\mathbf{x}$ lie on the unit sphere, i.e., all satisfy $\|\mathbf{x}\| = 1$. Can you simplify the $\|\mathbf{x} - \mathbf{x}_i\|^2$ term in the exponential? Hint: we will later see that this is very closely related to dot product attention. 
-1. Recall that :citet:`mack1982weak` proved that Nadaraya--Watson estimation is consistent. How quickly should you reduce the scale for the attention mechanism as you get more data? Provide some intuition for your answer. Does it depend on the dimensionality of the data? How?
+1. Parzen 윈도우 밀도 추정치는 $\hat{p}(\mathbf{x}) = \frac{1}{n} \sum_i k(\mathbf{x}, \mathbf{x}_i)$ 로 주어집니다. 이진 분류에 대해 Parzen 윈도우로 얻은 함수 $\hat{p}(\mathbf{x}, y=1) - \hat{p}(\mathbf{x}, y=-1)$ 이 Nadaraya-Watson 분류와 동등함을 증명하십시오.
+1. Nadaraya-Watson 회귀에서 커널 너비에 대한 좋은 값을 학습하기 위해 확률적 경사 하강법을 구현하십시오.
+    1. 위의 추정치를 그대로 사용해 $(f(\mathbf{x_i}) - y_i)^2$ 를 직접 최소화하면 어떻게 됩니까? 힌트: $y_i$ 는 $f$ 를 계산하는 데 사용되는 항의 일부입니다.
+    1. $f(\mathbf{x}_i)$ 의 추정치에서 $(\mathbf{x}_i, y_i)$ 를 제거하고 커널 너비에 대해 최적화하십시오. 여전히 과적합이 관찰됩니까?
+1. 모든 $\mathbf{x}$ 가 단위 구면 위에 있다고 가정합시다. 즉, 모두 $\|\mathbf{x}\| = 1$ 을 만족합니다. 지수 안의 $\|\mathbf{x} - \mathbf{x}_i\|^2$ 항을 단순화할 수 있습니까? 힌트: 나중에 보겠지만 이것은 내적 어텐션과 매우 밀접하게 관련되어 있습니다.
+1. :citet:`mack1982weak` 가 Nadaraya-Watson 추정이 일관적임을 증명했다는 것을 기억하십시오. 더 많은 데이터를 얻을수록 어텐션 메커니즘의 척도를 얼마나 빠르게 줄여야 합니까? 답에 대한 어떤 직관을 제시하십시오. 그것이 데이터의 차원에 의존합니까? 어떻게 그렇습니까?
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/1598)

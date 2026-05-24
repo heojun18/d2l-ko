@@ -1,59 +1,59 @@
-# Markov Decision Process (MDP)
+# 마르코프 결정 과정(MDP)
 :label:`sec_mdp`
-In this section, we will discuss how to formulate reinforcement learning problems using Markov decision processes (MDPs) and describe various components of MDPs in detail. 
+이 절에서는 마르코프 결정 과정(Markov Decision Process, MDP)을 사용하여 강화 학습 문제를 어떻게 정식화하는지 논의하고, MDP의 다양한 구성 요소를 자세히 설명합니다.
 
-## Definition of an MDP
+## MDP의 정의
 
-A Markov decision process (MDP) :cite:`BellmanMDP` is a model for how the state of a system evolves as different actions are applied to the system. A few different quantities come together to form an MDP.
+마르코프 결정 과정(MDP) :cite:`BellmanMDP`은 시스템에 서로 다른 행동이 가해질 때 시스템의 상태가 어떻게 변해 가는지를 모델링하는 방식입니다. 몇 가지 서로 다른 양들이 모여 MDP를 이룹니다.
 
 ![A simple gridworld navigation task where the robot not only has to find its way to the goal location (shown as a green house) but also has to avoid trap locations (shown as red cross signs).](../img/mdp.png)
 :width:`250px`
 :label:`fig_mdp`
 
-* Let $\mathcal{S}$ be the set of states in the MDP. As a concrete example see :numref:`fig_mdp`, for a robot that is navigating a gridworld. In this case, $\mathcal{S}$ corresponds to the set of locations that the robot can be at any given timestep.
-* Let $\mathcal{A}$ be the set of actions that the robot can take at each state, e.g., "go forward", "turn right", "turn left", "stay at the same location", etc. Actions can change the current state of the robot to some other state within the set $\mathcal{S}$.
-* It may happen that we do not know how the robot moves *exactly* but only know it up to some approximation. We model this situation in reinforcement learning as follows: if the robot takes an action "go forward", there might be a small probability that it stays at the current state, another small probability that it "turns left", etc. Mathematically, this amounts to defining a "transition function" $T: \mathcal{S} \times \mathcal{A} \times \mathcal{S} \to [0,1]$ such that $T(s, a, s') = P(s' \mid s, a)$ using the conditional probability of reaching a state $s'$ given that the robot was at state $s$ and took an action $a$. The transition function is a probability distribution and we therefore have $\sum_{s' \in \mathcal{S}} T(s, a, s') = 1$ for all $s \in \mathcal{S}$ and $a \in \mathcal{A}$, i.e., the robot has to go to some state if it takes an action.
-* We now construct a notion of which actions are useful and which ones are not using the concept of a "reward" $r: \mathcal{S} \times \mathcal{A} \to \mathbb{R}$. We say that the robot gets a reward $r(s,a)$ if the robot takes an action $a$ at state $s$. If the reward $r(s, a)$ is large, this indicates that taking the action $a$ at state $s$ is more useful to achieving the goal of the robot, i.e., going to the green house. If the reward $r(s, a)$ is small, then action $a$ is less useful to achieving this goal. It is important to note that the reward is designed by the user (the person who creates the reinforcement learning algorithm) with the goal in mind.
+* $\mathcal{S}$를 MDP의 상태(state) 집합이라고 합시다. 구체적인 예시로 :numref:`fig_mdp`를 보면, 격자 세계(gridworld)를 탐색하는 로봇이 있습니다. 이 경우 $\mathcal{S}$는 임의의 주어진 시간 단계에서 로봇이 위치할 수 있는 장소들의 집합에 해당합니다.
+* $\mathcal{A}$를 로봇이 각 상태에서 취할 수 있는 행동(action)의 집합이라고 합시다. 예를 들어 "앞으로 가기", "오른쪽으로 돌기", "왼쪽으로 돌기", "같은 위치에 머무르기" 등이 있습니다. 행동은 로봇의 현재 상태를 집합 $\mathcal{S}$ 내의 다른 상태로 바꿀 수 있습니다.
+* 로봇이 *정확히* 어떻게 움직이는지는 모르고, 어떤 근사 수준까지만 알 수도 있습니다. 강화 학습에서는 이러한 상황을 다음과 같이 모델링합니다. 로봇이 "앞으로 가기"라는 행동을 취한다면, 현재 상태에 그대로 머무를 작은 확률이 있을 수 있고, "왼쪽으로 돌" 또 다른 작은 확률 등이 있을 수 있습니다. 수학적으로 이것은 "전이 함수(transition function)" $T: \mathcal{S} \times \mathcal{A} \times \mathcal{S} \to [0,1]$를 정의하는 것과 같으며, 로봇이 상태 $s$에 있을 때 행동 $a$를 취했을 때 상태 $s'$에 도달할 조건부 확률을 사용해 $T(s, a, s') = P(s' \mid s, a)$로 표현합니다. 전이 함수는 확률 분포이므로 모든 $s \in \mathcal{S}$와 $a \in \mathcal{A}$에 대해 $\sum_{s' \in \mathcal{S}} T(s, a, s') = 1$이 성립합니다. 즉, 로봇이 행동을 취하면 반드시 어떤 상태로 가게 된다는 의미입니다.
+* 이제 어떤 행동이 유용하고 어떤 행동이 그렇지 않은지에 대한 개념을 "보상(reward)" $r: \mathcal{S} \times \mathcal{A} \to \mathbb{R}$의 개념으로 구성합니다. 로봇이 상태 $s$에서 행동 $a$를 취하면 보상 $r(s,a)$를 받는다고 합시다. 만약 보상 $r(s, a)$가 크다면, 이는 상태 $s$에서 행동 $a$를 취하는 것이 로봇의 목표, 즉 초록색 집으로 가는 것을 달성하는 데 더 유용함을 의미합니다. 만약 보상 $r(s, a)$가 작다면, 행동 $a$는 이 목표를 달성하는 데 덜 유용합니다. 보상은 목표를 염두에 두고 사용자(강화 학습 알고리즘을 만드는 사람)가 설계하는 것임을 유의해야 합니다.
 
-## Return and Discount Factor
+## 리턴과 할인 인자
 
-The different components above together form a Markov decision process (MDP)
+위의 서로 다른 구성 요소들이 모여 마르코프 결정 과정(MDP)을 이룹니다.
 $$\textrm{MDP}: (\mathcal{S}, \mathcal{A}, T, r).$$
 
-Let's now consider the situation when the robot starts at a particular state $s_0 \in \mathcal{S}$ and continues taking actions to result in a trajectory
+이제 로봇이 특정 상태 $s_0 \in \mathcal{S}$에서 시작하여 계속 행동을 취하여 다음과 같은 궤적(trajectory)을 만들어 내는 상황을 고려해 봅시다.
 $$\tau = (s_0, a_0, r_0, s_1, a_1, r_1, s_2, a_2, r_2, \ldots).$$
 
-At each time step $t$ the robot is at a state $s_t$ and takes an action $a_t$ which results in a reward $r_t = r(s_t, a_t)$. The *return* of a trajectory is the total reward obtained by the robot along such a trajectory
+각 시간 단계 $t$에서 로봇은 상태 $s_t$에 있고 행동 $a_t$를 취하며, 이로 인해 보상 $r_t = r(s_t, a_t)$가 발생합니다. 궤적의 *리턴(return)*은 로봇이 이러한 궤적을 따라가며 얻은 총 보상입니다.
 $$R(\tau) = r_0 + r_1 + r_2 + \cdots.$$
 
-The goal in reinforcement learning is to find a trajectory that has the largest *return*.
+강화 학습의 목표는 가장 큰 *리턴*을 가지는 궤적을 찾는 것입니다.
 
-Think of the situation when the robot continues to travel in the gridworld without ever reaching the goal location. The sequence of states and actions in a trajectory can be infinitely long in this case and the *return* of any such infinitely long trajectory will be infinite. In order to keep the reinforcement learning formulation meaningful even for such trajectories, we introduce the notion of a discount factor $\gamma < 1$. We write the discounted *return* as
+로봇이 목표 위치에 결코 도달하지 못한 채 격자 세계를 계속 돌아다니는 상황을 생각해 봅시다. 이 경우 궤적에서의 상태와 행동의 시퀀스는 무한히 길어질 수 있고, 그러한 무한히 긴 궤적의 *리턴*은 무한대가 될 것입니다. 그러한 궤적에 대해서도 강화 학습의 정식화가 의미를 갖도록 유지하기 위해, 저희는 할인 인자(discount factor) $\gamma < 1$의 개념을 도입합니다. 할인된 *리턴*을 다음과 같이 씁니다.
 $$R(\tau) = r_0 + \gamma r_1 + \gamma^2 r_2 + \cdots = \sum_{t=0}^\infty \gamma^t r_t.$$
 
-Note that if $\gamma$ is very small, the rewards earned by the robot in the far future, say $t = 1000$, are heavily discounted by the factor $\gamma^{1000}$. This encourages the robot to select short trajectories that achieve its goal, namely that of going to the green house in the gridwold example (see :numref:`fig_mdp`). For large values of the discount factor, say $\gamma = 0.99$, the robot is encouraged to *explore* and then find the best trajectory to go to the goal location.
+$\gamma$가 매우 작다면, 먼 미래 (가령 $t = 1000$)에 로봇이 얻은 보상은 $\gamma^{1000}$만큼 큰 폭으로 할인됩니다. 이는 로봇이 자신의 목표를 달성하는 짧은 궤적, 즉 격자 세계 예제에서 초록색 집으로 가는 궤적(:numref:`fig_mdp` 참조)을 선택하도록 장려합니다. 할인 인자가 큰 값 (가령 $\gamma = 0.99$)일 때는, 로봇이 *탐험(explore)*하여 목표 위치로 가는 최선의 궤적을 찾도록 장려됩니다.
 
-## Discussion of the Markov Assumption
+## 마르코프 가정에 대한 논의
 
-Let us think of a new robot where the state $s_t$ is the location as above but the action $a_t$ is the acceleration that the robot applies to its wheels instead of an abstract command like "go forward". If this robot has some non-zero velocity at state $s_t$, then the next location $s_{t+1}$ is a function of the past location $s_t$, the acceleration $a_t$, also the velocity of the robot at time $t$ which is proportional to $s_t - s_{t-1}$. This indicates that we should have
+위와 마찬가지로 상태 $s_t$가 위치이지만, 행동 $a_t$는 "앞으로 가기"와 같은 추상적인 명령이 아니라 로봇이 바퀴에 가하는 가속도인 새로운 로봇을 생각해 봅시다. 이 로봇이 상태 $s_t$에서 0이 아닌 어떤 속도를 가지고 있다면, 다음 위치 $s_{t+1}$은 이전 위치 $s_t$, 가속도 $a_t$, 그리고 $s_t - s_{t-1}$에 비례하는 시간 $t$에서의 로봇의 속도의 함수가 됩니다. 이는 다음이 성립해야 함을 의미합니다.
 
 $$s_{t+1} = \textrm{some function}(s_t, a_t, s_{t-1});$$
 
-the "some function" in our case would be Newton's law of motion. This is quite different from our transition function that simply depends upon $s_t$ and $a_t$.
+여기서 "some function"은 우리의 경우 뉴턴의 운동 법칙이 될 것입니다. 이것은 단순히 $s_t$와 $a_t$에만 의존하는 우리의 전이 함수와는 상당히 다릅니다.
 
-Markov systems are all systems where the next state $s_{t+1}$ is only a function of the current state $s_t$ and the action $a_t$ taken at the current state. In Markov systems, the next state does not depend on which actions were taken in the past or the states that the robot was at in the past. For example, the new robot that has acceleration as the action above is not Markovian because the next location $s_{t+1}$ depends upon the previous state $s_{t-1}$ through the velocity. It may seem that Markovian nature of a system is a restrictive assumption, but it is not so. Markov Decision Processes are still capable of modeling a very large class of real systems. For example, for our new robot, if we chose our state $s_t$ to the tuple $(\textrm{location}, \textrm{velocity})$ then the system is Markovian because its next state $(\textrm{location}_{t+1}, \textrm{velocity}_{t+1})$ depends only upon the current state $(\textrm{location}_t, \textrm{velocity}_t)$ and the action at the current state $a_t$.
+마르코프 시스템은 다음 상태 $s_{t+1}$이 오로지 현재 상태 $s_t$와 현재 상태에서 취한 행동 $a_t$의 함수인 모든 시스템을 말합니다. 마르코프 시스템에서는 다음 상태가 과거에 어떤 행동이 취해졌는지나 로봇이 과거에 어떤 상태에 있었는지에는 의존하지 않습니다. 예를 들어, 위에서 가속도를 행동으로 가지는 새로운 로봇은 마르코프 시스템이 아닙니다. 다음 위치 $s_{t+1}$이 속도를 통해 이전 상태 $s_{t-1}$에 의존하기 때문입니다. 시스템의 마르코프 성질이 제약적인 가정처럼 보일 수도 있지만, 그렇지 않습니다. 마르코프 결정 과정은 여전히 매우 광범위한 종류의 실제 시스템을 모델링할 수 있습니다. 예를 들어, 위의 새로운 로봇에 대해 상태 $s_t$를 $(\textrm{location}, \textrm{velocity})$ 튜플로 선택한다면 그 시스템은 마르코프 시스템이 됩니다. 다음 상태 $(\textrm{location}_{t+1}, \textrm{velocity}_{t+1})$이 오로지 현재 상태 $(\textrm{location}_t, \textrm{velocity}_t)$와 현재 상태에서의 행동 $a_t$에만 의존하기 때문입니다.
 
-## Summary
-The reinforcement learning problem is typically modeled using Markov Decision Processes. A Markov decision process (MDP) is defined by a tuple of four entities $(\mathcal{S}, \mathcal{A}, T, r)$ where $\mathcal{S}$ is the state space, $\mathcal{A}$ is the action space, $T$ is the transition function that encodes the transition probabilities of the MDP and $r$ is the immediate reward obtained by taking action at a particular state.
+## 요약
+강화 학습 문제는 일반적으로 마르코프 결정 과정을 사용하여 모델링됩니다. 마르코프 결정 과정(MDP)은 네 개의 객체로 이루어진 튜플 $(\mathcal{S}, \mathcal{A}, T, r)$로 정의되며, 여기서 $\mathcal{S}$는 상태 공간, $\mathcal{A}$는 행동 공간, $T$는 MDP의 전이 확률을 부호화하는 전이 함수, $r$은 특정 상태에서 행동을 취해 얻은 즉각적인 보상입니다.
 
 
-## Exercises
+## 연습문제
 
-1. Suppose that we want to design an MDP to model [MountainCar](https://www.gymlibrary.dev/environments/classic_control/mountain_car/) problem.
-    1. What would be the set of states?
-    2. What would be the set of actions?
-    3. What would be the possible reward functions?
-2. How would you design an MDP for an Atari game like [Pong game](https://www.gymlibrary.dev/environments/atari/pong/)?
+1. [MountainCar](https://www.gymlibrary.dev/environments/classic_control/mountain_car/) 문제를 모델링하기 위해 MDP를 설계하고 싶다고 가정합시다.
+    1. 상태 집합은 무엇이 될까요?
+    2. 행동 집합은 무엇이 될까요?
+    3. 가능한 보상 함수에는 어떤 것이 있을까요?
+2. [Pong 게임](https://www.gymlibrary.dev/environments/atari/pong/)과 같은 Atari 게임에 대한 MDP를 어떻게 설계하시겠습니까?
 
 :begin_tab:`pytorch`
 [Discussions](https://discuss.d2l.ai/t/12084)

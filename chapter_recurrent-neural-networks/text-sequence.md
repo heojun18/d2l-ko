@@ -1,20 +1,17 @@
-# Converting Raw Text into Sequence Data
+# 원시 텍스트를 시퀀스 데이터로 변환하기
 :label:`sec_text-sequence`
 
-Throughout this book,
-we will often work with text data
-represented as sequences
-of words, characters, or word pieces.
-To get going, we will need some basic
-tools for converting raw text
-into sequences of the appropriate form.
-Typical preprocessing pipelines
-execute the following steps:
+이 책 전반에 걸쳐,
+저희는 단어, 문자, 또는 워드피스의 시퀀스로 표현된
+텍스트 데이터를 가지고 자주 작업할 것입니다.
+시작하려면 원시 텍스트를 적절한 형태의 시퀀스로
+변환하기 위한 몇 가지 기본 도구가 필요합니다.
+일반적인 전처리 파이프라인은 다음 단계들을 실행합니다.
 
-1. Load text as strings into memory.
-1. Split the strings into tokens (e.g., words or characters).
-1. Build a vocabulary dictionary to associate each vocabulary element with a numerical index.
-1. Convert the text into sequences of numerical indices.
+1. 텍스트를 문자열로 메모리에 로드합니다.
+1. 문자열을 토큰(예: 단어 또는 문자)으로 분할합니다.
+1. 각 어휘 요소를 수치 인덱스와 연결시키는 어휘 사전을 만듭니다.
+1. 텍스트를 수치 인덱스의 시퀀스로 변환합니다.
 
 ```{.python .input  n=1}
 %load_ext d2lbook.tab
@@ -59,17 +56,16 @@ import random
 import re
 ```
 
-## Reading the Dataset
+## 데이터셋 읽기
 
-Here, we will work with H. G. Wells'
+여기서 저희는 H. G. 웰스(Wells)의
 [The Time Machine](http://www.gutenberg.org/ebooks/35),
-a book containing just over 30,000 words.
-While real applications will typically
-involve significantly larger datasets,
-this is sufficient to demonstrate
-the preprocessing pipeline.
-The following `_download` method
-(**reads the raw text into a string**).
+약 30,000개가 조금 넘는 단어를 포함하는 책을 가지고 작업할 것입니다.
+실제 응용에서는 일반적으로
+훨씬 더 큰 데이터셋이 관여하지만,
+이것은 전처리 파이프라인을 시연하기에 충분합니다.
+다음 `_download` 메서드는
+(**원시 텍스트를 문자열로 읽습니다**).
 
 ```{.python .input  n=5}
 %%tab all
@@ -86,7 +82,7 @@ raw_text = data._download()
 raw_text[:60]
 ```
 
-For simplicity, we ignore punctuation and capitalization when preprocessing the raw text.
+간단함을 위해, 저희는 원시 텍스트를 전처리할 때 구두점과 대소문자를 무시합니다.
 
 ```{.python .input  n=6}
 %%tab all
@@ -98,23 +94,21 @@ text = data._preprocess(raw_text)
 text[:60]
 ```
 
-## Tokenization
+## 토큰화
 
-*Tokens* are the atomic (indivisible) units of text.
-Each time step corresponds to 1 token,
-but what precisely constitutes a token is a design choice.
-For example, we could represent the sentence
-"Baby needs a new pair of shoes"
-as a sequence of 7 words,
-where the set of all words comprise
-a large vocabulary (typically tens
-or hundreds of thousands of words).
-Or we would represent the same sentence
-as a much longer sequence of 30 characters,
-using a much smaller vocabulary
-(there are only 256 distinct ASCII characters).
-Below, we tokenize our preprocessed text
-into a sequence of characters.
+*토큰(Tokens)* 은 텍스트의 원자(분할 불가능한) 단위입니다.
+각 타임스텝은 1개의 토큰에 대응되지만,
+무엇이 정확히 토큰을 구성하는지는 설계상의 선택입니다.
+예를 들어, 저희는 문장
+"Baby needs a new pair of shoes"를
+7개 단어의 시퀀스로 표현할 수 있는데,
+여기서 모든 단어의 집합은 큰 어휘(일반적으로 수만 개 또는
+수십만 개의 단어)를 이룹니다.
+또는 저희는 같은 문장을 훨씬 더 작은 어휘
+(고유한 ASCII 문자는 256개밖에 없습니다)를 사용하여
+30개 문자의 훨씬 더 긴 시퀀스로 표현할 수도 있습니다.
+아래에서 저희는 전처리된 텍스트를
+문자의 시퀀스로 토큰화합니다.
 
 ```{.python .input  n=7}
 %%tab all
@@ -126,24 +120,22 @@ tokens = data._tokenize(text)
 ','.join(tokens[:30])
 ```
 
-## Vocabulary
+## 어휘 (Vocabulary)
 
-These tokens are still strings.
-However, the inputs to our models
-must ultimately consist
-of numerical inputs.
-[**Next, we introduce a class
-for constructing *vocabularies*,
-i.e., objects that associate
-each distinct token value
-with a unique index.**]
-First, we determine the set of unique tokens in our training *corpus*.
-We then assign a numerical index to each unique token.
-Rare vocabulary elements are often dropped for convenience.
-Whenever we encounter a token at training or test time
-that had not been previously seen or was dropped from the vocabulary,
-we represent it by a special "&lt;unk&gt;" token,
-signifying that this is an *unknown* value.
+이 토큰들은 여전히 문자열입니다.
+그러나 저희 모델로의 입력은
+궁극적으로 수치 입력으로 구성되어야 합니다.
+[**다음으로, 저희는 *어휘(vocabularies)*,
+즉 각 고유한 토큰 값을
+고유한 인덱스와 연결시키는 객체를
+구성하기 위한 클래스를 소개합니다.**]
+먼저, 저희는 학습 *코퍼스(corpus)* 에서 고유한 토큰의 집합을 결정합니다.
+그 다음 각 고유한 토큰에 수치 인덱스를 할당합니다.
+드문 어휘 요소는 편의를 위해 종종 버려집니다.
+학습 또는 테스트 시점에 이전에 보지 못했거나
+어휘에서 버려진 토큰을 마주칠 때마다,
+저희는 그것을 특수한 "&lt;unk&gt;" 토큰으로 표현하여,
+이것이 *알 수 없는(unknown)* 값임을 나타냅니다.
 
 ```{.python .input  n=8}
 %%tab all
@@ -181,12 +173,11 @@ class Vocab:  #@save
         return self.token_to_idx['<unk>']
 ```
 
-We now [**construct a vocabulary**] for our dataset,
-converting the sequence of strings
-into a list of numerical indices.
-Note that we have not lost any information
-and can easily convert our dataset
-back to its original (string) representation.
+이제 저희는 데이터셋에 대한 [**어휘를 구성**]하여,
+문자열의 시퀀스를 수치 인덱스의 리스트로 변환합니다.
+저희가 어떤 정보도 잃지 않았으며
+저희 데이터셋을 원래의 (문자열) 표현으로
+쉽게 되돌릴 수 있음에 유의하세요.
 
 ```{.python .input  n=9}
 %%tab all
@@ -196,19 +187,19 @@ print('indices:', indices)
 print('words:', vocab.to_tokens(indices))
 ```
 
-## Putting It All Together
+## 모두 합치기
 
-Using the above classes and methods,
-we [**package everything into the following
-`build` method of the `TimeMachine` class**],
-which returns `corpus`, a list of token indices, and `vocab`,
-the vocabulary of *The Time Machine* corpus.
-The modifications we did here are:
-(i) we tokenize text into characters, not words,
-to simplify the training in later sections;
-(ii) `corpus` is a single list, not a list of token lists,
-since each text line in *The Time Machine* dataset
-is not necessarily a sentence or paragraph.
+위의 클래스와 메서드를 사용하여,
+저희는 [**모든 것을 다음의 `TimeMachine` 클래스의
+`build` 메서드로 패키징**]하는데,
+이 메서드는 토큰 인덱스의 리스트인 `corpus`와
+*The Time Machine* 코퍼스의 어휘인 `vocab`을 반환합니다.
+저희가 여기서 한 수정 사항은 다음과 같습니다.
+(i) 이후 절에서의 학습을 단순화하기 위해,
+텍스트를 단어가 아니라 문자로 토큰화합니다.
+(ii) `corpus`는 토큰 리스트들의 리스트가 아니라 단일 리스트인데,
+이는 *The Time Machine* 데이터셋의 각 텍스트 줄이
+반드시 문장이나 단락이 아니기 때문입니다.
 
 ```{.python .input  n=10}
 %%tab all
@@ -223,13 +214,13 @@ corpus, vocab = data.build(raw_text)
 len(corpus), len(vocab)
 ```
 
-## Exploratory Language Statistics
+## 탐색적 언어 통계
 :label:`subsec_natural-lang-stat`
 
-Using the real corpus and the `Vocab` class defined over words,
-we can inspect basic statistics concerning word use in our corpus.
-Below, we construct a vocabulary from words used in *The Time Machine*
-and print the ten most frequently occurring of them.
+실제 코퍼스와 단어에 대해 정의된 `Vocab` 클래스를 사용하여,
+저희는 코퍼스 내 단어 사용에 관한 기본 통계를 살펴볼 수 있습니다.
+아래에서 저희는 *The Time Machine*에서 사용된 단어로부터
+어휘를 구성하고 가장 자주 발생하는 단어 10개를 출력합니다.
 
 ```{.python .input  n=11}
 %%tab all
@@ -238,32 +229,31 @@ vocab = Vocab(words)
 vocab.token_freqs[:10]
 ```
 
-Note that (**the ten most frequent words**)
-are not all that descriptive.
-You might even imagine that
-we might see a very similar list
-if we had chosen any book at random.
-Articles like "the" and "a",
-pronouns like "i" and "my",
-and prepositions like "of", "to", and "in"
-occur often because they serve common syntactic roles.
-Such words that are common but not particularly descriptive
-are often called (***stop words***) and,
-in previous generations of text classifiers
-based on so-called bag-of-words representations,
-they were most often filtered out.
-However, they carry meaning and
-it is not necessary to filter them out
-when working with modern RNN- and
-Transformer-based neural models.
-If you look further down the list,
-you will notice
-that word frequency decays quickly.
-The $10^{\textrm{th}}$ most frequent word
-is less than $1/5$ as common as the most popular.
-Word frequency tends to follow a power law distribution
-(specifically the Zipfian) as we go down the ranks.
-To get a better idea, we [**plot the figure of the word frequency**].
+(**가장 빈도가 높은 10개 단어**)가
+그렇게 서술적이지는 않다는 점에 유의하세요.
+저희가 어떤 책을 무작위로 골랐더라도
+매우 유사한 리스트를 봤을 것이라고
+상상하실 수도 있을 것입니다.
+"the"와 "a" 같은 관사,
+"i"와 "my" 같은 대명사,
+"of", "to", "in" 같은 전치사는
+흔한 구문적 역할을 수행하기 때문에 자주 발생합니다.
+흔하지만 특별히 서술적이지는 않은 그러한 단어를
+종종 (***불용어(stop words)***)라고 부르고,
+이른바 단어 가방(bag-of-words) 표현을 기반으로 한
+이전 세대의 텍스트 분류기에서는,
+그것들이 가장 자주 걸러졌습니다.
+그러나 그것들은 의미를 담고 있으며,
+현대의 RNN 및 Transformer 기반 신경 모델로 작업할 때는
+그것들을 걸러낼 필요가 없습니다.
+리스트를 더 아래로 내려다보면,
+단어 빈도가 빠르게 감쇠한다는 점을
+알아채실 것입니다.
+$10^{\textrm{th}}$번째로 빈도가 높은 단어는
+가장 인기 있는 단어의 $1/5$도 안 됩니다.
+순위가 내려갈수록 단어 빈도는
+거듭제곱 법칙 분포(구체적으로는 지프 분포(Zipfian))를 따르는 경향이 있습니다.
+더 잘 이해하기 위해, 저희는 [**단어 빈도의 도표를 그립니다**].
 
 ```{.python .input  n=12}
 %%tab all
@@ -272,25 +262,24 @@ d2l.plot(freqs, xlabel='token: x', ylabel='frequency: n(x)',
          xscale='log', yscale='log')
 ```
 
-After dealing with the first few words as exceptions,
-all the remaining words roughly follow a straight line on a log--log plot.
-This phenomenon is captured by *Zipf's law*,
-which states that the frequency $n_i$
-of the $i^\textrm{th}$ most frequent word is:
+처음 몇 단어를 예외로 다룬 후,
+나머지 모든 단어는 로그-로그 도표에서 대체로 직선을 따릅니다.
+이 현상은 *지프의 법칙(Zipf's law)* 에 의해 포착되는데,
+이는 $i^\textrm{th}$번째로 빈도가 높은 단어의 빈도 $n_i$가:
 
 $$n_i \propto \frac{1}{i^\alpha},$$
 :eqlabel:`eq_zipf_law`
 
-which is equivalent to
+라고 하며, 이는 다음과 동등합니다.
 
 $$\log n_i = -\alpha \log i + c,$$
 
-where $\alpha$ is the exponent that characterizes
-the distribution and $c$ is a constant.
-This should already give us pause for thought if we want
-to model words by counting statistics.
-After all, we will significantly overestimate the frequency of the tail, also known as the infrequent words. But [**what about the other word combinations, such as two consecutive words (bigrams), three consecutive words (trigrams)**], and beyond?
-Let's see whether the bigram frequency behaves in the same manner as the single word (unigram) frequency.
+여기서 $\alpha$는 분포를 특징짓는 지수이고
+$c$는 상수입니다.
+이것은 저희가 통계를 세는 방식으로 단어를 모델링하고자 한다면
+이미 멈춰 생각해 봐야 할 점을 시사합니다.
+결국 저희는 꼬리, 즉 빈도가 낮은 단어의 빈도를 상당히 과대평가할 것입니다. 그러나 [**다른 단어 조합들, 예를 들어 두 개의 연속된 단어(바이그램), 세 개의 연속된 단어(트라이그램)**], 그리고 그 이상은 어떨까요?
+바이그램 빈도가 단일 단어(유니그램) 빈도와 같은 방식으로 동작하는지 봅시다.
 
 ```{.python .input  n=13}
 %%tab all
@@ -299,7 +288,7 @@ bigram_vocab = Vocab(bigram_tokens)
 bigram_vocab.token_freqs[:10]
 ```
 
-One thing is notable here. Out of the ten most frequent word pairs, nine are composed of both stop words and only one is relevant to the actual book---"the time". Furthermore, let's see whether the trigram frequency behaves in the same manner.
+여기서 한 가지가 주목할 만합니다. 가장 빈도가 높은 10개의 단어 쌍 중, 9개는 모두 불용어로 구성되어 있고 단 하나만이 실제 책과 관련이 있습니다("the time"). 더 나아가, 트라이그램 빈도가 같은 방식으로 동작하는지 봅시다.
 
 ```{.python .input  n=14}
 %%tab all
@@ -309,7 +298,7 @@ trigram_vocab = Vocab(trigram_tokens)
 trigram_vocab.token_freqs[:10]
 ```
 
-Now, let's [**visualize the token frequency**] among these three models: unigrams, bigrams, and trigrams.
+이제, 이 세 가지 모델(유니그램, 바이그램, 트라이그램) 사이에서 [**토큰 빈도를 시각화**]해 봅시다.
 
 ```{.python .input  n=15}
 %%tab all
@@ -320,34 +309,33 @@ d2l.plot([freqs, bigram_freqs, trigram_freqs], xlabel='token: x',
          legend=['unigram', 'bigram', 'trigram'])
 ```
 
-This figure is quite exciting.
-First, beyond unigram words, sequences of words
-also appear to be following Zipf's law,
-albeit with a smaller exponent
-$\alpha$ in :eqref:`eq_zipf_law`,
-depending on the sequence length.
-Second, the number of distinct $n$-grams is not that large.
-This gives us hope that there is quite a lot of structure in language.
-Third, many $n$-grams occur very rarely.
-This makes certain methods unsuitable for language modeling
-and motivates the use of deep learning models.
-We will discuss this in the next section.
+이 그림은 꽤 흥미진진합니다.
+첫째, 유니그램 단어를 넘어, 단어 시퀀스도
+시퀀스 길이에 따라
+:eqref:`eq_zipf_law`에서 더 작은 지수 $\alpha$로,
+지프의 법칙을 따르는 것으로 보입니다.
+둘째, 고유한 $n$-그램의 개수는 그렇게 크지 않습니다.
+이는 언어에 꽤 많은 구조가 있다는 희망을 줍니다.
+셋째, 많은 $n$-그램이 매우 드물게 발생합니다.
+이는 특정 방법을 언어 모델링에 부적합하게 만들고
+딥러닝 모델의 사용에 동기를 부여합니다.
+저희는 다음 절에서 이를 논의할 것입니다.
 
 
-## Summary
+## 요약
 
-Text is among the most common forms of sequence data encountered in deep learning.
-Common choices for what constitutes a token are characters, words, and word pieces.
-To preprocess text, we usually (i) split text into tokens; (ii) build a vocabulary to map token strings to numerical indices; and (iii) convert text data into token indices for models to manipulate.
-In practice, the frequency of words tends to follow Zipf's law. This is true not just for individual words (unigrams), but also for $n$-grams.
+텍스트는 딥러닝에서 마주치는 가장 흔한 형태의 시퀀스 데이터 중 하나입니다.
+무엇이 토큰을 구성하는지에 대한 흔한 선택은 문자, 단어, 워드피스입니다.
+텍스트를 전처리하기 위해, 저희는 보통 (i) 텍스트를 토큰으로 분할하고, (ii) 토큰 문자열을 수치 인덱스로 매핑하는 어휘를 구성하며, (iii) 모델이 다룰 수 있도록 텍스트 데이터를 토큰 인덱스로 변환합니다.
+실제로 단어의 빈도는 지프의 법칙을 따르는 경향이 있습니다. 이는 개별 단어(유니그램)뿐만 아니라 $n$-그램에도 마찬가지로 적용됩니다.
 
 
-## Exercises
+## 연습문제
 
-1. In the experiment of this section, tokenize text into words and vary the `min_freq` argument value of the `Vocab` instance. Qualitatively characterize how changes in `min_freq` impact the size of the resulting vocabulary.
-1. Estimate the exponent of Zipfian distribution for unigrams, bigrams, and trigrams in this corpus.
-1. Find some other sources of data (download a standard machine learning dataset, pick another public domain book,
-   scrape a website, etc). For each, tokenize the data at both the word and character levels. How do the vocabulary sizes compare with *The Time Machine* corpus at equivalent values of `min_freq`. Estimate the exponent of the Zipfian distribution corresponding to the unigram and bigram distributions for these corpora. How do they compare with the values that you observed for *The Time Machine* corpus?
+1. 이 절의 실험에서, 텍스트를 단어로 토큰화하고 `Vocab` 인스턴스의 `min_freq` 인자 값을 변화시켜 보세요. `min_freq`의 변화가 결과 어휘의 크기에 어떻게 영향을 미치는지 정성적으로 특징지어 보세요.
+1. 이 코퍼스에서 유니그램, 바이그램, 트라이그램에 대한 지프 분포의 지수를 추정하세요.
+1. 다른 데이터 소스를 찾으세요(표준 머신러닝 데이터셋을 다운로드하거나, 다른 퍼블릭 도메인 책을 고르거나,
+   웹사이트를 스크래핑하는 등). 각각에 대해, 단어 수준과 문자 수준 모두에서 데이터를 토큰화하세요. 동등한 `min_freq` 값에서 어휘 크기가 *The Time Machine* 코퍼스와 어떻게 비교되나요? 이 코퍼스들에 대한 유니그램과 바이그램 분포에 해당하는 지프 분포의 지수를 추정하세요. 그것들이 *The Time Machine* 코퍼스에 대해 관찰한 값과 어떻게 비교되나요?
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/117)

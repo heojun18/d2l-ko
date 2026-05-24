@@ -1,54 +1,53 @@
-# Natural Language Processing: Applications
+# 자연어 처리: 응용
 :label:`chap_nlp_app`
 
-We have seen how to represent tokens in text sequences and train their representations in :numref:`chap_nlp_pretrain`.
-Such pretrained text representations can be fed to various models for different downstream natural language processing tasks.
+저희는 :numref:`chap_nlp_pretrain`에서 텍스트 시퀀스의 토큰을 표현하고 그 표현을 학습하는 방법을 살펴보았습니다.
+이러한 사전 학습된 텍스트 표현은 다양한 다운스트림 자연어 처리 작업을 위해 여러 모델에 입력될 수 있습니다.
 
-In fact,
-earlier chapters have already discussed some natural language processing applications
-*without pretraining*,
-just for explaining deep learning architectures.
-For instance, in :numref:`chap_rnn`,
-we have relied on RNNs to design language models to generate novella-like text.
-In :numref:`chap_modern_rnn` and :numref:`chap_attention-and-transformers`,
-we have also designed models based on RNNs and attention mechanisms for machine translation.
+사실,
+앞선 장들에서는 딥러닝 아키텍처를 설명하기 위해
+*사전 학습 없이*
+일부 자연어 처리 응용을 이미 다루었습니다.
+예를 들어, :numref:`chap_rnn`에서는
+RNN에 의존하여 중편 소설과 같은 텍스트를 생성하는 언어 모델을 설계했습니다.
+:numref:`chap_modern_rnn`과 :numref:`chap_attention-and-transformers`에서는
+기계 번역을 위해 RNN과 어텐션 메커니즘에 기반한 모델도 설계했습니다.
 
-However, this book does not intend to cover all such applications in a comprehensive manner.
-Instead,
-our focus is on *how to apply (deep) representation learning of languages to addressing natural language processing problems*.
-Given pretrained text representations,
-this chapter will explore two 
-popular and representative
-downstream natural language processing tasks:
-sentiment analysis and natural language inference,
-which analyze single text and relationships of text pairs, respectively.
+그러나 이 책은 그러한 모든 응용을 포괄적으로 다루려는 의도는 아닙니다.
+대신,
+저희의 초점은 *언어의 (심층) 표현 학습을 자연어 처리 문제 해결에 어떻게 적용할 것인가*에 있습니다.
+사전 학습된 텍스트 표현이 주어졌을 때,
+이 장에서는 두 가지
+인기 있고 대표적인
+다운스트림 자연어 처리 작업을 살펴볼 것입니다:
+바로 단일 텍스트를 분석하는 감성 분석과 텍스트 쌍의 관계를 분석하는 자연어 추론입니다.
 
-![Pretrained text representations can be fed to various deep learning architectures for different downstream natural language processing applications. This chapter focuses on how to design models for different downstream natural language processing applications.](../img/nlp-map-app.svg)
+![사전 학습된 텍스트 표현은 다양한 다운스트림 자연어 처리 응용을 위해 여러 딥러닝 아키텍처에 입력될 수 있습니다. 이 장에서는 다양한 다운스트림 자연어 처리 응용을 위한 모델을 설계하는 방법에 초점을 맞춥니다.](../img/nlp-map-app.svg)
 :label:`fig_nlp-map-app`
 
-As depicted in :numref:`fig_nlp-map-app`,
-this chapter focuses on describing the basic ideas of designing natural language processing models using different types of deep learning architectures, such as MLPs, CNNs, RNNs, and attention.
-Though it is possible to combine any pretrained text representations with any architecture for either application in :numref:`fig_nlp-map-app`,
-we select a few representative combinations.
-Specifically, we will explore popular architectures based on RNNs and CNNs for sentiment analysis.
-For natural language inference, we choose attention and MLPs to demonstrate how to analyze text pairs.
-In the end, we introduce how to fine-tune a pretrained BERT model
-for a wide range of natural language processing applications,
-such as on a sequence level (single text classification and text pair classification)
-and a token level (text tagging and question answering).
-As a concrete empirical case,
-we will fine-tune BERT for natural language inference.
+:numref:`fig_nlp-map-app`에 나타난 것처럼,
+이 장에서는 MLP, CNN, RNN, 어텐션과 같은 다양한 유형의 딥러닝 아키텍처를 사용하여 자연어 처리 모델을 설계하는 기본 아이디어를 설명하는 데 중점을 둡니다.
+:numref:`fig_nlp-map-app`의 어느 응용에서든 어떤 사전 학습된 텍스트 표현과 어떤 아키텍처라도 결합할 수 있지만,
+저희는 몇 가지 대표적인 조합을 선택합니다.
+구체적으로, 감성 분석을 위해 RNN과 CNN에 기반한 인기 있는 아키텍처를 살펴볼 것입니다.
+자연어 추론을 위해서는 어텐션과 MLP를 선택하여 텍스트 쌍을 분석하는 방법을 보여드립니다.
+마지막으로, 시퀀스 수준(단일 텍스트 분류 및 텍스트 쌍 분류) 및
+토큰 수준(텍스트 태깅 및 질의응답)과 같은
+광범위한 자연어 처리 응용을 위해
+사전 학습된 BERT 모델을 파인튜닝하는 방법을 소개합니다.
+구체적인 실증 사례로,
+자연어 추론을 위해 BERT를 파인튜닝할 것입니다.
 
-As we have introduced in :numref:`sec_bert`,
-BERT requires minimal architecture changes
-for a wide range of natural language processing applications.
-However, this benefit comes at the cost of fine-tuning
-a huge number of BERT parameters for the downstream applications.
-When space or time is limited,
-those crafted models based on MLPs, CNNs, RNNs, and attention
-are more feasible.
-In the following, we start by the sentiment analysis application
-and illustrate the model design based on RNNs and CNNs, respectively.
+:numref:`sec_bert`에서 소개한 것처럼,
+BERT는 광범위한 자연어 처리 응용에 대해
+최소한의 아키텍처 변경만을 필요로 합니다.
+그러나 이러한 이점은 다운스트림 응용을 위해
+방대한 수의 BERT 파라미터를 파인튜닝해야 한다는 비용을 수반합니다.
+공간이나 시간이 제한될 때에는,
+MLP, CNN, RNN, 어텐션에 기반하여 정교하게 설계된 모델들이
+더 실용적입니다.
+다음으로, 저희는 감성 분석 응용부터 시작하여
+각각 RNN과 CNN에 기반한 모델 설계를 설명합니다.
 
 ```toc
 :maxdepth: 2

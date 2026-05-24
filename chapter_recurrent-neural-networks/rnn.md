@@ -1,33 +1,33 @@
-# Recurrent Neural Networks
+# 순환 신경망 (Recurrent Neural Networks)
 :label:`sec_rnn`
 
 
-In :numref:`sec_language-model` we described Markov models and $n$-grams for language modeling, where the conditional probability of token $x_t$ at time step $t$ only depends on the $n-1$ previous tokens.
-If we want to incorporate the possible effect of tokens earlier than time step $t-(n-1)$ on $x_t$,
-we need to increase $n$.
-However, the number of model parameters would also increase exponentially with it, as we need to store $|\mathcal{V}|^n$ numbers for a vocabulary set $\mathcal{V}$.
-Hence, rather than modeling $P(x_t \mid x_{t-1}, \ldots, x_{t-n+1})$ it is preferable to use a latent variable model,
+:numref:`sec_language-model`에서 저희는 언어 모델링을 위한 마르코프 모델과 $n$-그램을 설명했는데, 여기서 타임스텝 $t$의 토큰 $x_t$의 조건부 확률은 오직 이전 $n-1$개의 토큰에만 의존합니다.
+타임스텝 $t-(n-1)$보다 더 이른 토큰이 $x_t$에 미치는 잠재적인 영향을 포함하고자 한다면,
+저희는 $n$을 늘려야 합니다.
+그러나 모델 파라미터의 수도 그에 따라 지수적으로 증가할 것입니다. 왜냐하면 어휘 집합 $\mathcal{V}$에 대해 $|\mathcal{V}|^n$개의 숫자를 저장해야 하기 때문입니다.
+따라서, $P(x_t \mid x_{t-1}, \ldots, x_{t-n+1})$을 모델링하기보다는 잠재 변수 모델을 사용하는 것이 선호됩니다.
 
 $$P(x_t \mid x_{t-1}, \ldots, x_1) \approx P(x_t \mid h_{t-1}),$$
 
-where $h_{t-1}$ is a *hidden state*  that stores the sequence information up to time step $t-1$.
-In general,
-the hidden state at any time step $t$ could be computed based on both the current input $x_{t}$ and the previous hidden state $h_{t-1}$:
+여기서 $h_{t-1}$은 타임스텝 $t-1$까지의 시퀀스 정보를 저장하는 *은닉 상태(hidden state)* 입니다.
+일반적으로,
+어떤 타임스텝 $t$에서의 은닉 상태는 현재 입력 $x_{t}$와 이전 은닉 상태 $h_{t-1}$ 모두를 바탕으로 계산될 수 있습니다.
 
 $$h_t = f(x_{t}, h_{t-1}).$$
 :eqlabel:`eq_ht_xt`
 
-For a sufficiently powerful function $f$ in :eqref:`eq_ht_xt`, the latent variable model is not an approximation. After all, $h_t$ may simply store all the data it has observed so far.
-However, it could potentially make both computation and storage expensive.
+:eqref:`eq_ht_xt`에서 충분히 강력한 함수 $f$에 대해, 잠재 변수 모델은 근사가 아닙니다. 결국, $h_t$는 그것이 지금까지 관측한 모든 데이터를 단순히 저장할 수도 있습니다.
+그러나, 이는 계산과 저장 모두를 잠재적으로 비싸게 만들 수 있습니다.
 
-Recall that we have discussed hidden layers with hidden units in :numref:`chap_perceptrons`.
-It is noteworthy that
-hidden layers and hidden states refer to two very different concepts.
-Hidden layers are, as explained, layers that are hidden from view on the path from input to output.
-Hidden states are technically speaking *inputs* to whatever we do at a given step,
-and they can only be computed by looking at data at previous time steps.
+:numref:`chap_perceptrons`에서 저희가 은닉 유닛을 가진 은닉 층을 논의했다는 점을 떠올려 보세요.
+은닉 층과 은닉 상태가 매우 다른 두 개념을 가리킨다는 점은
+주목할 만합니다.
+은닉 층은, 설명한 바와 같이, 입력에서 출력으로의 경로에서 시야에 가려진 층입니다.
+은닉 상태는 엄밀히 말해 주어진 스텝에서 저희가 하는 어떤 작업에든 *입력*이며,
+오직 이전 타임스텝의 데이터를 봄으로써만 계산될 수 있습니다.
 
-*Recurrent neural networks* (RNNs) are neural networks with hidden states. Before introducing the RNN model, we first revisit the MLP model introduced in :numref:`sec_mlp`.
+*순환 신경망(Recurrent neural networks, RNN)* 은 은닉 상태를 가진 신경망입니다. RNN 모델을 소개하기 전에, 저희는 먼저 :numref:`sec_mlp`에서 소개된 MLP 모델을 다시 살펴봅니다.
 
 ```{.python .input}
 %load_ext d2lbook.tab
@@ -60,106 +60,102 @@ import jax
 from jax import numpy as jnp
 ```
 
-## Neural Networks without Hidden States
+## 은닉 상태가 없는 신경망
 
-Let's take a look at an MLP with a single hidden layer.
-Let the hidden layer's activation function be $\phi$.
-Given a minibatch of examples $\mathbf{X} \in \mathbb{R}^{n \times d}$ with batch size $n$ and $d$ inputs, the hidden layer output $\mathbf{H} \in \mathbb{R}^{n \times h}$ is calculated as
+은닉 층이 하나인 MLP를 살펴봅시다.
+은닉 층의 활성화 함수를 $\phi$라고 합시다.
+배치 크기 $n$과 $d$개의 입력을 가진 예시의 미니배치 $\mathbf{X} \in \mathbb{R}^{n \times d}$가 주어졌을 때, 은닉 층 출력 $\mathbf{H} \in \mathbb{R}^{n \times h}$는 다음과 같이 계산됩니다.
 
 $$\mathbf{H} = \phi(\mathbf{X} \mathbf{W}_{\textrm{xh}} + \mathbf{b}_\textrm{h}).$$
 :eqlabel:`rnn_h_without_state`
 
-In :eqref:`rnn_h_without_state`, we have the weight parameter $\mathbf{W}_{\textrm{xh}} \in \mathbb{R}^{d \times h}$, the bias parameter $\mathbf{b}_\textrm{h} \in \mathbb{R}^{1 \times h}$, and the number of hidden units $h$, for the hidden layer.
-So armed, we apply broadcasting (see :numref:`subsec_broadcasting`) during the summation.
-Next, the hidden layer output $\mathbf{H}$ is used as input of the output layer, which is given by
+:eqref:`rnn_h_without_state`에서, 저희는 은닉 층에 대한 가중치 파라미터 $\mathbf{W}_{\textrm{xh}} \in \mathbb{R}^{d \times h}$, 편향 파라미터 $\mathbf{b}_\textrm{h} \in \mathbb{R}^{1 \times h}$, 그리고 은닉 유닛의 수 $h$를 가지고 있습니다.
+이렇게 갖추고, 저희는 합산 동안 브로드캐스팅을 적용합니다 (:numref:`subsec_broadcasting` 참고).
+다음으로, 은닉 층 출력 $\mathbf{H}$는 출력 층의 입력으로 사용되며, 이는 다음과 같이 주어집니다.
 
 $$\mathbf{O} = \mathbf{H} \mathbf{W}_{\textrm{hq}} + \mathbf{b}_\textrm{q},$$
 
-where $\mathbf{O} \in \mathbb{R}^{n \times q}$ is the output variable, $\mathbf{W}_{\textrm{hq}} \in \mathbb{R}^{h \times q}$ is the weight parameter, and $\mathbf{b}_\textrm{q} \in \mathbb{R}^{1 \times q}$ is the bias parameter of the output layer.  If it is a classification problem, we can use $\mathrm{softmax}(\mathbf{O})$ to compute the probability distribution of the output categories.
+여기서 $\mathbf{O} \in \mathbb{R}^{n \times q}$는 출력 변수, $\mathbf{W}_{\textrm{hq}} \in \mathbb{R}^{h \times q}$는 가중치 파라미터, $\mathbf{b}_\textrm{q} \in \mathbb{R}^{1 \times q}$는 출력 층의 편향 파라미터입니다. 만약 분류 문제라면, 저희는 $\mathrm{softmax}(\mathbf{O})$를 사용하여 출력 범주의 확률 분포를 계산할 수 있습니다.
 
-This is entirely analogous to the regression problem we solved previously in :numref:`sec_sequence`, hence we omit details.
-Suffice it to say that we can pick feature-label pairs at random and learn the parameters of our network via automatic differentiation and stochastic gradient descent.
+이는 :numref:`sec_sequence`에서 저희가 이전에 풀었던 회귀 문제와 완전히 유사하므로, 자세한 내용은 생략합니다.
+저희가 무작위로 특징-레이블 쌍을 고르고 자동 미분과 확률적 경사 하강법을 통해 신경망의 파라미터를 학습할 수 있다고 말하는 것으로 충분합니다.
 
-## Recurrent Neural Networks with Hidden States
+## 은닉 상태를 가진 순환 신경망
 :label:`subsec_rnn_w_hidden_states`
 
-Matters are entirely different when we have hidden states. Let's look at the structure in some more detail.
+은닉 상태를 가지면 상황이 완전히 달라집니다. 구조를 좀 더 자세히 살펴봅시다.
 
-Assume that we have
-a minibatch of inputs
-$\mathbf{X}_t \in \mathbb{R}^{n \times d}$
-at time step $t$.
-In other words,
-for a minibatch of $n$ sequence examples,
-each row of $\mathbf{X}_t$ corresponds to one example at time step $t$ from the sequence.
-Next,
-denote by $\mathbf{H}_t  \in \mathbb{R}^{n \times h}$ the hidden layer output of time step $t$.
-Unlike with MLP, here we save the hidden layer output $\mathbf{H}_{t-1}$ from the previous time step and introduce a new weight parameter $\mathbf{W}_{\textrm{hh}} \in \mathbb{R}^{h \times h}$ to describe how to use the hidden layer output of the previous time step in the current time step. Specifically, the calculation of the hidden layer output of the current time step is determined by the input of the current time step together with the hidden layer output of the previous time step:
+타임스텝 $t$에 입력의 미니배치
+$\mathbf{X}_t \in \mathbb{R}^{n \times d}$가
+있다고 가정합시다.
+다시 말해,
+$n$개의 시퀀스 예시의 미니배치에 대해,
+$\mathbf{X}_t$의 각 행은 시퀀스의 타임스텝 $t$에서의 한 예시에 해당합니다.
+다음으로,
+타임스텝 $t$의 은닉 층 출력을 $\mathbf{H}_t  \in \mathbb{R}^{n \times h}$로 표기합시다.
+MLP와는 달리, 여기서 저희는 이전 타임스텝의 은닉 층 출력 $\mathbf{H}_{t-1}$을 저장하고 이전 타임스텝의 은닉 층 출력을 현재 타임스텝에서 어떻게 사용할지 기술하기 위해 새로운 가중치 파라미터 $\mathbf{W}_{\textrm{hh}} \in \mathbb{R}^{h \times h}$를 도입합니다. 구체적으로, 현재 타임스텝의 은닉 층 출력의 계산은 현재 타임스텝의 입력과 함께 이전 타임스텝의 은닉 층 출력에 의해 결정됩니다.
 
 $$\mathbf{H}_t = \phi(\mathbf{X}_t \mathbf{W}_{\textrm{xh}} + \mathbf{H}_{t-1} \mathbf{W}_{\textrm{hh}}  + \mathbf{b}_\textrm{h}).$$
 :eqlabel:`rnn_h_with_state`
 
-Compared with :eqref:`rnn_h_without_state`, :eqref:`rnn_h_with_state` adds one more term $\mathbf{H}_{t-1} \mathbf{W}_{\textrm{hh}}$ and thus
-instantiates :eqref:`eq_ht_xt`.
-From the relationship between hidden layer outputs $\mathbf{H}_t$ and $\mathbf{H}_{t-1}$ of adjacent time steps,
-we know that these variables captured and retained the sequence's historical information up to their current time step, just like the state or memory of the neural network's current time step. Therefore, such a hidden layer output is called a *hidden state*.
-Since the hidden state uses the same definition of the previous time step in the current time step, the computation of :eqref:`rnn_h_with_state` is *recurrent*. Hence, as we said, neural networks with hidden states
-based on recurrent computation are named
-*recurrent neural networks*.
-Layers that perform
-the computation of :eqref:`rnn_h_with_state`
-in RNNs
-are called *recurrent layers*.
+:eqref:`rnn_h_without_state`와 비교하면, :eqref:`rnn_h_with_state`는 항 $\mathbf{H}_{t-1} \mathbf{W}_{\textrm{hh}}$를 하나 더 추가하고 따라서
+:eqref:`eq_ht_xt`를 인스턴스화합니다.
+인접한 타임스텝의 은닉 층 출력 $\mathbf{H}_t$와 $\mathbf{H}_{t-1}$ 사이의 관계로부터,
+저희는 이러한 변수가 마치 신경망의 현재 타임스텝의 상태 또는 메모리처럼, 현재 타임스텝까지의 시퀀스의 과거 정보를 포착하고 유지했다는 것을 알 수 있습니다. 따라서, 이러한 은닉 층 출력을 *은닉 상태(hidden state)* 라고 합니다.
+은닉 상태가 현재 타임스텝에서 이전 타임스텝의 동일한 정의를 사용하기 때문에, :eqref:`rnn_h_with_state`의 계산은 *순환적(recurrent)* 입니다. 따라서, 저희가 말했듯이,
+순환 계산을 기반으로 한 은닉 상태를 가진 신경망을
+*순환 신경망(recurrent neural networks)* 이라고 부릅니다.
+RNN에서
+:eqref:`rnn_h_with_state`의 계산을 수행하는 층을
+*순환 층(recurrent layers)* 이라고 합니다.
 
 
-There are many different ways for constructing RNNs.
-Those with a hidden state defined by :eqref:`rnn_h_with_state` are very common.
-For time step $t$,
-the output of the output layer is similar to the computation in the MLP:
+RNN을 구성하는 데에는 많은 다른 방법이 있습니다.
+:eqref:`rnn_h_with_state`로 정의된 은닉 상태를 가진 것들이 매우 흔합니다.
+타임스텝 $t$에 대해,
+출력 층의 출력은 MLP에서의 계산과 비슷합니다.
 
 $$\mathbf{O}_t = \mathbf{H}_t \mathbf{W}_{\textrm{hq}} + \mathbf{b}_\textrm{q}.$$
 
-Parameters of the RNN
-include the weights $\mathbf{W}_{\textrm{xh}} \in \mathbb{R}^{d \times h}, \mathbf{W}_{\textrm{hh}} \in \mathbb{R}^{h \times h}$,
-and the bias $\mathbf{b}_\textrm{h} \in \mathbb{R}^{1 \times h}$
-of the hidden layer,
-together with the weights $\mathbf{W}_{\textrm{hq}} \in \mathbb{R}^{h \times q}$
-and the bias $\mathbf{b}_\textrm{q} \in \mathbb{R}^{1 \times q}$
-of the output layer.
-It is worth mentioning that
-even at different time steps,
-RNNs always use these model parameters.
-Therefore, the parametrization cost of an RNN
-does not grow as the number of time steps increases.
+RNN의 파라미터에는
+은닉 층의 가중치 $\mathbf{W}_{\textrm{xh}} \in \mathbb{R}^{d \times h}, \mathbf{W}_{\textrm{hh}} \in \mathbb{R}^{h \times h}$,
+편향 $\mathbf{b}_\textrm{h} \in \mathbb{R}^{1 \times h}$와 함께
+출력 층의 가중치 $\mathbf{W}_{\textrm{hq}} \in \mathbb{R}^{h \times q}$,
+편향 $\mathbf{b}_\textrm{q} \in \mathbb{R}^{1 \times q}$가 포함됩니다.
+다른 타임스텝에서도,
+RNN은 항상 이러한 모델 파라미터를 사용한다는 점을
+언급할 가치가 있습니다.
+따라서, RNN의 파라미터화 비용은
+타임스텝의 수가 증가함에 따라 커지지 않습니다.
 
-:numref:`fig_rnn` illustrates the computational logic of an RNN at three adjacent time steps.
-At any time step $t$,
-the computation of the hidden state can be treated as:
-(i) concatenating the input $\mathbf{X}_t$ at the current time step $t$ and the hidden state $\mathbf{H}_{t-1}$ at the previous time step $t-1$;
-(ii) feeding the concatenation result into a fully connected layer with the activation function $\phi$.
-The output of such a fully connected layer is the hidden state $\mathbf{H}_t$ of the current time step $t$.
-In this case,
-the model parameters are the concatenation of $\mathbf{W}_{\textrm{xh}}$ and $\mathbf{W}_{\textrm{hh}}$, and a bias of $\mathbf{b}_\textrm{h}$, all from :eqref:`rnn_h_with_state`.
-The hidden state of the current time step $t$, $\mathbf{H}_t$, will participate in computing the hidden state $\mathbf{H}_{t+1}$ of the next time step $t+1$.
-What is more, $\mathbf{H}_t$ will also be
-fed into the fully connected output layer
-to compute the output
-$\mathbf{O}_t$ of the current time step $t$.
+:numref:`fig_rnn`은 인접한 세 타임스텝에서 RNN의 계산 논리를 보여줍니다.
+어떤 타임스텝 $t$에서든,
+은닉 상태의 계산은 다음과 같이 다룰 수 있습니다.
+(i) 현재 타임스텝 $t$의 입력 $\mathbf{X}_t$와 이전 타임스텝 $t-1$의 은닉 상태 $\mathbf{H}_{t-1}$을 연결한 다음,
+(ii) 그 연결 결과를 활성화 함수 $\phi$를 가진 완전 연결 층에 공급합니다.
+그러한 완전 연결 층의 출력이 현재 타임스텝 $t$의 은닉 상태 $\mathbf{H}_t$입니다.
+이 경우에,
+모델 파라미터는 모두 :eqref:`rnn_h_with_state`에서 온, $\mathbf{W}_{\textrm{xh}}$와 $\mathbf{W}_{\textrm{hh}}$의 연결, 그리고 편향 $\mathbf{b}_\textrm{h}$입니다.
+현재 타임스텝 $t$의 은닉 상태 $\mathbf{H}_t$는 다음 타임스텝 $t+1$의 은닉 상태 $\mathbf{H}_{t+1}$을 계산하는 데 참여할 것입니다.
+더욱이, $\mathbf{H}_t$는 현재 타임스텝 $t$의 출력
+$\mathbf{O}_t$를 계산하기 위해
+완전 연결 출력 층에도
+공급될 것입니다.
 
-![An RNN with a hidden state.](../img/rnn.svg)
+![은닉 상태를 가진 RNN.](../img/rnn.svg)
 :label:`fig_rnn`
 
-We just mentioned that the calculation of $\mathbf{X}_t \mathbf{W}_{\textrm{xh}} + \mathbf{H}_{t-1} \mathbf{W}_{\textrm{hh}}$ for the hidden state is equivalent to
-matrix multiplication of the
-concatenation of $\mathbf{X}_t$ and $\mathbf{H}_{t-1}$
-and the
-concatenation of $\mathbf{W}_{\textrm{xh}}$ and $\mathbf{W}_{\textrm{hh}}$.
-Though this can be proven mathematically,
-in the following we just use a simple code snippet as a demonstration.
-To begin with,
-we define matrices `X`, `W_xh`, `H`, and `W_hh`, whose shapes are (3, 1), (1, 4), (3, 4), and (4, 4), respectively.
-Multiplying `X` by `W_xh`, and `H` by `W_hh`, and then adding these two products,
-we obtain a matrix of shape (3, 4).
+저희는 은닉 상태에 대한 $\mathbf{X}_t \mathbf{W}_{\textrm{xh}} + \mathbf{H}_{t-1} \mathbf{W}_{\textrm{hh}}$의 계산이
+$\mathbf{X}_t$와 $\mathbf{H}_{t-1}$의 연결과
+$\mathbf{W}_{\textrm{xh}}$와 $\mathbf{W}_{\textrm{hh}}$의 연결의
+행렬 곱셈과 동등하다고
+방금 언급했습니다.
+이것은 수학적으로 증명될 수 있지만,
+다음에서는 시연으로 간단한 코드 스니펫만 사용합니다.
+우선,
+저희는 각각 모양이 (3, 1), (1, 4), (3, 4), (4, 4)인 행렬 `X`, `W_xh`, `H`, `W_hh`를 정의합니다.
+`X`에 `W_xh`를, `H`에 `W_hh`를 곱하고, 그 다음 이 두 곱을 더하면,
+모양 (3, 4)인 행렬을 얻습니다.
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -184,64 +180,62 @@ H, W_hh = jax.random.normal(d2l.get_key(), (3, 4)), jax.random.normal(
 d2l.matmul(X, W_xh) + d2l.matmul(H, W_hh)
 ```
 
-Now we concatenate the matrices `X` and `H`
-along columns (axis 1),
-and the matrices
-`W_xh` and `W_hh` along rows (axis 0).
-These two concatenations
-result in
-matrices of shape (3, 5)
-and of shape (5, 4), respectively.
-Multiplying these two concatenated matrices,
-we obtain the same output matrix of shape (3, 4)
-as above.
+이제 저희는 행렬 `X`와 `H`를
+열(축 1)을 따라 연결하고,
+행렬 `W_xh`와 `W_hh`를 행(축 0)을 따라 연결합니다.
+이 두 연결은
+각각 모양 (3, 5)와 모양 (5, 4)인
+행렬을 만듭니다.
+이 두 연결된 행렬을 곱하면,
+저희는 위와 동일한 모양 (3, 4)의
+출력 행렬을 얻습니다.
 
 ```{.python .input}
 %%tab all
 d2l.matmul(d2l.concat((X, H), 1), d2l.concat((W_xh, W_hh), 0))
 ```
 
-## RNN-Based Character-Level Language Models
+## RNN 기반 문자 수준 언어 모델
 
-Recall that for language modeling in :numref:`sec_language-model`,
-we aim to predict the next token based on
-the current and past tokens;
-thus we shift the original sequence by one token
-as the targets (labels).
-:citet:`Bengio.Ducharme.Vincent.ea.2003` first proposed
-to use a neural network for language modeling.
-In the following we illustrate how RNNs can be used to build a language model.
-Let the minibatch size be one, and the sequence of the text be "machine".
-To simplify training in subsequent sections,
-we tokenize text into characters rather than words
-and consider a *character-level language model*.
-:numref:`fig_rnn_train` demonstrates how to predict the next character based on the current and previous characters via an RNN for character-level language modeling.
+:numref:`sec_language-model`에서의 언어 모델링에 대해,
+저희가 현재와 과거의 토큰을 바탕으로
+다음 토큰을 예측하는 것을 목표로 하며,
+따라서 원래 시퀀스를 한 토큰씩 이동시켜
+타깃(레이블)으로 삼는다는 점을 떠올려 보세요.
+:citet:`Bengio.Ducharme.Vincent.ea.2003`이 언어 모델링에 신경망을 사용하는 것을
+처음으로 제안했습니다.
+다음에서 저희는 RNN이 어떻게 언어 모델을 구축하는 데 사용될 수 있는지를 보여줍니다.
+미니배치 크기를 1로 하고, 텍스트의 시퀀스를 "machine"이라고 합시다.
+후속 절에서 학습을 단순화하기 위해,
+저희는 텍스트를 단어가 아니라 문자로 토큰화하고
+*문자 수준 언어 모델(character-level language model)* 을 고려합니다.
+:numref:`fig_rnn_train`은 문자 수준 언어 모델링을 위해 RNN을 통해 현재와 이전 문자를 바탕으로 다음 문자를 예측하는 방법을 보여줍니다.
 
-![A character-level language model based on the RNN. The input and target sequences are "machin" and "achine", respectively.](../img/rnn-train.svg)
+![RNN 기반의 문자 수준 언어 모델. 입력과 타깃 시퀀스는 각각 "machin"과 "achine"입니다.](../img/rnn-train.svg)
 :label:`fig_rnn_train`
 
-During the training process,
-we run a softmax operation on the output from the output layer for each time step, and then use the cross-entropy loss to compute the error between the model output and the target.
-Because of the recurrent computation of the hidden state in the hidden layer, the output, $\mathbf{O}_3$,  of time step 3 in :numref:`fig_rnn_train` is determined by the text sequence "m", "a", and "c". Since the next character of the sequence in the training data is "h", the loss of time step 3 will depend on the probability distribution of the next character generated based on the feature sequence "m", "a", "c" and the target "h" of this time step.
+학습 과정 동안,
+저희는 각 타임스텝에 대해 출력 층의 출력에 소프트맥스 연산을 실행한 다음, 모델 출력과 타깃 사이의 오차를 계산하기 위해 교차 엔트로피 손실을 사용합니다.
+은닉 층에서의 은닉 상태의 순환 계산 때문에, :numref:`fig_rnn_train`에서 타임스텝 3의 출력 $\mathbf{O}_3$은 텍스트 시퀀스 "m", "a", "c"에 의해 결정됩니다. 학습 데이터에서 시퀀스의 다음 문자가 "h"이므로, 타임스텝 3의 손실은 특징 시퀀스 "m", "a", "c"와 이 타임스텝의 타깃 "h"를 바탕으로 생성된 다음 문자의 확률 분포에 의존할 것입니다.
 
-In practice, each token is represented by a $d$-dimensional vector, and we use a batch size $n>1$. Therefore, the input $\mathbf X_t$ at time step $t$ will be an $n\times d$ matrix, which is identical to what we discussed in :numref:`subsec_rnn_w_hidden_states`.
+실제로는, 각 토큰이 $d$차원 벡터로 표현되고, 저희는 배치 크기 $n>1$을 사용합니다. 따라서, 타임스텝 $t$의 입력 $\mathbf X_t$는 $n\times d$ 행렬일 것이며, 이는 :numref:`subsec_rnn_w_hidden_states`에서 저희가 논의한 것과 동일합니다.
 
-In the following sections, we will implement RNNs
-for character-level language models.
-
-
-## Summary
-
-A neural network that uses recurrent computation for hidden states is called a recurrent neural network (RNN).
-The hidden state of an RNN can capture historical information of the sequence up to the current time step. With recurrent computation, the number of RNN model parameters does not grow as the number of time steps increases. As for applications, an RNN can be used to create character-level language models.
+다음 절들에서, 저희는 문자 수준 언어 모델을 위한 RNN을
+구현할 것입니다.
 
 
-## Exercises
+## 요약
 
-1. If we use an RNN to predict the next character in a text sequence, what is the required dimension for any output?
-1. Why can RNNs express the conditional probability of a token at some time step based on all the previous tokens in the text sequence?
-1. What happens to the gradient if you backpropagate through a long sequence?
-1. What are some of the problems associated with the language model described in this section?
+은닉 상태에 순환 계산을 사용하는 신경망을 순환 신경망(RNN)이라고 합니다.
+RNN의 은닉 상태는 현재 타임스텝까지의 시퀀스의 과거 정보를 포착할 수 있습니다. 순환 계산으로, RNN 모델 파라미터의 수는 타임스텝의 수가 증가함에 따라 커지지 않습니다. 응용으로는, RNN은 문자 수준 언어 모델을 만드는 데 사용될 수 있습니다.
+
+
+## 연습문제
+
+1. 텍스트 시퀀스에서 다음 문자를 예측하기 위해 RNN을 사용한다면, 어떤 출력에 대해서든 필요한 차원은 무엇인가요?
+1. RNN이 텍스트 시퀀스의 이전 모든 토큰을 바탕으로 어떤 타임스텝에서의 토큰의 조건부 확률을 왜 표현할 수 있나요?
+1. 긴 시퀀스를 통해 역전파하면 그래디언트에 무슨 일이 일어나나요?
+1. 이 절에서 설명한 언어 모델과 관련된 몇 가지 문제는 무엇인가요?
 
 
 :begin_tab:`mxnet`

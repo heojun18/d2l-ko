@@ -3,39 +3,21 @@
 tab.interact_select('mxnet', 'pytorch', 'tensorflow', 'jax')
 ```
 
-# Multi-Head Attention
+# 멀티헤드 어텐션
 :label:`sec_multihead-attention`
 
 
-In practice, given the same set of queries, keys, and values we may want our model to combine knowledge from
-different behaviors of the same attention mechanism,
-such as capturing dependencies of various ranges
-(e.g., shorter-range vs. longer-range) within a sequence.
-Thus, it may be beneficial to allow our attention mechanism to jointly use different representation subspaces of queries, keys, and values.
+실제로 동일한 쿼리, 키, 값 집합이 주어지면 저희는 모델이 동일한 어텐션 메커니즘의 서로 다른 행동들로부터 나오는 지식, 예를 들어 시퀀스 내에서 다양한 범위(예: 짧은 범위 대 긴 범위)의 의존성을 포착하는 것과 같은 지식을 결합하기를 원할 수 있습니다.
+따라서 저희의 어텐션 메커니즘이 쿼리, 키, 값의 서로 다른 표현 부분 공간을 공동으로 사용하도록 허용하는 것이 유익할 수 있습니다.
 
 
-To this end, instead of performing 
-a single attention pooling,
-queries, keys, and values
-can be transformed
-with $h$ independently learned linear projections.
-Then these $h$ projected queries, keys, and values
-are fed into attention pooling in parallel.
-In the end,
-$h$ attention-pooling outputs
-are concatenated and 
-transformed with another learned linear projection
-to produce the final output.
-This design
-is called *multi-head attention*,
-where each of the $h$ attention pooling outputs
-is a *head* :cite:`Vaswani.Shazeer.Parmar.ea.2017`.
-Using fully connected layers
-to perform learnable linear transformations,
-:numref:`fig_multi-head-attention`
-describes multi-head attention.
+이를 위해 단일 어텐션 풀링을 수행하는 대신, 쿼리, 키, 값을 $h$ 개의 독립적으로 학습된 선형 사영(linear projection)으로 변환할 수 있습니다.
+그런 다음 이 $h$ 개의 사영된 쿼리, 키, 값을 병렬로 어텐션 풀링에 공급합니다.
+끝으로, $h$ 개의 어텐션 풀링 출력을 연결(concatenate)하고 또 다른 학습된 선형 사영으로 변환하여 최종 출력을 생성합니다.
+이 설계는 *멀티헤드 어텐션(multi-head attention)* 이라고 불리는데, $h$ 개 어텐션 풀링 출력 각각이 *헤드(head)* 입니다 :cite:`Vaswani.Shazeer.Parmar.ea.2017`.
+학습 가능한 선형 변환을 수행하기 위해 완전 연결 계층을 사용하면서, :numref:`fig_multi-head-attention` 는 멀티헤드 어텐션을 묘사합니다.
 
-![Multi-head attention, where multiple heads are concatenated then linearly transformed.](../img/multi-head-attention.svg)
+![멀티헤드 어텐션, 여기서 여러 헤드가 연결된 다음 선형 변환됩니다.](../img/multi-head-attention.svg)
 :label:`fig_multi-head-attention`
 
 ```{.python .input}
@@ -69,54 +51,27 @@ from jax import numpy as jnp
 import jax
 ```
 
-## Model
+## 모델
 
-Before providing the implementation of multi-head attention,
-let's formalize this model mathematically.
-Given a query $\mathbf{q} \in \mathbb{R}^{d_q}$,
-a key $\mathbf{k} \in \mathbb{R}^{d_k}$,
-and a value $\mathbf{v} \in \mathbb{R}^{d_v}$,
-each attention head $\mathbf{h}_i$  ($i = 1, \ldots, h$)
-is computed as
+멀티헤드 어텐션의 구현을 제공하기 전에, 이 모델을 수학적으로 형식화합시다.
+쿼리 $\mathbf{q} \in \mathbb{R}^{d_q}$, 키 $\mathbf{k} \in \mathbb{R}^{d_k}$, 값 $\mathbf{v} \in \mathbb{R}^{d_v}$ 가 주어졌을 때, 각 어텐션 헤드 $\mathbf{h}_i$ ($i = 1, \ldots, h$)는 다음과 같이 계산됩니다.
 
 $$\mathbf{h}_i = f(\mathbf W_i^{(q)}\mathbf q, \mathbf W_i^{(k)}\mathbf k,\mathbf W_i^{(v)}\mathbf v) \in \mathbb R^{p_v},$$
 
-where 
-$\mathbf W_i^{(q)}\in\mathbb R^{p_q\times d_q}$,
-$\mathbf W_i^{(k)}\in\mathbb R^{p_k\times d_k}$,
-and $\mathbf W_i^{(v)}\in\mathbb R^{p_v\times d_v}$
-are learnable parameters and
-$f$ is attention pooling,
-such as
-additive attention and scaled dot product attention
-in :numref:`sec_attention-scoring-functions`.
-The multi-head attention output
-is another linear transformation via 
-learnable parameters
-$\mathbf W_o\in\mathbb R^{p_o\times h p_v}$
-of the concatenation of $h$ heads:
+여기서 $\mathbf W_i^{(q)}\in\mathbb R^{p_q\times d_q}$, $\mathbf W_i^{(k)}\in\mathbb R^{p_k\times d_k}$, $\mathbf W_i^{(v)}\in\mathbb R^{p_v\times d_v}$ 는 학습 가능한 매개변수이고, $f$ 는 :numref:`sec_attention-scoring-functions` 의 가산 어텐션과 스케일드 내적 어텐션 같은 어텐션 풀링입니다.
+멀티헤드 어텐션 출력은 $h$ 개 헤드의 연결의 학습 가능한 매개변수 $\mathbf W_o\in\mathbb R^{p_o\times h p_v}$ 를 통한 또 다른 선형 변환입니다.
 
 $$\mathbf W_o \begin{bmatrix}\mathbf h_1\\\vdots\\\mathbf h_h\end{bmatrix} \in \mathbb{R}^{p_o}.$$
 
-Based on this design, each head may attend
-to different parts of the input.
-More sophisticated functions 
-than the simple weighted average can be expressed.
+이 설계에 기반하여, 각 헤드는 입력의 서로 다른 부분에 주의를 기울일 수 있습니다.
+단순한 가중 평균보다 더 정교한 함수를 표현할 수 있습니다.
 
-## Implementation
+## 구현
 
-In our implementation,
-we [**choose the scaled dot product attention
-for each head**] of the multi-head attention.
-To avoid significant growth of computational cost and parametrization cost,
-we set $p_q = p_k = p_v = p_o / h$.
-Note that $h$ heads can be computed in parallel
-if we set the number of outputs 
-of linear transformations
-for the query, key, and value
-to $p_q h = p_k h = p_v h = p_o$.
-In the following implementation,
-$p_o$ is specified via the argument `num_hiddens`.
+저희의 구현에서, 저희는 멀티헤드 어텐션의 [**각 헤드에 대해 스케일드 내적 어텐션을 선택**]합니다.
+계산 비용과 매개변수화 비용의 상당한 증가를 피하기 위해, 저희는 $p_q = p_k = p_v = p_o / h$ 로 설정합니다.
+쿼리, 키, 값에 대한 선형 변환의 출력 수를 $p_q h = p_k h = p_v h = p_o$ 로 설정하면 $h$ 개 헤드를 병렬로 계산할 수 있다는 점에 유의하십시오.
+다음 구현에서, $p_o$ 는 인수 `num_hiddens` 를 통해 지정됩니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -275,11 +230,8 @@ class MultiHeadAttention(nn.Module):  #@save
         return self.W_o(output_concat), attention_weights
 ```
 
-To allow for [**parallel computation of multiple heads**],
-the above `MultiHeadAttention` class uses two transposition methods as defined below.
-Specifically,
-the `transpose_output` method reverses the operation
-of the `transpose_qkv` method.
+[**여러 헤드의 병렬 계산**]을 허용하기 위해, 위의 `MultiHeadAttention` 클래스는 아래에 정의된 두 가지 전치(transposition) 메서드를 사용합니다.
+구체적으로, `transpose_output` 메서드는 `transpose_qkv` 메서드의 연산을 역전시킵니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -377,11 +329,8 @@ def transpose_output(self, X):
     return X.reshape((X.shape[0], X.shape[1], -1))
 ```
 
-Let's [**test our implemented**] `MultiHeadAttention` class
-using a toy example where keys and values are the same.
-As a result,
-the shape of the multi-head attention output
-is (`batch_size`, `num_queries`, `num_hiddens`).
+키와 값이 같은 토이 예시를 사용해 저희가 [**구현한**] `MultiHeadAttention` 클래스를 [**테스트**]해 봅시다.
+결과적으로 멀티헤드 어텐션 출력의 모양은 (`batch_size`, `num_queries`, `num_hiddens`)입니다.
 
 ```{.python .input}
 %%tab pytorch
@@ -446,18 +395,16 @@ d2l.check_shape(attention.init_with_output(d2l.get_key(), X, Y, Y, valid_lens,
                 (batch_size, num_queries, num_hiddens))
 ```
 
-## Summary
+## 요약
 
-Multi-head attention combines knowledge of the same attention pooling 
-via different representation subspaces of queries, keys, and values.
-To compute multiple heads of multi-head attention in parallel, 
-proper tensor manipulation is needed.
+멀티헤드 어텐션은 쿼리, 키, 값의 서로 다른 표현 부분 공간을 통해 동일한 어텐션 풀링의 지식을 결합합니다.
+멀티헤드 어텐션의 여러 헤드를 병렬로 계산하려면 적절한 텐서 조작이 필요합니다.
 
 
-## Exercises
+## 연습문제
 
-1. Visualize attention weights of multiple heads in this experiment.
-1. Suppose that we have a trained model based on multi-head attention and we want to prune less important attention heads to increase the prediction speed. How can we design experiments to measure the importance of an attention head?
+1. 이 실험에서 여러 헤드의 어텐션 가중치를 시각화하십시오.
+1. 저희가 멀티헤드 어텐션에 기반한 학습된 모델을 가지고 있고 예측 속도를 높이기 위해 덜 중요한 어텐션 헤드를 가지치기하고자 한다고 가정합시다. 어텐션 헤드의 중요도를 측정하기 위해 어떻게 실험을 설계할 수 있을까요?
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/1634)

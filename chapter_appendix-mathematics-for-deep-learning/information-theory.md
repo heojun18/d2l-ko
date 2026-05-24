@@ -1,45 +1,45 @@
-# Information Theory
+# 정보 이론
 :label:`sec_information_theory`
 
-The universe is overflowing with information. Information provides a common language across disciplinary rifts: from Shakespeare's Sonnet to researchers' paper on Cornell ArXiv, from Van Gogh's printing Starry Night to Beethoven's music Symphony No. 5, from the first programming language Plankalkül to the state-of-the-art machine learning algorithms. Everything must follow the rules of information theory, no matter the format. With information theory, we can measure and compare how much information is present in different signals. In this section, we will investigate the fundamental concepts of information theory and applications of information theory in machine learning.
+우주는 정보로 흘러넘치고 있습니다. 정보는 학문적 균열을 넘어 공통된 언어를 제공합니다. 셰익스피어의 소네트에서 코넬 ArXiv의 연구자 논문까지, 반 고흐의 인쇄물 별이 빛나는 밤에서 베토벤의 음악 교향곡 5번까지, 첫 번째 프로그래밍 언어 Plankalkül에서 최첨단 머신러닝 알고리즘까지. 모든 것은 형식에 관계없이 정보 이론의 규칙을 따라야 합니다. 정보 이론을 가지고, 저희는 다른 신호에 얼마나 많은 정보가 존재하는지 측정하고 비교할 수 있습니다. 이 절에서, 저희는 정보 이론의 기본 개념과 머신러닝에서의 정보 이론의 응용을 조사할 것입니다.
 
-Before we get started, let's outline the relationship between machine learning and information theory. Machine learning aims to extract interesting signals from data and make critical predictions.  On the other hand, information theory studies encoding, decoding, transmitting, and manipulating information. As a result, information theory provides fundamental language for discussing the information processing in machine learned systems. For example, many machine learning applications use the cross-entropy loss as described in :numref:`sec_softmax`.  This loss can be directly derived from information theoretic considerations.
-
-
-## Information
-
-Let's start with the "soul" of information theory: information. *Information* can be encoded in anything with a particular sequence of one or more encoding formats. Suppose that we task ourselves with trying to define a notion of information.  What could be our starting point?
-
-Consider the following thought experiment.  We have a friend with a deck of cards.  They will shuffle the deck, flip over some cards, and tell us statements about the cards.  We will try to assess the information content of each statement.
-
-First, they flip over a card and tell us, "I see a card."  This provides us with no information at all.  We were already certain that this was the case so we hope the information should be zero.
-
-Next, they flip over a card and say, "I see a heart."  This provides us some information, but in reality there are only $4$ different suits that were possible, each equally likely, so we are not surprised by this outcome.  We hope that whatever the measure of information, this event should have low information content.
-
-Next, they flip over a card and say, "This is the $3$ of spades."  This is more information.  Indeed there were $52$ equally likely possible outcomes, and our friend told us which one it was.  This should be a medium amount of information.
-
-Let's take this to the logical extreme.  Suppose that finally they flip over every card from the deck and read off the entire sequence of the shuffled deck.  There are $52!$ different orders to the deck, again all equally likely, so we need a lot of information to know which one it is.
-
-Any notion of information we develop must conform to this intuition.  Indeed, in the next sections we will learn how to compute that these events have $0\textrm{ bits}$, $2\textrm{ bits}$, $~5.7\textrm{ bits}$, and $~225.6\textrm{ bits}$ of information respectively.
-
-If we read through these thought experiments, we see a natural idea.  As a starting point, rather than caring about the knowledge, we may build off the idea that information represents the degree of surprise or the abstract possibility of the event. For example, if we want to describe an unusual event, we need a lot information. For a common event, we may not need much information.
-
-In 1948, Claude E. Shannon published *A Mathematical Theory of Communication* :cite:`Shannon.1948` establishing the theory of information.  In his article, Shannon introduced the concept of information entropy for the first time. We will begin our journey here.
+시작하기 전에, 머신러닝과 정보 이론 사이의 관계를 개략적으로 설명하겠습니다. 머신러닝은 데이터에서 흥미로운 신호를 추출하고 중요한 예측을 하는 것을 목표로 합니다. 반면에, 정보 이론은 정보의 인코딩, 디코딩, 전송, 그리고 조작을 연구합니다. 결과적으로, 정보 이론은 머신러닝 시스템에서의 정보 처리를 논의하기 위한 기본 언어를 제공합니다. 예를 들어, 많은 머신러닝 응용은 :numref:`sec_softmax`에서 설명된 교차 엔트로피 손실을 사용합니다. 이 손실은 정보 이론적 고려사항으로부터 직접 유도될 수 있습니다.
 
 
-### Self-information
+## 정보
 
-Since information embodies the abstract possibility of an event, how do we map the possibility to the number of bits? Shannon introduced the terminology *bit* as the unit of information, which was originally created by John Tukey. So what is a "bit" and why do we use it to measure information? Historically, an antique transmitter can only send or receive two types of code: $0$ and $1$.  Indeed, binary encoding is still in common use on all modern digital computers. In this way, any information is encoded by a series of $0$ and $1$. And hence, a series of binary digits of length $n$ contains $n$ bits of information.
+정보 이론의 "영혼"인 정보로 시작합시다. *정보*는 하나 이상의 인코딩 형식의 특정 시퀀스를 가진 어떤 것에도 인코딩될 수 있습니다. 저희가 정보의 개념을 정의하려고 한다고 가정해 봅시다. 저희의 시작점이 무엇이 될 수 있을까요?
 
-Now, suppose that for any series of codes, each $0$ or $1$ occurs with a probability of $\frac{1}{2}$. Hence, an event $X$ with a series of codes of length $n$, occurs with a probability of $\frac{1}{2^n}$. At the same time, as we mentioned before, this series contains $n$ bits of information. So, can we generalize to a mathematical function which can transfer the probability $p$ to the number of bits? Shannon gave the answer by defining *self-information*
+다음 사고 실험을 고려해 보십시오. 저희에게 카드 한 벌이 있는 친구가 있습니다. 그들은 덱을 섞고, 일부 카드를 뒤집고, 저희에게 카드에 대한 진술을 할 것입니다. 저희는 각 진술의 정보 내용을 평가하려고 노력할 것입니다.
+
+먼저, 그들은 카드를 뒤집고 저희에게 "카드가 보입니다."라고 말합니다. 이는 저희에게 전혀 정보를 제공하지 않습니다. 저희는 이미 이것이 사실이라고 확신했으므로, 정보가 0이어야 하기를 바랍니다.
+
+다음으로, 그들은 카드를 뒤집고 "하트가 보입니다."라고 말합니다. 이는 저희에게 약간의 정보를 제공하지만, 실제로는 가능한 $4$개의 다른 모양만 있고, 각각 동등하게 가능성이 있으므로, 저희는 이 결과에 놀라지 않습니다. 정보의 척도가 무엇이든, 이 사건은 낮은 정보 내용을 가져야 한다고 바랍니다.
+
+다음으로, 그들은 카드를 뒤집고 "이것은 스페이드 $3$입니다."라고 말합니다. 이것은 더 많은 정보입니다. 사실 $52$개의 동등하게 가능성 있는 결과가 있었고, 저희 친구는 그것이 어떤 것인지 알려주었습니다. 이것은 중간 정도의 정보여야 합니다.
+
+이를 논리적인 극단으로 가져갑시다. 마지막으로 그들이 덱의 모든 카드를 뒤집고 섞인 덱의 전체 시퀀스를 읽는다고 가정해 보십시오. 덱에 대한 $52!$개의 다른 순서가 있고, 다시 모두 동등하게 가능성이 있으므로, 저희는 그것이 어떤 것인지 알기 위해 많은 정보가 필요합니다.
+
+저희가 발전시키는 어떤 정보의 개념도 이 직관에 부합해야 합니다. 사실, 다음 절들에서 저희는 이러한 사건이 각각 $0\textrm{ 비트}$, $2\textrm{ 비트}$, $~5.7\textrm{ 비트}$, 그리고 $~225.6\textrm{ 비트}$의 정보를 가지고 있음을 계산하는 방법을 배울 것입니다.
+
+만약 이러한 사고 실험을 통해 읽으면, 저희는 자연스러운 아이디어를 봅니다. 시작점으로, 지식에 신경 쓰는 대신, 저희는 정보가 사건의 놀라움 정도 또는 추상적 가능성을 나타낸다는 아이디어에서 출발할 수 있습니다. 예를 들어, 만약 비정상적인 사건을 설명하고 싶다면, 저희는 많은 정보가 필요합니다. 일반적인 사건의 경우, 많은 정보가 필요하지 않을 수 있습니다.
+
+1948년, 클로드 E. 섀넌은 정보 이론을 수립하는 *통신의 수학적 이론* :cite:`Shannon.1948`을 발표했습니다. 그의 논문에서, 섀넌은 처음으로 정보 엔트로피 개념을 도입했습니다. 저희는 여기서 여정을 시작할 것입니다.
+
+
+### 자기 정보
+
+정보가 사건의 추상적 가능성을 구체화하므로, 저희는 가능성을 비트 수로 어떻게 매핑할까요? 섀넌은 정보의 단위로 *비트*라는 용어를 도입했는데, 이는 원래 존 튜키에 의해 만들어졌습니다. 그래서 "비트"란 무엇이며 왜 저희는 정보를 측정하기 위해 그것을 사용합니까? 역사적으로, 골동품 송신기는 두 가지 유형의 코드만 보내거나 받을 수 있었습니다. $0$과 $1$. 사실, 이진 인코딩은 여전히 모든 현대 디지털 컴퓨터에서 일반적으로 사용됩니다. 이런 식으로, 어떤 정보든 일련의 $0$과 $1$로 인코딩됩니다. 그리고 따라서, 길이 $n$의 이진 숫자의 시리즈는 $n$ 비트의 정보를 포함합니다.
+
+이제, 어떤 코드 시리즈에 대해서도, 각 $0$ 또는 $1$이 $\frac{1}{2}$의 확률로 발생한다고 가정해 보십시오. 따라서, 길이 $n$의 코드 시리즈를 가진 사건 $X$는 $\frac{1}{2^n}$의 확률로 발생합니다. 동시에, 이전에 언급한 것처럼, 이 시리즈는 $n$ 비트의 정보를 포함합니다. 그래서, 저희는 확률 $p$를 비트 수로 전송할 수 있는 수학 함수로 일반화할 수 있을까요? 섀넌은 *자기 정보*를 정의함으로써 답을 주었습니다.
 
 $$I(X) = - \log_2 (p),$$
 
-as the *bits* of information we have received for this event $X$. Note that we will always use base-2 logarithms in this section. For the sake of simplicity, the rest of this section will omit the subscript 2 in the logarithm notation, i.e., $\log(.)$ always refers to $\log_2(.)$. For example, the code "0010" has a self-information
+이는 이 사건 $X$에 대해 저희가 받은 정보의 *비트*입니다. 이 절에서 저희는 항상 밑 2 로그를 사용할 것이라는 점에 유의하십시오. 단순함을 위해, 이 절의 나머지는 로그 표기법에서 첨자 2를 생략할 것입니다. 즉, $\log(.)$는 항상 $\log_2(.)$를 가리킵니다. 예를 들어, 코드 "0010"은 다음과 같은 자기 정보를 가집니다.
 
 $$I(\textrm{"0010"}) = - \log (p(\textrm{"0010"})) = - \log \left( \frac{1}{2^4} \right) = 4 \textrm{ bits}.$$
 
-We can calculate self information as shown below. Before that, let's first import all the necessary packages in this section.
+저희는 아래와 같이 자기 정보를 계산할 수 있습니다. 그 전에, 먼저 이 절에서 필요한 모든 패키지를 임포트합시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -86,35 +86,35 @@ def self_information(p):
 self_information(1 / 64)
 ```
 
-## Entropy
+## 엔트로피
 
-As self-information only measures the information of a single discrete event, we need a more generalized measure for any random variable of either discrete or continuous distribution.
+자기 정보는 단일 이산 사건의 정보만 측정하므로, 저희는 이산 또는 연속 분포의 어떤 확률 변수에 대해서도 더 일반화된 척도가 필요합니다.
 
 
-### Motivating Entropy
+### 엔트로피의 동기 부여
 
-Let's try to get specific about what we want.  This will be an informal statement of what are known as the *axioms of Shannon entropy*.  It will turn out that the following collection of common-sense statements force us to a unique definition of information.  A formal version of these axioms, along with several others may be found in :citet:`Csiszar.2008`.
+저희가 원하는 것에 대해 구체적으로 알아보려고 합시다. 이것은 *섀넌 엔트로피의 공리*로 알려진 것의 비공식적 진술이 될 것입니다. 다음 상식적 진술의 모음이 저희를 정보의 고유한 정의로 강요한다는 것이 밝혀질 것입니다. 이러한 공리의 형식적 버전과 몇몇 다른 것들은 :citet:`Csiszar.2008`에서 찾을 수 있습니다.
 
-1.  The information we gain by observing a random variable does not depend on what we call the elements, or the presence of additional elements which have probability zero.
-2.  The information we gain by observing two random variables is no more than the sum of the information we gain by observing them separately.  If they are independent, then it is exactly the sum.
-3.  The information gained when observing (nearly) certain events is (nearly) zero.
+1.  확률 변수를 관찰함으로써 얻는 정보는 저희가 원소를 무엇이라고 부르는지, 또는 확률 0을 가진 추가 원소의 존재에 의존하지 않습니다.
+2.  두 확률 변수를 관찰함으로써 얻는 정보는 그것들을 별도로 관찰함으로써 얻는 정보의 합보다 더 많지 않습니다. 만약 그것들이 독립이라면, 정확히 합입니다.
+3.  (거의) 확실한 사건을 관찰할 때 얻은 정보는 (거의) 0입니다.
 
-While proving this fact is beyond the scope of our text, it is important to know that this uniquely determines the form that entropy must take.  The only ambiguity that these allow is in the choice of fundamental units, which is most often normalized by making the choice we saw before that the information provided by a single fair coin flip is one bit.
+이 사실을 증명하는 것은 저희 텍스트의 범위를 벗어나지만, 이것이 엔트로피가 취해야 하는 형태를 고유하게 결정한다는 것을 아는 것이 중요합니다. 이것들이 허용하는 유일한 모호함은 기본 단위의 선택에 있으며, 이는 단일 공정 동전 던지기에 의해 제공되는 정보가 1비트라는 저희가 이전에 본 선택을 함으로써 가장 자주 정규화됩니다.
 
-### Definition
+### 정의
 
-For any random variable $X$ that follows a probability distribution $P$ with a probability density function (p.d.f.) or a probability mass function (p.m.f.) $p(x)$, we measure the expected amount of information through *entropy* (or *Shannon entropy*)
+확률 밀도 함수(p.d.f.) 또는 확률 질량 함수(p.m.f.) $p(x)$를 가진 확률 분포 $P$를 따르는 어떤 확률 변수 $X$에 대해서도, 저희는 *엔트로피*(또는 *섀넌 엔트로피*)를 통해 기대 정보량을 측정합니다.
 
 $$H(X) = - E_{x \sim P} [\log p(x)].$$
 :eqlabel:`eq_ent_def`
 
-To be specific, if $X$ is discrete, $$H(X) = - \sum_i p_i \log p_i \textrm{, where } p_i = P(X_i).$$
+구체적으로, 만약 $X$가 이산이라면, $$H(X) = - \sum_i p_i \log p_i \textrm{, where } p_i = P(X_i).$$
 
-Otherwise, if $X$ is continuous, we also refer entropy as *differential entropy*
+그렇지 않으면, 만약 $X$가 연속이라면, 저희는 엔트로피를 *미분 엔트로피*라고도 부릅니다.
 
 $$H(X) = - \int_x p(x) \log p(x) \; dx.$$
 
-We can define entropy as below.
+저희는 아래와 같이 엔트로피를 정의할 수 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -146,60 +146,60 @@ def entropy(p):
 entropy(tf.constant([0.1, 0.5, 0.1, 0.3]))
 ```
 
-### Interpretations
+### 해석
 
-You may be curious: in the entropy definition :eqref:`eq_ent_def`, why do we use an expectation of a negative logarithm? Here are some intuitions.
+여러분은 궁금할 수 있습니다. 엔트로피 정의 :eqref:`eq_ent_def`에서, 왜 저희는 음의 로그의 기댓값을 사용합니까? 여기 몇 가지 직관이 있습니다.
 
-First, why do we use a *logarithm* function $\log$? Suppose that $p(x) = f_1(x) f_2(x) \ldots, f_n(x)$, where each component function $f_i(x)$ is independent from each other. This means that each $f_i(x)$ contributes independently to the total information obtained from $p(x)$. As discussed above, we want the entropy formula to be additive over independent random variables. Luckily, $\log$ can naturally turn a product of probability distributions to a summation of the individual terms.
+먼저, 왜 저희는 *로그* 함수 $\log$를 사용합니까? $p(x) = f_1(x) f_2(x) \ldots, f_n(x)$이라고 가정합니다. 여기서 각 성분 함수 $f_i(x)$는 서로 독립입니다. 이는 각 $f_i(x)$가 $p(x)$에서 얻은 총 정보에 독립적으로 기여한다는 것을 의미합니다. 위에서 논의된 것처럼, 저희는 엔트로피 공식이 독립 확률 변수에 대해 가산적이기를 원합니다. 다행히도, $\log$는 확률 분포의 곱을 자연스럽게 개별 항의 합산으로 바꿀 수 있습니다.
 
-Next, why do we use a *negative* $\log$? Intuitively, more frequent events should contain less information than less common events, since we often gain more information from an unusual case than from an ordinary one. However, $\log$ is monotonically increasing with the probabilities, and indeed negative for all values in $[0, 1]$.  We need to construct a monotonically decreasing relationship between the probability of events and their entropy, which will ideally be always positive (for nothing we observe should force us to forget what we have known). Hence, we add a negative sign in front of $\log$ function.
+다음으로, 왜 저희는 *음의* $\log$를 사용합니까? 직관적으로, 더 자주 발생하는 사건은 덜 일반적인 사건보다 더 적은 정보를 포함해야 합니다. 왜냐하면 저희는 종종 비정상적인 경우에서 일반적인 경우보다 더 많은 정보를 얻기 때문입니다. 그러나, $\log$는 확률과 함께 단조 증가하며, 사실 $[0, 1]$의 모든 값에 대해 음수입니다. 저희는 사건의 확률과 그것들의 엔트로피 사이에 단조 감소 관계를 구성해야 하는데, 이는 이상적으로는 항상 양수여야 합니다(저희가 관찰하는 어떤 것도 저희가 알고 있던 것을 잊게 강요해서는 안 되기 때문입니다). 따라서, 저희는 $\log$ 함수 앞에 음의 부호를 추가합니다.
 
-Last, where does the *expectation* function come from? Consider a random variable $X$. We can interpret the self-information ($-\log(p)$) as the amount of *surprise* we have at seeing a particular outcome.  Indeed, as the probability approaches zero, the surprise becomes infinite.  Similarly, we can interpret the entropy as the average amount of surprise from observing $X$. For example, imagine that a slot machine system emits statistical independently symbols ${s_1, \ldots, s_k}$ with probabilities ${p_1, \ldots, p_k}$ respectively. Then the entropy of this system equals to the average self-information from observing each output, i.e.,
+마지막으로, *기댓값* 함수는 어디에서 옵니까? 확률 변수 $X$를 고려해 보십시오. 저희는 자기 정보($-\log(p)$)를 특정 결과를 볼 때 느끼는 *놀라움*의 양으로 해석할 수 있습니다. 사실, 확률이 0에 접근함에 따라, 놀라움은 무한대가 됩니다. 유사하게, 저희는 엔트로피를 $X$를 관찰함으로부터의 평균 놀라움 양으로 해석할 수 있습니다. 예를 들어, 슬롯 머신 시스템이 각각 확률 ${p_1, \ldots, p_k}$로 통계적으로 독립적인 기호 ${s_1, \ldots, s_k}$를 방출한다고 상상해 보십시오. 그러면 이 시스템의 엔트로피는 각 출력을 관찰하는 것으로부터의 평균 자기 정보와 같습니다. 즉,
 
 $$H(S) = \sum_i {p_i \cdot I(s_i)} = - \sum_i {p_i \cdot \log p_i}.$$
 
 
 
-### Properties of Entropy
+### 엔트로피의 속성
 
-By the above examples and interpretations, we can derive the following properties of entropy :eqref:`eq_ent_def`. Here, we refer to $X$ as an event and $P$ as the probability distribution of $X$.
+위의 예제와 해석에 의해, 저희는 엔트로피 :eqref:`eq_ent_def`의 다음 속성을 유도할 수 있습니다. 여기서, 저희는 $X$를 사건으로, $P$를 $X$의 확률 분포로 가리킵니다.
 
-* $H(X) \geq 0$ for all discrete $X$ (entropy can be negative for continuous $X$).
+* 모든 이산 $X$에 대해 $H(X) \geq 0$(연속 $X$에 대해서는 엔트로피가 음수일 수 있습니다).
 
-* If $X \sim P$ with a p.d.f. or a p.m.f. $p(x)$, and we try to estimate $P$ by a new probability distribution $Q$ with a p.d.f. or a p.m.f. $q(x)$, then $$H(X) = - E_{x \sim P} [\log p(x)] \leq  - E_{x \sim P} [\log q(x)], \textrm{ with equality if and only if } P = Q.$$  Alternatively, $H(X)$ gives a lower bound of the average number of bits needed to encode symbols drawn from $P$.
+* 만약 $X \sim P$가 p.d.f. 또는 p.m.f. $p(x)$를 가지고, 저희가 p.d.f. 또는 p.m.f. $q(x)$를 가진 새로운 확률 분포 $Q$로 $P$를 추정하려고 시도한다면, $$H(X) = - E_{x \sim P} [\log p(x)] \leq  - E_{x \sim P} [\log q(x)], \textrm{ with equality if and only if } P = Q.$$  대안적으로, $H(X)$는 $P$에서 추출된 기호를 인코딩하는 데 필요한 평균 비트 수의 하한을 제공합니다.
 
-* If $X \sim P$, then $x$ conveys the maximum amount of information if it spreads evenly among all possible outcomes. Specifically, if the probability distribution $P$ is discrete with $k$-class $\{p_1, \ldots, p_k \}$, then $$H(X) \leq \log(k), \textrm{ with equality if and only if } p_i = \frac{1}{k}, \forall i.$$ If $P$ is a continuous random variable, then the story becomes much more complicated.  However, if we additionally impose that $P$ is supported on a finite interval (with all values between $0$ and $1$), then $P$ has the highest entropy if it is the uniform distribution on that interval.
-
-
-## Mutual Information
-
-Previously we defined entropy of a single random variable $X$, how about the entropy of a pair random variables $(X, Y)$?  We can think of these techniques as trying to answer the following type of question, "What information is contained in $X$ and $Y$ together compared to each separately?  Is there redundant information, or is it all unique?"
-
-For the following discussion, we always use $(X, Y)$ as a pair of random variables that follows a joint probability distribution $P$ with a p.d.f. or a p.m.f. $p_{X, Y}(x, y)$, while $X$ and $Y$ follow probability distribution $p_X(x)$ and $p_Y(y)$, respectively.
+* 만약 $X \sim P$이면, $x$는 모든 가능한 결과 중에서 균등하게 퍼져 있다면 최대량의 정보를 전달합니다. 구체적으로, 만약 확률 분포 $P$가 $k$ 클래스 $\{p_1, \ldots, p_k \}$로 이산이라면, $$H(X) \leq \log(k), \textrm{ with equality if and only if } p_i = \frac{1}{k}, \forall i.$$ 만약 $P$가 연속 확률 변수라면, 이야기는 훨씬 더 복잡해집니다. 그러나, 만약 $P$가 유한 구간(모든 값이 $0$과 $1$ 사이)에서 지원된다고 추가로 부과하면, $P$는 그 구간에서 균등 분포인 경우에 가장 높은 엔트로피를 가집니다.
 
 
-### Joint Entropy
+## 상호 정보
 
-Similar to entropy of a single random variable :eqref:`eq_ent_def`, we define the *joint entropy* $H(X, Y)$ of a pair random variables $(X, Y)$ as
+이전에 저희는 단일 확률 변수 $X$의 엔트로피를 정의했는데, 한 쌍의 확률 변수 $(X, Y)$의 엔트로피는 어떨까요? 저희는 이러한 기법을 다음과 같은 유형의 질문에 답하려고 시도하는 것으로 생각할 수 있습니다. "$X$와 $Y$에 함께 포함된 정보는 각각 별도로 포함된 정보와 비교하여 무엇인가? 중복된 정보가 있는가, 아니면 모두 고유한가?"
+
+다음 논의를 위해, 저희는 항상 p.d.f. 또는 p.m.f. $p_{X, Y}(x, y)$를 가진 결합 확률 분포 $P$를 따르는 한 쌍의 확률 변수로 $(X, Y)$를 사용할 것이며, $X$와 $Y$는 각각 확률 분포 $p_X(x)$와 $p_Y(y)$를 따릅니다.
+
+
+### 결합 엔트로피
+
+단일 확률 변수의 엔트로피 :eqref:`eq_ent_def`와 유사하게, 저희는 한 쌍의 확률 변수 $(X, Y)$의 *결합 엔트로피* $H(X, Y)$를 다음과 같이 정의합니다.
 
 $$H(X, Y) = -E_{(x, y) \sim P} [\log p_{X, Y}(x, y)]. $$
 :eqlabel:`eq_joint_ent_def`
 
-Precisely, on the one hand, if $(X, Y)$ is a pair of discrete random variables, then
+정확히, 한편으로, 만약 $(X, Y)$가 한 쌍의 이산 확률 변수라면
 
 $$H(X, Y) = - \sum_{x} \sum_{y} p_{X, Y}(x, y) \log p_{X, Y}(x, y).$$
 
-On the other hand, if $(X, Y)$ is a pair of continuous random variables, then we define the *differential joint entropy* as
+다른 한편으로, 만약 $(X, Y)$가 한 쌍의 연속 확률 변수라면, 저희는 *미분 결합 엔트로피*를 다음과 같이 정의합니다.
 
 $$H(X, Y) = - \int_{x, y} p_{X, Y}(x, y) \ \log p_{X, Y}(x, y) \;dx \;dy.$$
 
-We can think of :eqref:`eq_joint_ent_def` as telling us the total randomness in the pair of random variables.  As a pair of extremes, if $X = Y$ are two identical random variables, then the information in the pair is exactly the information in one and we have $H(X, Y) = H(X) = H(Y)$.  On the other extreme, if $X$ and $Y$ are independent then $H(X, Y) = H(X) + H(Y)$.  Indeed we will always have that the information contained in a pair of random variables is no smaller than the entropy of either random variable and no more than the sum of both.
+저희는 :eqref:`eq_joint_ent_def`을 한 쌍의 확률 변수에서의 총 무작위성을 알려주는 것으로 생각할 수 있습니다. 한 쌍의 극단으로, 만약 $X = Y$가 두 동일한 확률 변수라면, 쌍의 정보는 정확히 하나의 정보이며 $H(X, Y) = H(X) = H(Y)$를 가집니다. 다른 극단에서는, 만약 $X$와 $Y$가 독립이라면 $H(X, Y) = H(X) + H(Y)$. 사실 저희는 항상 한 쌍의 확률 변수에 포함된 정보가 어느 확률 변수의 엔트로피보다 작지 않고 둘의 합보다 많지 않을 것임을 가질 것입니다.
 
 $$
 H(X), H(Y) \le H(X, Y) \le H(X) + H(Y).
 $$
 
-Let's implement joint entropy from scratch.
+결합 엔트로피를 처음부터 구현해 봅시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -234,34 +234,34 @@ def joint_entropy(p_xy):
 joint_entropy(tf.constant([[0.1, 0.5], [0.1, 0.3]]))
 ```
 
-Notice that this is the same *code* as before, but now we interpret it differently as working on the joint distribution of the two random variables.
+이것은 이전과 같은 *코드*이지만, 이제 저희는 두 확률 변수의 결합 분포에서 작동하는 것으로 다르게 해석합니다.
 
 
-### Conditional Entropy
+### 조건부 엔트로피
 
-The joint entropy defined above the amount of information contained in a pair of random variables.  This is useful, but oftentimes it is not what we care about.  Consider the setting of machine learning.  Let's take $X$ to be the random variable (or vector of random variables) that describes the pixel values of an image, and $Y$ to be the random variable which is the class label.  $X$ should contain substantial information---a natural image is a complex thing.  However, the information contained in $Y$ once the image has been show should be low.  Indeed, the image of a digit should already contain the information about what digit it is unless the digit is illegible.  Thus, to continue to extend our vocabulary of information theory, we need to be able to reason about the information content in a random variable conditional on another.
+위에서 정의된 결합 엔트로피는 한 쌍의 확률 변수에 포함된 정보량입니다. 이는 유용하지만, 종종 저희가 신경 쓰는 것이 아닙니다. 머신러닝의 설정을 고려해 보십시오. $X$를 이미지의 픽셀 값을 설명하는 확률 변수(또는 확률 변수의 벡터)로, $Y$를 클래스 레이블인 확률 변수로 취해 봅시다. $X$는 상당한 정보를 포함해야 합니다(자연 이미지는 복잡한 것입니다). 그러나, 이미지가 표시된 후 $Y$에 포함된 정보는 낮아야 합니다. 사실, 숫자의 이미지는 숫자가 읽기 어렵지 않는 한 그것이 어떤 숫자인지에 대한 정보를 이미 포함해야 합니다. 따라서, 정보 이론의 저희 어휘를 계속 확장하기 위해, 저희는 다른 것에 조건부인 확률 변수의 정보 내용에 대해 추론할 수 있어야 합니다.
 
-In the probability theory, we saw the definition of the *conditional probability* to measure the relationship between variables. We now want to analogously define the *conditional entropy* $H(Y \mid X)$.  We can write this as
+확률 이론에서, 저희는 변수 사이의 관계를 측정하기 위한 *조건부 확률*의 정의를 보았습니다. 저희는 이제 유사하게 *조건부 엔트로피* $H(Y \mid X)$를 정의하고 싶습니다. 저희는 이를 다음과 같이 쓸 수 있습니다.
 
 $$ H(Y \mid X) = - E_{(x, y) \sim P} [\log p(y \mid x)],$$
 :eqlabel:`eq_cond_ent_def`
 
-where $p(y \mid x) = \frac{p_{X, Y}(x, y)}{p_X(x)}$ is the conditional probability. Specifically, if $(X, Y)$ is a pair of discrete random variables, then
+여기서 $p(y \mid x) = \frac{p_{X, Y}(x, y)}{p_X(x)}$는 조건부 확률입니다. 구체적으로, 만약 $(X, Y)$가 한 쌍의 이산 확률 변수라면
 
 $$H(Y \mid X) = - \sum_{x} \sum_{y} p(x, y) \log p(y \mid x).$$
 
-If $(X, Y)$ is a pair of continuous random variables, then the *differential conditional entropy* is similarly defined as
+만약 $(X, Y)$가 한 쌍의 연속 확률 변수라면, *미분 조건부 엔트로피*는 유사하게 정의됩니다.
 
 $$H(Y \mid X) = - \int_x \int_y p(x, y) \ \log p(y \mid x) \;dx \;dy.$$
 
 
-It is now natural to ask, how does the *conditional entropy* $H(Y \mid X)$ relate to the entropy $H(X)$ and the joint entropy $H(X, Y)$?  Using the definitions above, we can express this cleanly:
+이제 자연스럽게 묻자면, *조건부 엔트로피* $H(Y \mid X)$가 엔트로피 $H(X)$ 및 결합 엔트로피 $H(X, Y)$와 어떻게 관련되어 있습니까? 위의 정의를 사용하여, 저희는 이를 깔끔하게 표현할 수 있습니다.
 
 $$H(Y \mid X) = H(X, Y) - H(X).$$
 
-This has an intuitive interpretation: the information in $Y$ given $X$ ($H(Y \mid X)$) is the same as the information in both $X$ and $Y$ together ($H(X, Y)$) minus the information already contained in $X$.  This gives us the information in $Y$ which is not also represented in $X$.
+이는 직관적인 해석을 가집니다. $X$가 주어진 $Y$의 정보 ($H(Y \mid X)$)는 $X$와 $Y$ 모두에 함께 있는 정보 ($H(X, Y)$)에서 $X$에 이미 포함된 정보를 뺀 것과 같습니다. 이는 저희에게 $X$에 또한 나타내지지 않은 $Y$의 정보를 제공합니다.
 
-Now, let's implement conditional entropy :eqref:`eq_cond_ent_def` from scratch.
+이제, 조건부 엔트로피 :eqref:`eq_cond_ent_def`를 처음부터 구현해 봅시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -301,35 +301,35 @@ conditional_entropy(tf.constant([[0.1, 0.5], [0.2, 0.3]]),
                     tf.constant([0.2, 0.8]))
 ```
 
-### Mutual Information
+### 상호 정보
 
-Given the previous setting of random variables $(X, Y)$, you may wonder: "Now that we know how much information is contained in $Y$ but not in $X$, can we similarly ask how much information is shared between $X$ and $Y$?" The answer will be the *mutual information* of $(X, Y)$, which we will write as $I(X, Y)$.
+확률 변수 $(X, Y)$의 이전 설정이 주어졌을 때, 여러분은 궁금할 수 있습니다. "이제 $X$에는 없지만 $Y$에 얼마나 많은 정보가 포함되어 있는지 알았으므로, 저희는 유사하게 $X$와 $Y$ 사이에 얼마나 많은 정보가 공유되는지 물을 수 있습니까?" 답은 $(X, Y)$의 *상호 정보*가 될 것이며, 저희는 이를 $I(X, Y)$로 쓸 것입니다.
 
-Rather than diving straight into the formal definition, let's practice our intuition by first trying to derive an expression for the mutual information entirely based on terms we have constructed before.  We wish to find the information shared between two random variables.  One way we could try to do this is to start with all the information contained in both $X$ and $Y$ together, and then we take off the parts that are not shared.  The information contained in both $X$ and $Y$ together is written as $H(X, Y)$.  We want to subtract from this the information contained in $X$ but not in $Y$, and the information contained in $Y$ but not in $X$.  As we saw in the previous section, this is given by $H(X \mid Y)$ and $H(Y \mid X)$ respectively.  Thus, we have that the mutual information should be
+형식적 정의로 곧장 다이빙하기보다, 저희가 이전에 구성한 항을 전적으로 기반으로 한 상호 정보에 대한 식을 먼저 유도하려고 시도함으로써 직관을 연습해 봅시다. 저희는 두 확률 변수 사이에 공유된 정보를 찾고 싶습니다. 저희가 이를 시도할 수 있는 한 가지 방법은 $X$와 $Y$ 모두에 함께 포함된 모든 정보로 시작한 다음, 공유되지 않는 부분을 제거하는 것입니다. $X$와 $Y$ 모두에 함께 포함된 정보는 $H(X, Y)$로 작성됩니다. 저희는 이로부터 $X$에는 있지만 $Y$에는 없는 정보와, $Y$에는 있지만 $X$에는 없는 정보를 빼고 싶습니다. 이전 절에서 본 것처럼, 이는 각각 $H(X \mid Y)$와 $H(Y \mid X)$로 주어집니다. 따라서, 저희는 상호 정보가 다음과 같아야 한다는 것을 가집니다.
 
 $$
 I(X, Y) = H(X, Y) - H(Y \mid X) - H(X \mid Y).
 $$
 
-Indeed, this is a valid definition for the mutual information.  If we expand out the definitions of these terms and combine them, a little algebra shows that this is the same as
+사실, 이것은 상호 정보에 대한 유효한 정의입니다. 만약 이러한 항의 정의를 확장하고 결합하면, 약간의 대수가 이것이 다음과 같음을 보여줍니다.
 
 $$I(X, Y) = E_{x} E_{y} \left\{ p_{X, Y}(x, y) \log\frac{p_{X, Y}(x, y)}{p_X(x) p_Y(y)} \right\}. $$
 :eqlabel:`eq_mut_ent_def`
 
 
-We can summarize all of these relationships in image :numref:`fig_mutual_information`.  It is an excellent test of intuition to see why the following statements are all also equivalent to $I(X, Y)$.
+저희는 이러한 모든 관계를 이미지 :numref:`fig_mutual_information`에 요약할 수 있습니다. 다음 진술이 모두 $I(X, Y)$와도 동등한 이유를 보는 것은 직관의 훌륭한 테스트입니다.
 
 * $H(X) - H(X \mid Y)$
 * $H(Y) - H(Y \mid X)$
 * $H(X) + H(Y) - H(X, Y)$
 
-![Mutual information's relationship with joint entropy and conditional entropy.](../img/mutual-information.svg)
+![결합 엔트로피와 조건부 엔트로피와의 상호 정보의 관계.](../img/mutual-information.svg)
 :label:`fig_mutual_information`
 
 
-In many ways we can think of the mutual information :eqref:`eq_mut_ent_def` as principled extension of correlation coefficient we saw in :numref:`sec_random_variables`.  This allows us to ask not only for linear relationships between variables, but for the maximum information shared between the two random variables of any kind.
+여러 면에서 저희는 상호 정보 :eqref:`eq_mut_ent_def`를 :numref:`sec_random_variables`에서 본 상관 계수의 원칙적인 확장으로 생각할 수 있습니다. 이는 저희가 변수 사이의 선형 관계뿐만 아니라, 어떤 종류의 두 확률 변수 사이에 공유된 최대 정보를 묻는 것을 허용합니다.
 
-Now, let's implement mutual information from scratch.
+이제, 상호 정보를 처음부터 구현해 봅시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -370,48 +370,48 @@ mutual_information(tf.constant([[0.1, 0.5], [0.1, 0.3]]),
                    tf.constant([0.2, 0.8]), tf.constant([[0.75, 0.25]]))
 ```
 
-### Properties of Mutual Information
+### 상호 정보의 속성
 
-Rather than memorizing the definition of mutual information :eqref:`eq_mut_ent_def`, you only need to keep in mind its notable properties:
+상호 정보 :eqref:`eq_mut_ent_def`의 정의를 암기하기보다, 저희는 그 주목할 만한 속성만 마음에 새기면 됩니다.
 
-* Mutual information is symmetric, i.e., $I(X, Y) = I(Y, X)$.
-* Mutual information is non-negative, i.e., $I(X, Y) \geq 0$.
-* $I(X, Y) = 0$ if and only if $X$ and $Y$ are independent. For example, if $X$ and $Y$ are independent, then knowing $Y$ does not give any information about $X$ and vice versa, so their mutual information is zero.
-* Alternatively, if $X$ is an invertible function of $Y$, then $Y$ and $X$ share all information and $$I(X, Y) = H(Y) = H(X).$$
+* 상호 정보는 대칭입니다. 즉, $I(X, Y) = I(Y, X)$.
+* 상호 정보는 음이 아닙니다. 즉, $I(X, Y) \geq 0$.
+* $X$와 $Y$가 독립인 경우에 그리고 오직 그 경우에만 $I(X, Y) = 0$. 예를 들어, 만약 $X$와 $Y$가 독립이라면, $Y$를 아는 것은 $X$에 대한 어떤 정보도 주지 않으며, 그 반대도 마찬가지이므로, 그들의 상호 정보는 0입니다.
+* 대안적으로, 만약 $X$가 $Y$의 가역 함수라면, $Y$와 $X$는 모든 정보를 공유하고 $$I(X, Y) = H(Y) = H(X).$$
 
-### Pointwise Mutual Information
+### 점별 상호 정보
 
-When we worked with entropy at the beginning of this chapter, we were able to provide an interpretation of $-\log(p_X(x))$ as how *surprised* we were with the particular outcome.  We may give a similar interpretation to the logarithmic term in the mutual information, which is often referred to as the *pointwise mutual information*:
+이 장의 시작에서 저희가 엔트로피로 작업할 때, 저희는 $-\log(p_X(x))$를 특정 결과에 저희가 얼마나 *놀랐는지*로 해석을 제공할 수 있었습니다. 저희는 상호 정보의 로그 항에 유사한 해석을 줄 수 있으며, 이는 종종 *점별 상호 정보*라고 합니다.
 
 $$\textrm{pmi}(x, y) = \log\frac{p_{X, Y}(x, y)}{p_X(x) p_Y(y)}.$$
 :eqlabel:`eq_pmi_def`
 
-We can think of :eqref:`eq_pmi_def` as measuring how much more or less likely the specific combination of outcomes $x$ and $y$ are compared to what we would expect for independent random outcomes.  If it is large and positive, then these two specific outcomes occur much more frequently than they would compared to random chance (*note*: the denominator is $p_X(x) p_Y(y)$ which is the probability of the two outcomes were independent), whereas if it is large and negative it represents the two outcomes happening far less than we would expect by random chance.
+저희는 :eqref:`eq_pmi_def`를 결과 $x$와 $y$의 특정 조합이 독립적인 무작위 결과에 대해 저희가 기대할 것과 비교하여 얼마나 더 또는 덜 가능성이 있는지를 측정하는 것으로 생각할 수 있습니다. 만약 그것이 크고 양수라면, 이 두 특정 결과는 무작위 우연과 비교하여(*참고*: 분모는 두 결과가 독립이었을 확률인 $p_X(x) p_Y(y)$입니다) 훨씬 더 자주 발생하는 반면, 만약 그것이 크고 음수라면 두 결과가 무작위 우연에 의해 저희가 기대할 것보다 훨씬 덜 발생하는 것을 나타냅니다.
 
-This allows us to interpret the mutual information :eqref:`eq_mut_ent_def` as the average amount that we were surprised to see two outcomes occurring together compared to what we would expect if they were independent.
+이는 저희가 상호 정보 :eqref:`eq_mut_ent_def`를 그것들이 독립이었다면 저희가 기대할 것과 비교하여 두 결과가 함께 발생하는 것을 보고 놀란 평균량으로 해석할 수 있게 합니다.
 
-### Applications of Mutual Information
+### 상호 정보의 응용
 
-Mutual information may be a little abstract in it pure definition, so how does it related to machine learning? In natural language processing, one of the most difficult problems is the *ambiguity resolution*, or the issue of the meaning of a word being unclear from context. For example, recently a headline in the news reported that "Amazon is on fire". You may wonder whether the company Amazon has a building on fire, or the Amazon rain forest is on fire.
+상호 정보는 그 순수한 정의에서 약간 추상적일 수 있는데, 그것이 머신러닝과 어떻게 관련되어 있습니까? 자연어 처리에서, 가장 어려운 문제 중 하나는 *모호성 해결*, 즉 단어의 의미가 맥락에서 불분명한 문제입니다. 예를 들어, 최근에 뉴스의 한 헤드라인이 "Amazon이 불타고 있다"고 보도했습니다. 여러분은 회사 Amazon이 불에 타는 건물이 있는지, 아니면 Amazon 열대우림이 불타고 있는지 궁금할 수 있습니다.
 
-In this case, mutual information can help us resolve this ambiguity. We first find the group of words that each has a relatively large mutual information with the company Amazon, such as e-commerce, technology, and online. Second, we find another group of words that each has a relatively large mutual information with the Amazon rain forest, such as rain, forest, and tropical. When we need to disambiguate "Amazon", we can compare which group has more occurrence in the context of the word Amazon.  In this case the article would go on to describe the forest, and make the context clear.
-
-
-## Kullback–Leibler Divergence
-
-As what we have discussed in :numref:`sec_linear-algebra`, we can use norms to measure distance between two points in space of any dimensionality.  We would like to be able to do a similar task with probability distributions.  There are many ways to go about this, but information theory provides one of the nicest.  We now explore the *Kullback–Leibler (KL) divergence*, which provides a way to measure if two distributions are close together or not.
+이 경우, 상호 정보는 저희가 이 모호성을 해결하는 데 도움이 될 수 있습니다. 저희는 먼저 회사 Amazon과 상대적으로 큰 상호 정보를 각각 가진 단어 그룹, 예를 들어 전자상거래, 기술, 그리고 온라인을 찾습니다. 둘째, 저희는 Amazon 열대우림과 상대적으로 큰 상호 정보를 각각 가진 다른 단어 그룹, 예를 들어 비, 숲, 그리고 열대를 찾습니다. "Amazon"의 모호성을 해소해야 할 때, 저희는 어느 그룹이 단어 Amazon의 맥락에서 더 많은 발생을 가지는지 비교할 수 있습니다. 이 경우 기사는 숲을 설명하고 맥락을 분명하게 만들 것입니다.
 
 
-### Definition
+## 쿨백-라이블러 발산
 
-Given a random variable $X$ that follows the probability distribution $P$ with a p.d.f. or a p.m.f. $p(x)$, and we estimate $P$ by another probability distribution $Q$ with a p.d.f. or a p.m.f. $q(x)$. Then the *Kullback–Leibler (KL) divergence* (or *relative entropy*) between $P$ and $Q$ is
+:numref:`sec_linear-algebra`에서 논의한 것처럼, 저희는 어떤 차원성의 공간에서도 두 점 사이의 거리를 측정하기 위해 노름을 사용할 수 있습니다. 저희는 확률 분포로 유사한 작업을 할 수 있기를 원합니다. 이를 처리하는 많은 방법이 있지만, 정보 이론은 가장 좋은 방법 중 하나를 제공합니다. 저희는 이제 두 분포가 함께 가까운지 아닌지 측정하는 방법을 제공하는 *쿨백-라이블러 (KL) 발산*을 탐색합니다.
+
+
+### 정의
+
+p.d.f. 또는 p.m.f. $p(x)$를 가진 확률 분포 $P$를 따르는 확률 변수 $X$가 주어졌을 때, 저희는 p.d.f. 또는 p.m.f. $q(x)$를 가진 다른 확률 분포 $Q$로 $P$를 추정합니다. 그러면 $P$와 $Q$ 사이의 *쿨백-라이블러 (KL) 발산*(또는 *상대 엔트로피*)은 다음과 같습니다.
 
 $$D_{\textrm{KL}}(P\|Q) = E_{x \sim P} \left[ \log \frac{p(x)}{q(x)} \right].$$
 :eqlabel:`eq_kl_def`
 
-As with the pointwise mutual information :eqref:`eq_pmi_def`, we can again provide an interpretation of the logarithmic term:  $-\log \frac{q(x)}{p(x)} = -\log(q(x)) - (-\log(p(x)))$ will be large and positive if we see $x$ far more often under $P$ than we would expect for $Q$, and large and negative if we see the outcome far less than expected.  In this way, we can interpret it as our *relative* surprise at observing the outcome compared to how surprised we would be observing it from our reference distribution.
+점별 상호 정보 :eqref:`eq_pmi_def`와 마찬가지로, 저희는 다시 로그 항에 대한 해석을 제공할 수 있습니다. $-\log \frac{q(x)}{p(x)} = -\log(q(x)) - (-\log(p(x)))$는 저희가 $Q$에 대해 기대할 것보다 $P$ 하에서 $x$를 훨씬 더 자주 본다면 크고 양수일 것이며, 결과를 기대한 것보다 훨씬 덜 본다면 크고 음수일 것입니다. 이런 식으로, 저희는 이를 저희의 참조 분포로부터 그것을 관찰할 때 얼마나 놀랄지와 비교하여 결과를 관찰하는 데 있어서의 저희의 *상대* 놀라움으로 해석할 수 있습니다.
 
-Let's implement the KL divergence from Scratch.
+KL 발산을 처음부터 구현해 봅시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -437,26 +437,26 @@ def kl_divergence(p, q):
     return tf.abs(out).numpy()
 ```
 
-### KL Divergence Properties
+### KL 발산 속성
 
-Let's take a look at some properties of the KL divergence :eqref:`eq_kl_def`.
+KL 발산 :eqref:`eq_kl_def`의 몇 가지 속성을 살펴봅시다.
 
-* KL divergence is non-symmetric, i.e., there are $P,Q$ such that $$D_{\textrm{KL}}(P\|Q) \neq D_{\textrm{KL}}(Q\|P).$$
-* KL divergence is non-negative, i.e., $$D_{\textrm{KL}}(P\|Q) \geq 0.$$ Note that the equality holds only when $P = Q$.
-* If there exists an $x$ such that $p(x) > 0$ and $q(x) = 0$, then $D_{\textrm{KL}}(P\|Q) = \infty$.
-* There is a close relationship between KL divergence and mutual information. Besides the relationship shown in :numref:`fig_mutual_information`, $I(X, Y)$ is also numerically equivalent with the following terms:
+* KL 발산은 비대칭입니다. 즉, $$D_{\textrm{KL}}(P\|Q) \neq D_{\textrm{KL}}(Q\|P).$$인 $P,Q$가 있습니다.
+* KL 발산은 음이 아닙니다. 즉, $$D_{\textrm{KL}}(P\|Q) \geq 0.$$ 등식은 $P = Q$일 때만 성립한다는 점에 유의하십시오.
+* 만약 $p(x) > 0$이고 $q(x) = 0$인 $x$가 존재한다면, $D_{\textrm{KL}}(P\|Q) = \infty$.
+* KL 발산과 상호 정보 사이에는 밀접한 관계가 있습니다. :numref:`fig_mutual_information`에 표시된 관계 외에도, $I(X, Y)$는 또한 다음 항들과 수치적으로 동등합니다.
     1. $D_{\textrm{KL}}(P(X, Y)  \ \| \ P(X)P(Y))$;
     1. $E_Y \{ D_{\textrm{KL}}(P(X \mid Y) \ \| \ P(X)) \}$;
     1. $E_X \{ D_{\textrm{KL}}(P(Y \mid X) \ \| \ P(Y)) \}$.
 
-  For the first term, we interpret mutual information as the KL divergence between $P(X, Y)$ and the product of $P(X)$ and $P(Y)$, and thus is a measure of how different the joint distribution is from the distribution if they were independent. For the second term, mutual information tells us the average reduction in uncertainty about $Y$ that results from learning the value of the $X$'s distribution. Similarly to the third term.
+  첫 번째 항의 경우, 저희는 상호 정보를 $P(X, Y)$와 $P(X)$와 $P(Y)$의 곱 사이의 KL 발산으로 해석하며, 따라서 그것들이 독립이었다면 결합 분포가 분포와 얼마나 다른지에 대한 측정값입니다. 두 번째 항의 경우, 상호 정보는 저희에게 $X$의 분포의 값을 학습함으로써 발생하는 $Y$에 대한 불확실성의 평균 감소를 알려줍니다. 세 번째 항과 유사합니다.
 
 
-### Example
+### 예제
 
-Let's go through a toy example to see the non-symmetry explicitly.
+비대칭성을 명시적으로 보기 위해 장난감 예제를 살펴봅시다.
 
-First, let's generate and sort three tensors of length $10,000$: an objective tensor $p$ which follows a normal distribution $N(0, 1)$, and two candidate tensors $q_1$ and $q_2$ which follow normal distributions $N(-1, 1)$ and $N(1, 1)$ respectively.
+먼저, 길이 $10,000$의 세 텐서를 생성하고 정렬합시다. 정규 분포 $N(0, 1)$을 따르는 목적 텐서 $p$, 그리고 각각 정규 분포 $N(-1, 1)$과 $N(1, 1)$을 따르는 두 후보 텐서 $q_1$과 $q_2$.
 
 ```{.python .input}
 #@tab mxnet
@@ -498,7 +498,7 @@ q1 = tf.sort(q1)
 q2 = tf.sort(q2)
 ```
 
-Since $q_1$ and $q_2$ are symmetric with respect to the y-axis (i.e., $x=0$), we expect a similar value of KL divergence between $D_{\textrm{KL}}(p\|q_1)$ and $D_{\textrm{KL}}(p\|q_2)$. As you can see below, there is only a less than 3% off between $D_{\textrm{KL}}(p\|q_1)$ and $D_{\textrm{KL}}(p\|q_2)$.
+$q_1$과 $q_2$가 y축(즉, $x=0$)에 대해 대칭이므로, 저희는 $D_{\textrm{KL}}(p\|q_1)$과 $D_{\textrm{KL}}(p\|q_2)$ 사이의 유사한 KL 발산 값을 기대합니다. 아래에서 볼 수 있듯이, $D_{\textrm{KL}}(p\|q_1)$과 $D_{\textrm{KL}}(p\|q_2)$ 사이에는 3% 미만의 차이만 있습니다.
 
 ```{.python .input}
 #@tab all
@@ -509,7 +509,7 @@ similar_percentage = abs(kl_pq1 - kl_pq2) / ((kl_pq1 + kl_pq2) / 2) * 100
 kl_pq1, kl_pq2, similar_percentage
 ```
 
-In contrast, you may find that $D_{\textrm{KL}}(q_2 \|p)$ and $D_{\textrm{KL}}(p \| q_2)$ are off a lot, with around 40% off as shown below.
+대조적으로, 여러분은 $D_{\textrm{KL}}(q_2 \|p)$와 $D_{\textrm{KL}}(p \| q_2)$가 아래에 보여진 것처럼 약 40% 정도 많이 차이가 난다는 것을 발견할 수 있습니다.
 
 ```{.python .input}
 #@tab all
@@ -519,11 +519,11 @@ differ_percentage = abs(kl_q2p - kl_pq2) / ((kl_q2p + kl_pq2) / 2) * 100
 kl_q2p, differ_percentage
 ```
 
-## Cross-Entropy
+## 교차 엔트로피
 
-If you are curious about applications of information theory in deep learning, here is a quick example. We define the true distribution $P$ with probability distribution $p(x)$, and the estimated distribution $Q$ with probability distribution $q(x)$, and we will use them in the rest of this section.
+만약 딥러닝에서 정보 이론의 응용에 대해 궁금하다면, 여기 빠른 예제가 있습니다. 저희는 확률 분포 $p(x)$를 가진 참 분포 $P$와 확률 분포 $q(x)$를 가진 추정 분포 $Q$를 정의하고, 이 절의 나머지에서 그것들을 사용할 것입니다.
 
-Say we need to solve a binary classification problem based on given $n$ data examples {$x_1, \ldots, x_n$}. Assume that we encode $1$ and $0$ as the positive and negative class label $y_i$ respectively, and our neural network is parametrized by $\theta$. If we aim to find a best $\theta$ so that $\hat{y}_i= p_{\theta}(y_i \mid x_i)$, it is natural to apply the maximum log-likelihood approach as was seen in :numref:`sec_maximum_likelihood`. To be specific, for true labels $y_i$ and predictions $\hat{y}_i= p_{\theta}(y_i \mid x_i)$, the probability to be classified as positive is $\pi_i= p_{\theta}(y_i = 1 \mid x_i)$. Hence, the log-likelihood function would be
+저희가 주어진 $n$개의 데이터 예제 {$x_1, \ldots, x_n$}에 기반하여 이진 분류 문제를 풀어야 한다고 합시다. $1$과 $0$을 각각 양과 음의 클래스 레이블 $y_i$로 인코딩한다고 가정하고, 저희의 신경망이 $\theta$로 매개변수화되어 있다고 가정합니다. 만약 $\hat{y}_i= p_{\theta}(y_i \mid x_i)$가 되도록 가장 좋은 $\theta$를 찾는 것을 목표로 한다면, :numref:`sec_maximum_likelihood`에서 본 것처럼 최대 로그 가능도 접근법을 적용하는 것이 자연스럽습니다. 구체적으로, 참 레이블 $y_i$와 예측 $\hat{y}_i= p_{\theta}(y_i \mid x_i)$에 대해, 양으로 분류될 확률은 $\pi_i= p_{\theta}(y_i = 1 \mid x_i)$입니다. 따라서, 로그 가능도 함수는 다음과 같을 것입니다.
 
 $$
 \begin{aligned}
@@ -533,24 +533,24 @@ l(\theta) &= \log L(\theta) \\
 \end{aligned}
 $$
 
-Maximizing the log-likelihood function $l(\theta)$ is identical to minimizing $- l(\theta)$, and hence we can find the best $\theta$ from here. To generalize the above loss to any distributions, we also called $-l(\theta)$ the *cross-entropy loss* $\textrm{CE}(y, \hat{y})$, where $y$ follows the true distribution $P$ and $\hat{y}$ follows the estimated distribution $Q$.
+로그 가능도 함수 $l(\theta)$를 최대화하는 것은 $- l(\theta)$를 최소화하는 것과 동일하며, 따라서 저희는 여기서 가장 좋은 $\theta$를 찾을 수 있습니다. 위 손실을 어떤 분포로 일반화하기 위해, 저희는 $-l(\theta)$를 *교차 엔트로피 손실* $\textrm{CE}(y, \hat{y})$라고도 불렀는데, 여기서 $y$는 참 분포 $P$를 따르고 $\hat{y}$는 추정 분포 $Q$를 따릅니다.
 
-This was all derived by working from the maximum likelihood point of view.  However, if we look closely we can see that terms like $\log(\pi_i)$ have entered into our computation which is a solid indication that we can understand the expression from an information theoretic point of view.
+이 모든 것은 최대 가능도 관점에서 작업함으로써 유도되었습니다. 그러나, 자세히 살펴보면 $\log(\pi_i)$와 같은 항이 저희의 계산에 들어왔음을 볼 수 있는데, 이는 저희가 정보 이론적 관점에서 식을 이해할 수 있다는 확실한 표시입니다.
 
 
-### Formal Definition
+### 형식적 정의
 
-Like KL divergence, for a random variable $X$, we can also measure the divergence between the estimating distribution $Q$ and the true distribution $P$ via *cross-entropy*,
+KL 발산처럼, 확률 변수 $X$에 대해, 저희는 또한 *교차 엔트로피*를 통해 추정 분포 $Q$와 참 분포 $P$ 사이의 발산을 측정할 수 있습니다.
 
 $$\textrm{CE}(P, Q) = - E_{x \sim P} [\log(q(x))].$$
 :eqlabel:`eq_ce_def`
 
-By using properties of entropy discussed above, we can also interpret it as the summation of the entropy $H(P)$ and the KL divergence between $P$ and $Q$, i.e.,
+위에서 논의된 엔트로피의 속성을 사용함으로써, 저희는 또한 이를 엔트로피 $H(P)$와 $P$와 $Q$ 사이의 KL 발산의 합산으로 해석할 수 있습니다. 즉,
 
 $$\textrm{CE} (P, Q) = H(P) + D_{\textrm{KL}}(P\|Q).$$
 
 
-We can implement the cross-entropy loss as below.
+저희는 아래와 같이 교차 엔트로피 손실을 구현할 수 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -575,7 +575,7 @@ def cross_entropy(y_hat, y):
     return tf.reduce_mean(ce).numpy()
 ```
 
-Now define two tensors for the labels and predictions, and calculate the cross-entropy loss of them.
+이제 레이블과 예측에 대한 두 텐서를 정의하고, 그것들의 교차 엔트로피 손실을 계산합시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -601,44 +601,44 @@ preds = tf.constant([[0.3, 0.6, 0.1], [0.2, 0.3, 0.5]])
 cross_entropy(preds, labels)
 ```
 
-### Properties
+### 속성
 
-As alluded in the beginning of this section, cross-entropy :eqref:`eq_ce_def` can be used to define a loss function in the optimization problem. It turns out that the following are equivalent:
+이 절의 시작에서 암시한 것처럼, 교차 엔트로피 :eqref:`eq_ce_def`는 최적화 문제에서 손실 함수를 정의하는 데 사용될 수 있습니다. 다음이 동등하다는 것이 밝혀집니다.
 
-1. Maximizing predictive probability of $Q$ for distribution $P$, (i.e., $E_{x
+1. 분포 $P$에 대한 $Q$의 예측 확률을 최대화하는 것, (즉, $E_{x
 \sim P} [\log (q(x))]$);
-1. Minimizing cross-entropy $\textrm{CE} (P, Q)$;
-1. Minimizing the KL divergence $D_{\textrm{KL}}(P\|Q)$.
+1. 교차 엔트로피 $\textrm{CE} (P, Q)$를 최소화하는 것;
+1. KL 발산 $D_{\textrm{KL}}(P\|Q)$를 최소화하는 것.
 
-The definition of cross-entropy indirectly proves the equivalent relationship between objective 2 and objective 3, as long as the entropy of true data $H(P)$ is constant.
+교차 엔트로피의 정의는 참 데이터의 엔트로피 $H(P)$가 상수인 한, 목적 2와 목적 3 사이의 동등한 관계를 간접적으로 증명합니다.
 
 
-### Cross-Entropy as An Objective Function of Multi-class Classification
+### 다중 클래스 분류의 목적 함수로서의 교차 엔트로피
 
-If we dive deep into the classification objective function with cross-entropy loss $\textrm{CE}$, we will find minimizing $\textrm{CE}$ is equivalent to maximizing the log-likelihood function $L$.
+만약 교차 엔트로피 손실 $\textrm{CE}$를 가진 분류 목적 함수에 깊이 들어가면, 저희는 $\textrm{CE}$를 최소화하는 것이 로그 가능도 함수 $L$을 최대화하는 것과 동등함을 발견할 것입니다.
 
-To begin with, suppose that we are given a dataset with $n$ examples, and it can be classified into $k$-classes. For each data example $i$, we represent any $k$-class label $\mathbf{y}_i = (y_{i1}, \ldots, y_{ik})$ by *one-hot encoding*. To be specific, if the  example $i$ belongs to class $j$, then we set the $j$-th entry to $1$, and all other components to $0$, i.e.,
+시작하기 위해, $n$개의 예제를 가진 데이터셋이 주어졌고, $k$ 클래스로 분류될 수 있다고 가정해 봅시다. 각 데이터 예제 $i$에 대해, 저희는 어떤 $k$ 클래스 레이블 $\mathbf{y}_i = (y_{i1}, \ldots, y_{ik})$를 *원핫 인코딩*으로 나타냅니다. 구체적으로, 만약 예제 $i$가 클래스 $j$에 속한다면, 저희는 $j$번째 항목을 $1$로, 다른 모든 성분을 $0$으로 설정합니다. 즉,
 
 $$ y_{ij} = \begin{cases}1 & j \in J; \\ 0 &\textrm{otherwise.}\end{cases}$$
 
-For instance, if a multi-class classification problem contains three classes $A$, $B$, and $C$, then the labels $\mathbf{y}_i$ can be encoded in {$A: (1, 0, 0); B: (0, 1, 0); C: (0, 0, 1)$}.
+예를 들어, 만약 다중 클래스 분류 문제가 세 클래스 $A$, $B$, 그리고 $C$를 포함한다면, 레이블 $\mathbf{y}_i$는 {$A: (1, 0, 0); B: (0, 1, 0); C: (0, 0, 1)$}으로 인코딩될 수 있습니다.
 
 
-Assume that our neural network is parametrized by $\theta$. For true label vectors $\mathbf{y}_i$ and predictions $$\hat{\mathbf{y}}_i= p_{\theta}(\mathbf{y}_i \mid \mathbf{x}_i) = \sum_{j=1}^k y_{ij} p_{\theta} (y_{ij}  \mid  \mathbf{x}_i).$$
+저희의 신경망이 $\theta$로 매개변수화되어 있다고 가정합니다. 참 레이블 벡터 $\mathbf{y}_i$와 예측 $$\hat{\mathbf{y}}_i= p_{\theta}(\mathbf{y}_i \mid \mathbf{x}_i) = \sum_{j=1}^k y_{ij} p_{\theta} (y_{ij}  \mid  \mathbf{x}_i).$$에 대해.
 
-Hence, the *cross-entropy loss* would be
+따라서, *교차 엔트로피 손실*은 다음과 같을 것입니다.
 
 $$
 \textrm{CE}(\mathbf{y}, \hat{\mathbf{y}}) = - \sum_{i=1}^n \mathbf{y}_i \log \hat{\mathbf{y}}_i
  = - \sum_{i=1}^n \sum_{j=1}^k y_{ij} \log{p_{\theta} (y_{ij}  \mid  \mathbf{x}_i)}.\\
 $$
 
-On the other side, we can also approach the problem through maximum likelihood estimation. To begin with, let's quickly introduce a $k$-class multinoulli distribution. It is an extension of the Bernoulli distribution from binary class to multi-class. If a random variable $\mathbf{z} = (z_{1}, \ldots, z_{k})$ follows a $k$-class *multinoulli distribution* with probabilities $\mathbf{p} =$ ($p_{1}, \ldots, p_{k}$), i.e., $$p(\mathbf{z}) = p(z_1, \ldots, z_k) = \textrm{Multi} (p_1, \ldots, p_k), \textrm{ where } \sum_{i=1}^k p_i = 1,$$ then the joint probability mass function(p.m.f.) of $\mathbf{z}$ is
+다른 한편으로, 저희는 또한 최대 가능도 추정을 통해 문제에 접근할 수 있습니다. 시작하기 위해, $k$ 클래스 다항분포를 빠르게 소개합시다. 이는 베르누이 분포를 이진 클래스에서 다중 클래스로 확장한 것입니다. 만약 확률 변수 $\mathbf{z} = (z_{1}, \ldots, z_{k})$가 확률 $\mathbf{p} =$ ($p_{1}, \ldots, p_{k}$)을 가진 $k$ 클래스 *다항분포*를 따른다면, 즉, $$p(\mathbf{z}) = p(z_1, \ldots, z_k) = \textrm{Multi} (p_1, \ldots, p_k), \textrm{ where } \sum_{i=1}^k p_i = 1,$$ 이면, $\mathbf{z}$의 결합 확률 질량 함수(p.m.f.)는 다음과 같습니다.
 $$\mathbf{p}^\mathbf{z} = \prod_{j=1}^k p_{j}^{z_{j}}.$$
 
 
-It can be seen that the label of each data example, $\mathbf{y}_i$, is following a $k$-class multinoulli distribution with probabilities $\boldsymbol{\pi} =$ ($\pi_{1}, \ldots, \pi_{k}$). Therefore, the joint p.m.f. of each data example $\mathbf{y}_i$ is  $\mathbf{\pi}^{\mathbf{y}_i} = \prod_{j=1}^k \pi_{j}^{y_{ij}}.$
-Hence, the log-likelihood function would be
+각 데이터 예제 $\mathbf{y}_i$의 레이블이 확률 $\boldsymbol{\pi} =$ ($\pi_{1}, \ldots, \pi_{k}$)을 가진 $k$ 클래스 다항분포를 따르고 있음을 볼 수 있습니다. 따라서, 각 데이터 예제 $\mathbf{y}_i$의 결합 p.m.f.는 $\mathbf{\pi}^{\mathbf{y}_i} = \prod_{j=1}^k \pi_{j}^{y_{ij}}.$
+따라서, 로그 가능도 함수는 다음과 같을 것입니다.
 
 $$
 \begin{aligned}
@@ -650,10 +650,10 @@ l(\theta)
 \end{aligned}
 $$
 
-Since in maximum likelihood estimation, we maximizing the objective function $l(\theta)$ by having $\pi_{j} = p_{\theta} (y_{ij}  \mid  \mathbf{x}_i)$. Therefore, for any multi-class classification, maximizing the above log-likelihood function $l(\theta)$ is equivalent to minimizing the CE loss $\textrm{CE}(y, \hat{y})$.
+최대 가능도 추정에서, 저희는 $\pi_{j} = p_{\theta} (y_{ij}  \mid  \mathbf{x}_i)$를 가짐으로써 목적 함수 $l(\theta)$를 최대화하고 있습니다. 따라서, 어떤 다중 클래스 분류에 대해서도, 위의 로그 가능도 함수 $l(\theta)$를 최대화하는 것은 CE 손실 $\textrm{CE}(y, \hat{y})$를 최소화하는 것과 동등합니다.
 
 
-To test the above proof, let's apply the built-in measure `NegativeLogLikelihood`. Using the same `labels` and `preds` as in the earlier example, we will get the same numerical loss as the previous example up to the 5 decimal place.
+위 증명을 테스트하기 위해, 내장된 척도 `NegativeLogLikelihood`를 적용해 봅시다. 이전 예제와 동일한 `labels`와 `preds`를 사용하면, 저희는 이전 예제와 소수점 5자리까지 같은 수치적 손실을 얻을 것입니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -687,24 +687,24 @@ loss = nll_loss(tf.math.log(preds), labels)
 loss
 ```
 
-## Summary
+## 요약
 
-* Information theory is a field of study about encoding, decoding, transmitting, and manipulating information.
-* Entropy is the unit to measure how much information is presented in different signals.
-* KL divergence can also measure the divergence between two distributions.
-* Cross-entropy can be viewed as an objective function of multi-class classification. Minimizing cross-entropy loss is equivalent to maximizing the log-likelihood function.
+* 정보 이론은 정보의 인코딩, 디코딩, 전송, 그리고 조작에 대한 연구 분야입니다.
+* 엔트로피는 다른 신호에 얼마나 많은 정보가 제시되어 있는지 측정하는 단위입니다.
+* KL 발산은 또한 두 분포 사이의 발산을 측정할 수 있습니다.
+* 교차 엔트로피는 다중 클래스 분류의 목적 함수로 볼 수 있습니다. 교차 엔트로피 손실을 최소화하는 것은 로그 가능도 함수를 최대화하는 것과 동등합니다.
 
 
-## Exercises
+## 연습문제
 
-1. Verify that the card examples from the first section indeed have the claimed entropy.
-1. Show that the KL divergence $D(p\|q)$ is nonnegative for all distributions $p$ and $q$. Hint: use Jensen's inequality, i.e., use the fact that $-\log x$ is a convex function.
-1. Let's compute the entropy from a few data sources:
-    * Assume that you are watching the output generated by a monkey at a typewriter. The monkey presses any of the $44$ keys of the typewriter at random (you can assume that it has not discovered any special keys or the shift key yet). How many bits of randomness per character do you observe?
-    * Being unhappy with the monkey, you replaced it by a drunk typesetter. It is able to generate words, albeit not coherently. Instead, it picks a random word out of a vocabulary of $2,000$ words. Let's assume that the average length of a word is $4.5$ letters in English. How many bits of randomness per character do you observe now?
-    * Still being unhappy with the result, you replace the typesetter by a high quality language model. The language model can currently obtain a perplexity as low as $15$ points per word. The character *perplexity* of a language model is defined as the inverse of the geometric mean of a set of probabilities, each probability is corresponding to a character in the word. To be specific, if the length of a given word is $l$, then  $\textrm{PPL}(\textrm{word}) = \left[\prod_i p(\textrm{character}_i)\right]^{ -\frac{1}{l}} = \exp \left[ - \frac{1}{l} \sum_i{\log p(\textrm{character}_i)} \right].$  Assume that the test word has 4.5 letters, how many bits of randomness per character do you observe now?
-1. Explain intuitively why $I(X, Y) = H(X) - H(X \mid Y)$.  Then, show this is true by expressing both sides as an expectation with respect to the joint distribution.
-1. What is the KL Divergence between the two Gaussian distributions $\mathcal{N}(\mu_1, \sigma_1^2)$ and $\mathcal{N}(\mu_2, \sigma_2^2)$?
+1. 첫 번째 절의 카드 예제가 실제로 주장된 엔트로피를 가지는지 확인하십시오.
+1. KL 발산 $D(p\|q)$가 모든 분포 $p$와 $q$에 대해 음이 아님을 보이십시오. 힌트: 옌센의 부등식을 사용하십시오. 즉, $-\log x$가 볼록 함수라는 사실을 사용하십시오.
+1. 몇 가지 데이터 소스로부터 엔트로피를 계산해 봅시다.
+    * 타자기에서 원숭이가 생성하는 출력을 보고 있다고 가정해 봅시다. 원숭이는 타자기의 $44$개 키 중 어느 것이든 무작위로 누릅니다(아직 특수 키나 시프트 키를 발견하지 못했다고 가정할 수 있습니다). 문자당 무작위성의 몇 비트를 관찰합니까?
+    * 원숭이에 만족하지 않아서, 당신은 그것을 술취한 식자공으로 대체했습니다. 그것은 일관성은 없지만 단어를 생성할 수 있습니다. 대신, 그것은 $2,000$ 단어의 어휘에서 무작위 단어를 선택합니다. 영어에서 단어의 평균 길이가 $4.5$ 글자라고 가정합시다. 이제 문자당 무작위성의 몇 비트를 관찰합니까?
+    * 여전히 결과에 만족하지 않아서, 당신은 식자공을 고품질 언어 모델로 대체합니다. 언어 모델은 현재 단어당 $15$ 점으로 낮은 퍼플렉시티를 얻을 수 있습니다. 언어 모델의 문자 *퍼플렉시티*는 확률 집합의 기하 평균의 역으로 정의되며, 각 확률은 단어의 문자에 해당합니다. 구체적으로, 만약 주어진 단어의 길이가 $l$이라면, $\textrm{PPL}(\textrm{word}) = \left[\prod_i p(\textrm{character}_i)\right]^{ -\frac{1}{l}} = \exp \left[ - \frac{1}{l} \sum_i{\log p(\textrm{character}_i)} \right].$  테스트 단어가 4.5 글자라고 가정하면, 이제 문자당 무작위성의 몇 비트를 관찰합니까?
+1. $I(X, Y) = H(X) - H(X \mid Y)$인 이유를 직관적으로 설명하십시오. 그런 다음, 결합 분포에 대한 기댓값으로 양변을 표현함으로써 이것이 참임을 보이십시오.
+1. 두 가우시안 분포 $\mathcal{N}(\mu_1, \sigma_1^2)$와 $\mathcal{N}(\mu_2, \sigma_2^2)$ 사이의 KL 발산은 무엇입니까?
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/420)

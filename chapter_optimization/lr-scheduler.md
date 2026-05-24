@@ -1,18 +1,18 @@
-# Learning Rate Scheduling
+# 학습률 스케줄링(Learning Rate Scheduling)
 :label:`sec_scheduler`
 
-So far we primarily focused on optimization *algorithms* for how to update the weight vectors rather than on the *rate* at which they are being updated. Nonetheless, adjusting the learning rate is often just as important as the actual algorithm. There are a number of aspects to consider:
+지금까지 저희는 주로 가중치 벡터를 어떻게 업데이트할지에 대한 최적화 *알고리즘*에 초점을 맞췄지, 그것들이 업데이트되는 *속도*에 초점을 맞추지는 않았습니다. 그럼에도 불구하고, 학습률을 조정하는 것은 종종 실제 알고리즘만큼이나 중요합니다. 고려해야 할 여러 측면이 있습니다.
 
-* Most obviously the *magnitude* of the learning rate matters. If it is too large, optimization diverges, if it is too small, it takes too long to train or we end up with a suboptimal result. We saw previously that the condition number of the problem matters (see e.g., :numref:`sec_momentum` for details). Intuitively it is the ratio of the amount of change in the least sensitive direction vs. the most sensitive one.
-* Secondly, the rate of decay is just as important. If the learning rate remains large we may simply end up bouncing around the minimum and thus not reach optimality. :numref:`sec_minibatch_sgd` discussed this in some detail and we analyzed performance guarantees in :numref:`sec_sgd`. In short, we want the rate to decay, but probably more slowly than $\mathcal{O}(t^{-\frac{1}{2}})$ which would be a good choice for convex problems.
-* Another aspect that is equally important is *initialization*. This pertains both to how the parameters are set initially (review :numref:`sec_numerical_stability` for details) and also how they evolve initially. This goes under the moniker of *warmup*, i.e., how rapidly we start moving towards the solution initially. Large steps in the beginning might not be beneficial, in particular since the initial set of parameters is random. The initial update directions might be quite meaningless, too.
-* Lastly, there are a number of optimization variants that perform cyclical learning rate adjustment. This is beyond the scope of the current chapter. We recommend the reader to review details in :citet:`Izmailov.Podoprikhin.Garipov.ea.2018`, e.g., how to obtain better solutions by averaging over an entire *path* of parameters.
+* 가장 명백하게는 학습률의 *크기*가 중요합니다. 너무 크면 최적화가 발산하고, 너무 작으면 학습에 너무 오래 걸리거나 차선의 결과로 끝나게 됩니다. 저희는 이전에 문제의 조건수가 중요함을 보았습니다(자세한 내용은 예를 들어 :numref:`sec_momentum` 참조). 직관적으로 이는 가장 둔감한 방향에서의 변화량과 가장 민감한 방향에서의 변화량의 비율입니다.
+* 둘째로, 감쇠 속도도 똑같이 중요합니다. 학습률이 크게 유지되면 저희는 단순히 최솟값 주변에서 튀어다닐 수 있고 따라서 최적성에 도달하지 못합니다. :numref:`sec_minibatch_sgd`는 이를 다소 자세히 논의했고 저희는 :numref:`sec_sgd`에서 성능 보장을 분석했습니다. 요컨대, 저희는 속도가 감쇠하되, 볼록 문제에 좋은 선택인 $\mathcal{O}(t^{-\frac{1}{2}})$보다는 아마도 더 천천히 감쇠하기를 원합니다.
+* 똑같이 중요한 또 다른 측면은 *초기화*입니다. 이는 파라미터가 초기에 어떻게 설정되는지(자세한 내용은 :numref:`sec_numerical_stability` 검토)와 또한 그것들이 초기에 어떻게 진화하는지에 관련됩니다. 이는 *워밍업*이라는 별명으로 통하는데, 즉 저희가 초기에 얼마나 빠르게 해를 향해 움직이기 시작하는지를 말합니다. 특히 초기 파라미터 집합이 무작위이므로 초반의 큰 스텝은 유익하지 않을 수 있습니다. 초기 업데이트 방향도 꽤 무의미할 수 있습니다.
+* 마지막으로, 주기적 학습률 조정을 수행하는 여러 최적화 변종이 있습니다. 이는 현재 장의 범위를 벗어납니다. 저희는 독자가 :citet:`Izmailov.Podoprikhin.Garipov.ea.2018`에서 자세한 내용을 검토할 것을 권장합니다. 예를 들어, 파라미터의 전체 *경로*에 걸쳐 평균화하여 더 나은 해를 얻는 방법입니다.
 
-Given the fact that there is a lot of detail needed to manage learning rates, most deep learning frameworks have tools to deal with this automatically. In the current chapter we will review the effects that different schedules have on accuracy and also show how this can be managed efficiently via a *learning rate scheduler*.
+학습률을 관리하는 데 많은 세부사항이 필요하다는 사실을 고려할 때, 대부분의 딥러닝 프레임워크에는 이를 자동으로 처리하기 위한 도구가 있습니다. 현재 장에서 저희는 다양한 스케줄이 정확도에 미치는 영향을 검토하고 *학습률 스케줄러*를 통해 이를 어떻게 효율적으로 관리할 수 있는지도 보일 것입니다.
 
-## Toy Problem
+## 장난감 문제
 
-We begin with a toy problem that is cheap enough to compute easily, yet sufficiently nontrivial to illustrate some of the key aspects. For that we pick a slightly modernized version of LeNet (`relu` instead of `sigmoid` activation, MaxPooling rather than AveragePooling), as applied to Fashion-MNIST. Moreover, we hybridize the network for performance. Since most of the code is standard we just introduce the basics without further detailed discussion. See :numref:`chap_cnn` for a refresher as needed.
+저희는 쉽게 계산할 수 있을 만큼 저렴하지만 핵심 측면 일부를 설명하기에 충분히 비자명한 장난감 문제로 시작합니다. 이를 위해 Fashion-MNIST에 적용된 LeNet의 약간 현대화된 버전(`sigmoid` 활성화 대신 `relu`, AveragePooling 대신 MaxPooling)을 선택합니다. 더욱이, 성능을 위해 네트워크를 하이브리드화합니다. 대부분의 코드가 표준이므로 저희는 더 자세한 논의 없이 기본만 소개합니다. 필요에 따라 :numref:`chap_cnn`을 복습용으로 참고하세요.
 
 ```{.python .input}
 #@tab mxnet
@@ -181,7 +181,7 @@ def train(net_fn, train_iter, test_iter, num_epochs, lr,
     return net
 ```
 
-Let's have a look at what happens if we invoke this algorithm with default settings, such as a learning rate of $0.3$ and train for $30$ iterations. Note how the training accuracy keeps on increasing while progress in terms of test accuracy stalls beyond a point. The gap between both curves indicates overfitting.
+학습률 $0.3$과 같은 기본 설정으로 이 알고리즘을 호출하고 $30$번의 반복 동안 학습하면 어떤 일이 일어나는지 살펴봅시다. 학습 정확도가 어떻게 계속 증가하는 동안 테스트 정확도 측면에서의 진전은 어느 시점을 넘어서면 멈추는지 주목하세요. 두 곡선 사이의 간격은 과적합을 나타냅니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -205,9 +205,9 @@ lr, num_epochs = 0.3, 30
 train(net, train_iter, test_iter, num_epochs, lr)
 ```
 
-## Schedulers
+## 스케줄러
 
-One way of adjusting the learning rate is to set it explicitly at each step. This is conveniently achieved by the `set_learning_rate` method. We could adjust it downward after every epoch (or even after every minibatch), e.g., in a dynamic manner in response to how optimization is progressing.
+학습률을 조정하는 한 가지 방법은 각 단계에서 그것을 명시적으로 설정하는 것입니다. 이는 `set_learning_rate` 메서드에 의해 편리하게 달성됩니다. 저희는 매 에포크 후(또는 심지어 매 미니배치 후)에 그것을 아래로 조정할 수 있습니다. 예를 들어, 최적화가 어떻게 진행되는지에 반응하여 동적인 방식으로 말이죠.
 
 ```{.python .input}
 #@tab mxnet
@@ -230,7 +230,7 @@ dummy_model.compile(tf.keras.optimizers.SGD(learning_rate=lr), loss='mse')
 print(f'learning rate is now ,', dummy_model.optimizer.lr.numpy())
 ```
 
-More generally we want to define a scheduler. When invoked with the number of updates it returns the appropriate value of the learning rate. Let's define a simple one that sets the learning rate to $\eta = \eta_0 (t + 1)^{-\frac{1}{2}}$.
+더 일반적으로 저희는 스케줄러를 정의하고 싶습니다. 업데이트 수와 함께 호출되면 학습률의 적절한 값을 반환합니다. 학습률을 $\eta = \eta_0 (t + 1)^{-\frac{1}{2}}$로 설정하는 간단한 것을 정의해 봅시다.
 
 ```{.python .input}
 #@tab all
@@ -242,7 +242,7 @@ class SquareRootScheduler:
         return self.lr * pow(num_update + 1.0, -0.5)
 ```
 
-Let's plot its behavior over a range of values.
+다양한 값의 범위에 걸쳐 그 동작을 그려 봅시다.
 
 ```{.python .input}
 #@tab all
@@ -250,7 +250,7 @@ scheduler = SquareRootScheduler(lr=0.1)
 d2l.plot(d2l.arange(num_epochs), [scheduler(t) for t in range(num_epochs)])
 ```
 
-Now let's see how this plays out for training on Fashion-MNIST. We simply provide the scheduler as an additional argument to the training algorithm.
+이제 Fashion-MNIST에서의 학습에 대해 이것이 어떻게 진행되는지 봅시다. 저희는 단지 학습 알고리즘에 추가 인자로 스케줄러를 제공합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -273,15 +273,15 @@ train(net, train_iter, test_iter, num_epochs, lr,
       custom_callback=LearningRateScheduler(scheduler))
 ```
 
-This worked quite a bit better than previously. Two things stand out: the curve was rather more smooth than previously. Secondly, there was less overfitting. Unfortunately it is not a well-resolved question as to why certain strategies lead to less overfitting in *theory*. There is some argument that a smaller stepsize will lead to parameters that are closer to zero and thus simpler. However, this does not explain the phenomenon entirely since we do not really stop early but simply reduce the learning rate gently.
+이는 이전보다 꽤 잘 작동했습니다. 두 가지가 두드러집니다. 곡선이 이전보다 다소 더 평활했습니다. 둘째, 과적합이 덜 했습니다. 안타깝게도 어떤 전략이 *이론적으로* 왜 더 적은 과적합으로 이어지는지에 대해서는 잘 해결된 질문이 아닙니다. 더 작은 스텝 크기는 0에 더 가깝고 따라서 더 단순한 파라미터로 이어질 것이라는 주장이 있습니다. 그러나 저희가 사실 일찍 중단하지 않고 단순히 학습률을 부드럽게 줄이기만 하므로 이는 현상을 완전히 설명하지 못합니다.
 
-## Policies
+## 정책
 
-While we cannot possibly cover the entire variety of learning rate schedulers, we attempt to give a brief overview of popular policies below. Common choices are polynomial decay and piecewise constant schedules. Beyond that, cosine learning rate schedules have been found to work well empirically on some problems. Lastly, on some problems it is beneficial to warm up the optimizer prior to using large learning rates.
+학습률 스케줄러의 전체 다양성을 다 다룰 수는 없지만, 저희는 아래에서 인기 있는 정책의 간단한 개요를 제공하려고 시도합니다. 일반적인 선택은 다항 감쇠와 조각별 상수 스케줄입니다. 그 외에도, 코사인 학습률 스케줄이 일부 문제에서 경험적으로 잘 작동하는 것으로 밝혀졌습니다. 마지막으로, 일부 문제에서는 큰 학습률을 사용하기 전에 옵티마이저를 워밍업하는 것이 유익합니다.
 
-### Factor Scheduler
+### 인수 스케줄러(Factor Scheduler)
 
-One alternative to a polynomial decay would be a multiplicative one, that is $\eta_{t+1} \leftarrow \eta_t \cdot \alpha$ for $\alpha \in (0, 1)$. To prevent the learning rate from decaying beyond a reasonable lower bound the update equation is often modified to $\eta_{t+1} \leftarrow \mathop{\mathrm{max}}(\eta_{\mathrm{min}}, \eta_t \cdot \alpha)$.
+다항 감쇠에 대한 한 가지 대안은 곱셈적인 것일 수 있습니다. 즉, $\alpha \in (0, 1)$에 대해 $\eta_{t+1} \leftarrow \eta_t \cdot \alpha$입니다. 학습률이 합리적인 하한 아래로 감쇠하는 것을 막기 위해 업데이트 방정식은 종종 $\eta_{t+1} \leftarrow \mathop{\mathrm{max}}(\eta_{\mathrm{min}}, \eta_t \cdot \alpha)$로 수정됩니다.
 
 ```{.python .input}
 #@tab all
@@ -299,11 +299,11 @@ scheduler = FactorScheduler(factor=0.9, stop_factor_lr=1e-2, base_lr=2.0)
 d2l.plot(d2l.arange(50), [scheduler(t) for t in range(50)])
 ```
 
-This can also be accomplished by a built-in scheduler in MXNet via the `lr_scheduler.FactorScheduler` object. It takes a few more parameters, such as warmup period, warmup mode (linear or constant), the maximum number of desired updates, etc.; Going forward we will use the built-in schedulers as appropriate and only explain their functionality here. As illustrated, it is fairly straightforward to build your own scheduler if needed.
+이는 또한 `lr_scheduler.FactorScheduler` 객체를 통해 MXNet의 내장 스케줄러에 의해 달성될 수 있습니다. 이는 워밍업 기간, 워밍업 모드(선형 또는 상수), 원하는 최대 업데이트 수 등과 같은 몇 가지 더 많은 파라미터를 받습니다. 앞으로 저희는 적절한 경우 내장 스케줄러를 사용하고 여기서는 그 기능만 설명합니다. 보여진 바와 같이, 필요할 경우 자신만의 스케줄러를 구축하는 것은 꽤 직관적입니다.
 
-### Multi Factor Scheduler
+### 다중 인수 스케줄러(Multi Factor Scheduler)
 
-A common strategy for training deep networks is to keep the learning rate piecewise constant and to decrease it by a given amount every so often. That is, given a set of times when to decrease the rate, such as $s = \{5, 10, 20\}$ decrease $\eta_{t+1} \leftarrow \eta_t \cdot \alpha$ whenever $t \in s$. Assuming that the values are halved at each step we can implement this as follows.
+딥 네트워크를 학습시키기 위한 일반적인 전략은 학습률을 조각별 상수로 유지하고 가끔씩 주어진 양만큼 감소시키는 것입니다. 즉, $s = \{5, 10, 20\}$와 같이 속도를 감소시킬 시점들의 집합이 주어졌을 때, $t \in s$일 때마다 $\eta_{t+1} \leftarrow \eta_t \cdot \alpha$를 감소시킵니다. 각 단계에서 값이 반감된다고 가정하면 다음과 같이 구현할 수 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -347,7 +347,7 @@ scheduler = MultiFactorScheduler(step=[15, 30], factor=0.5, base_lr=0.5)
 d2l.plot(d2l.arange(num_epochs), [scheduler(t) for t in range(num_epochs)])
 ```
 
-The intuition behind this piecewise constant learning rate schedule is that one lets optimization proceed until a stationary point has been reached in terms of the distribution of weight vectors. Then (and only then) do we decrease the rate such as to obtain a higher quality proxy to a good local minimum. The example below shows how this can produce ever slightly better solutions.
+이 조각별 상수 학습률 스케줄 뒤의 직관은 가중치 벡터의 분포 측면에서 정상점에 도달할 때까지 최적화가 진행되도록 한다는 것입니다. 그런 다음에야(그리고 그 후에만) 좋은 지역 최솟값에 대한 더 높은 품질의 대리를 얻기 위해 속도를 감소시킵니다. 아래 예는 이것이 어떻게 점점 조금씩 더 나은 해를 만들 수 있는지 보여줍니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -368,14 +368,14 @@ train(net, train_iter, test_iter, num_epochs, lr,
       custom_callback=LearningRateScheduler(scheduler))
 ```
 
-### Cosine Scheduler
+### 코사인 스케줄러
 
-A rather perplexing heuristic was proposed by :citet:`Loshchilov.Hutter.2016`. It relies on the observation that we might not want to decrease the learning rate too drastically in the beginning and moreover, that we might want to "refine" the solution in the end using a very small learning rate. This results in a cosine-like schedule with the following functional form for learning rates in the range $t \in [0, T]$.
+:citet:`Loshchilov.Hutter.2016`에 의해 다소 당혹스러운 휴리스틱이 제안되었습니다. 이는 처음에는 학습률을 너무 급격하게 줄이고 싶지 않을 수도 있고, 더욱이 마지막에는 매우 작은 학습률을 사용해 해를 "정제"하고 싶을 수도 있다는 관찰에 의존합니다. 이는 범위 $t \in [0, T]$에서 학습률에 대해 다음 함수 형태를 가진 코사인 형 스케줄을 결과로 가져옵니다.
 
 $$\eta_t = \eta_T + \frac{\eta_0 - \eta_T}{2} \left(1 + \cos(\pi t/T)\right)$$
 
 
-Here $\eta_0$ is the initial learning rate, $\eta_T$ is the target rate at time $T$. Furthermore, for $t > T$ we simply pin the value to $\eta_T$ without increasing it again. In the following example, we set the max update step $T = 20$.
+여기서 $\eta_0$는 초기 학습률, $\eta_T$는 시간 $T$에서의 목표 속도입니다. 더욱이, $t > T$의 경우 저희는 단순히 값을 다시 증가시키지 않고 $\eta_T$로 고정합니다. 다음 예에서 저희는 최대 업데이트 단계 $T = 20$을 설정합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -414,7 +414,7 @@ scheduler = CosineScheduler(max_update=20, base_lr=0.3, final_lr=0.01)
 d2l.plot(d2l.arange(num_epochs), [scheduler(t) for t in range(num_epochs)])
 ```
 
-In the context of computer vision this schedule *can* lead to improved results. Note, though, that such improvements are not guaranteed (as can be seen below).
+컴퓨터 비전의 맥락에서 이 스케줄은 개선된 결과로 이어질 *수* 있습니다. 그러나 그러한 개선이 보장되지 않는다는 점에 유의하세요(아래에서 볼 수 있듯이).
 
 ```{.python .input}
 #@tab mxnet
@@ -437,11 +437,11 @@ train(net, train_iter, test_iter, num_epochs, lr,
       custom_callback=LearningRateScheduler(scheduler))
 ```
 
-### Warmup
+### 워밍업(Warmup)
 
-In some cases initializing the parameters is not sufficient to guarantee a good solution. This is particularly a problem for some advanced network designs that may lead to unstable optimization problems. We could address this by choosing a sufficiently small learning rate to prevent divergence in the beginning. Unfortunately this means that progress is slow. Conversely, a large learning rate initially leads to divergence.
+어떤 경우에는 파라미터를 초기화하는 것만으로 좋은 해를 보장하기에 충분하지 않습니다. 이는 특히 불안정한 최적화 문제로 이어질 수 있는 일부 고급 네트워크 설계에 문제가 됩니다. 저희는 처음에 발산을 막기 위해 충분히 작은 학습률을 선택함으로써 이를 해결할 수 있습니다. 안타깝게도 이는 진전이 느리다는 것을 의미합니다. 반대로, 초기에 큰 학습률은 발산으로 이어집니다.
 
-A rather simple fix for this dilemma is to use a warmup period during which the learning rate *increases* to its initial maximum and to cool down the rate until the end of the optimization process. For simplicity one typically uses a linear increase for this purpose. This leads to a schedule of the form indicated below.
+이 딜레마에 대한 다소 간단한 해결책은 학습률이 초기 최대치로 *증가*하는 워밍업 기간을 사용하고 최적화 과정 끝까지 속도를 식히는 것입니다. 단순성을 위해 일반적으로 이 목적을 위해 선형 증가를 사용합니다. 이는 아래에 표시된 형태의 스케줄로 이어집니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -456,7 +456,7 @@ scheduler = CosineScheduler(20, warmup_steps=5, base_lr=0.3, final_lr=0.01)
 d2l.plot(d2l.arange(num_epochs), [scheduler(t) for t in range(num_epochs)])
 ```
 
-Note that the network converges better initially (in particular observe the performance during the first 5 epochs).
+네트워크가 초기에 더 잘 수렴함을 주목하세요(특히 첫 5 에포크 동안의 성능을 관찰하세요).
 
 ```{.python .input}
 #@tab mxnet
@@ -479,23 +479,23 @@ train(net, train_iter, test_iter, num_epochs, lr,
       custom_callback=LearningRateScheduler(scheduler))
 ```
 
-Warmup can be applied to any scheduler (not just cosine). For a more detailed discussion of learning rate schedules and many more experiments see also :cite:`Gotmare.Keskar.Xiong.ea.2018`. In particular they find that a warmup phase limits the amount of divergence of parameters in very deep networks. This makes intuitively sense since we would expect significant divergence due to random initialization in those parts of the network that take the most time to make progress in the beginning.
+워밍업은 코사인뿐만 아니라 임의의 스케줄러에 적용될 수 있습니다. 학습률 스케줄과 훨씬 많은 실험에 대한 더 자세한 논의는 :cite:`Gotmare.Keskar.Xiong.ea.2018`도 참조하세요. 특히 그들은 워밍업 단계가 매우 깊은 네트워크에서 파라미터의 발산 양을 제한한다는 것을 발견했습니다. 이는 직관적으로 말이 되는데, 초기에 진전을 이루는 데 가장 오래 걸리는 네트워크 부분에서 무작위 초기화로 인한 상당한 발산을 예상할 수 있기 때문입니다.
 
-## Summary
+## 요약
 
-* Decreasing the learning rate during training can lead to improved accuracy and (most perplexingly) reduced overfitting of the model.
-* A piecewise decrease of the learning rate whenever progress has plateaued is effective in practice. Essentially this ensures that we converge efficiently to a suitable solution and only then reduce the inherent variance of the parameters by reducing the learning rate.
-* Cosine schedulers are popular for some computer vision problems. See e.g., [GluonCV](http://gluon-cv.mxnet.io) for details of such a scheduler.
-* A warmup period before optimization can prevent divergence.
-* Optimization serves multiple purposes in deep learning. Besides minimizing the training objective, different choices of optimization algorithms and learning rate scheduling can lead to rather different amounts of generalization and overfitting on the test set (for the same amount of training error).
+* 학습 중에 학습률을 감소시키는 것은 개선된 정확도와 (가장 당혹스럽게도) 모델의 감소된 과적합으로 이어질 수 있습니다.
+* 진전이 정체될 때마다 학습률의 조각별 감소는 실제로 효과적입니다. 본질적으로 이는 저희가 적절한 해로 효율적으로 수렴하도록 보장한 다음에만 학습률을 줄임으로써 파라미터의 본질적인 분산을 줄이도록 보장합니다.
+* 코사인 스케줄러는 일부 컴퓨터 비전 문제에 인기가 있습니다. 그러한 스케줄러의 세부 사항은 예를 들어 [GluonCV](http://gluon-cv.mxnet.io)를 참조하세요.
+* 최적화 전 워밍업 기간은 발산을 막을 수 있습니다.
+* 최적화는 딥러닝에서 여러 목적을 수행합니다. 학습 목적을 최소화하는 것 외에도, 최적화 알고리즘과 학습률 스케줄링의 다양한 선택은 테스트 세트에서 (동일한 양의 학습 오차에 대해) 상당히 다른 양의 일반화와 과적합으로 이어질 수 있습니다.
 
-## Exercises
+## 연습문제
 
-1. Experiment with the optimization behavior for a given fixed learning rate. What is the best model you can obtain this way?
-1. How does convergence change if you change the exponent of the decrease in the learning rate? Use `PolyScheduler` for your convenience in the experiments.
-1. Apply the cosine scheduler to large computer vision problems, e.g., training ImageNet. How does it affect performance relative to other schedulers?
-1. How long should warmup last?
-1. Can you connect optimization and sampling? Start by using results from :citet:`Welling.Teh.2011` on Stochastic Gradient Langevin Dynamics.
+1. 주어진 고정 학습률에 대해 최적화 동작을 실험해 보세요. 이 방식으로 얻을 수 있는 최상의 모델은 무엇입니까?
+1. 학습률의 감소의 지수를 변경하면 수렴이 어떻게 변하나요? 실험에서 편의를 위해 `PolyScheduler`를 사용하세요.
+1. 코사인 스케줄러를 ImageNet 학습과 같은 대규모 컴퓨터 비전 문제에 적용해 보세요. 다른 스케줄러에 비해 성능에 어떻게 영향을 미치나요?
+1. 워밍업은 얼마나 오래 지속되어야 하나요?
+1. 최적화와 샘플링을 연결할 수 있나요? :citet:`Welling.Teh.2011`의 확률적 경사 랑주뱅 동역학에 대한 결과부터 사용해 시작하세요.
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/359)

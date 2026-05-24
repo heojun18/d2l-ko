@@ -1,21 +1,16 @@
-# The Object Detection Dataset
+# 객체 검출 데이터셋
 :label:`sec_object-detection-dataset`
 
-There is no small dataset such as MNIST and Fashion-MNIST in the field of object detection.
-In order to quickly demonstrate object detection models,
-[**we collected and labeled a small dataset**].
-First, we took photos of free bananas from our office
-and generated
-1000 banana images with different rotations and sizes.
-Then we placed each banana image
-at a random position on some background image.
-In the end, we labeled bounding boxes for those bananas on the images.
+객체 검출 분야에는 MNIST나 Fashion-MNIST 같은 작은 데이터셋이 없습니다.
+객체 검출 모델을 빠르게 시연하기 위해, [**저희는 작은 데이터셋을 수집하고 라벨링했습니다**].
+먼저, 저희는 사무실에 있는 무료 바나나의 사진을 찍어 다양한 회전과 크기의 1000개 바나나 이미지를 생성했습니다.
+그런 다음 각 바나나 이미지를 어떤 배경 이미지의 랜덤한 위치에 배치했습니다.
+마지막으로, 이미지에서 그 바나나의 바운딩 박스를 라벨링했습니다.
 
 
-## [**Downloading the Dataset**]
+## [**데이터셋 다운로드**]
 
-The banana detection dataset with all the image and
-csv label files can be downloaded directly from the Internet.
+모든 이미지와 csv 라벨 파일이 있는 바나나 검출 데이터셋은 인터넷에서 바로 다운로드할 수 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -46,14 +41,10 @@ d2l.DATA_HUB['banana-detection'] = (
     '5de26c8fce5ccdea9f91267273464dc968d20d72')
 ```
 
-## Reading the Dataset
+## 데이터셋 읽기
 
-We are going to [**read the banana detection dataset**] in the `read_data_bananas`
-function below.
-The dataset includes a csv file for
-object class labels and
-ground-truth bounding box coordinates
-at the upper-left and lower-right corners.
+저희는 아래의 `read_data_bananas` 함수에서 [**바나나 검출 데이터셋을 읽을**] 것입니다.
+데이터셋에는 객체 클래스 라벨과 좌상단 및 우하단 꼭짓점의 실측 바운딩 박스 좌표에 대한 csv 파일이 포함되어 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -99,10 +90,7 @@ def read_data_bananas(is_train=True):
     return images, torch.tensor(targets).unsqueeze(1) / 256
 ```
 
-By using the `read_data_bananas` function to read images and labels,
-the following `BananasDataset` class
-will allow us to [**create a customized `Dataset` instance**]
-for loading the banana detection dataset.
+이미지와 라벨을 읽기 위해 `read_data_bananas` 함수를 사용하면, 다음의 `BananasDataset` 클래스는 저희가 바나나 검출 데이터셋을 로드하기 위해 [**커스터마이즈된 `Dataset` 인스턴스를 만들 수 있게**] 해줍니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -139,11 +127,8 @@ class BananasDataset(torch.utils.data.Dataset):
         return len(self.features)
 ```
 
-Finally, we define
-the `load_data_bananas` function to [**return two
-data iterator instances for both the training and test sets.**]
-For the test dataset,
-there is no need to read it in random order.
+마지막으로, [**훈련 및 테스트 셋 모두에 대한 두 개의 데이터 이터레이터 인스턴스를 반환**]하기 위해 `load_data_bananas` 함수를 정의합니다.
+테스트 데이터셋의 경우, 랜덤한 순서로 읽을 필요가 없습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -169,37 +154,16 @@ def load_data_bananas(batch_size):
     return train_iter, val_iter
 ```
 
-Let's [**read a minibatch and print the shapes of
-both images and labels**] in this minibatch.
-The shape of the image minibatch,
-(batch size, number of channels, height, width),
-looks familiar:
-it is the same as in our earlier image classification tasks.
-The shape of the label minibatch is
-(batch size, $m$, 5),
-where $m$ is the largest possible number of bounding boxes
-that any image has in the dataset.
+[**미니배치를 읽고 이 미니배치에서 이미지와 라벨의 형태를 둘 다 출력**]해 봅시다.
+이미지 미니배치의 형태인 (배치 크기, 채널 수, 높이, 너비)는 익숙해 보입니다. 이는 저희의 이전 이미지 분류 작업과 같습니다.
+라벨 미니배치의 형태는 (배치 크기, $m$, 5)이며, 여기서 $m$은 데이터셋의 어떤 이미지가 가질 수 있는 바운딩 박스의 최대 수입니다.
 
-Although computation in minibatches is more efficient,
-it requires that all the image examples
-contain the same number of bounding boxes to form a minibatch via concatenation.
-In general,
-images may have a varying number of bounding boxes;
-thus,
-images with fewer than $m$ bounding boxes
-will be padded with illegal bounding boxes
-until $m$ is reached.
-Then
-the label of each bounding box is represented by an array of length 5.
-The first element in the array is the class of the object in the bounding box,
-where -1 indicates an illegal bounding box for padding.
-The remaining four elements of the array are
-the ($x$, $y$)-coordinate values
-of the upper-left corner and the lower-right corner
-of the bounding box (the range is between 0 and 1).
-For the banana dataset,
-since there is only one bounding box on each image,
-we have $m=1$.
+미니배치에서의 계산이 더 효율적이지만, 모든 이미지 예제가 연결을 통해 미니배치를 형성하기 위해 같은 수의 바운딩 박스를 포함해야 합니다.
+일반적으로, 이미지는 다양한 수의 바운딩 박스를 가질 수 있습니다. 따라서, $m$보다 적은 바운딩 박스를 가진 이미지는 $m$에 도달할 때까지 유효하지 않은 바운딩 박스로 패딩됩니다.
+그러면 각 바운딩 박스의 라벨은 길이 5의 배열로 표현됩니다.
+배열의 첫 번째 원소는 바운딩 박스에 있는 객체의 클래스이며, 여기서 -1은 패딩을 위한 유효하지 않은 바운딩 박스를 나타냅니다.
+배열의 나머지 네 원소는 바운딩 박스의 좌상단 꼭짓점과 우하단 꼭짓점의 ($x$, $y$) 좌표 값입니다(범위는 0과 1 사이).
+바나나 데이터셋의 경우, 각 이미지에 바운딩 박스가 하나만 있으므로 $m=1$입니다.
 
 ```{.python .input}
 #@tab all
@@ -209,12 +173,12 @@ batch = next(iter(train_iter))
 batch[0].shape, batch[1].shape
 ```
 
-## [**Demonstration**]
+## [**시연**]
 
-Let's demonstrate ten images with their labeled ground-truth bounding boxes.
-We can see that the rotations, sizes, and positions of bananas vary across all these images.
-Of course, this is just a simple artificial dataset.
-In practice, real-world datasets are usually much more complicated.
+라벨링된 실측 바운딩 박스와 함께 열 개의 이미지를 시연해 봅시다.
+이 모든 이미지에서 바나나의 회전, 크기, 위치가 다른 것을 볼 수 있습니다.
+물론, 이는 단순한 인공 데이터셋입니다.
+실제로 실세계 데이터셋은 보통 훨씬 더 복잡합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -232,16 +196,16 @@ for ax, label in zip(axes, batch[1][:10]):
     d2l.show_bboxes(ax, [label[0][1:5] * edge_size], colors=['w'])
 ```
 
-## Summary
+## 요약
 
-* The banana detection dataset we collected can be used to demonstrate object detection models.
-* The data loading for object detection is similar to that for image classification. However, in object detection the labels also contain information of ground-truth bounding boxes, which is missing in image classification.
+* 저희가 수집한 바나나 검출 데이터셋은 객체 검출 모델을 시연하는 데 사용할 수 있습니다.
+* 객체 검출을 위한 데이터 로딩은 이미지 분류를 위한 것과 비슷합니다. 하지만, 객체 검출에서 라벨은 실측 바운딩 박스의 정보도 포함하는데, 이는 이미지 분류에서는 누락된 것입니다.
 
 
-## Exercises
+## 연습문제
 
-1. Demonstrate other images with ground-truth bounding boxes in the banana detection dataset. How do they differ with respect to bounding boxes and objects?
-1. Say that we want to apply data augmentation, such as random cropping, to object detection. How can it be different from that in image classification? Hint: what if a cropped image only contains a small portion of an object?
+1. 바나나 검출 데이터셋에서 실측 바운딩 박스가 있는 다른 이미지들을 시연해 보세요. 바운딩 박스와 객체와 관련해 어떻게 다른가요?
+1. 객체 검출에 랜덤 자르기와 같은 데이터 증강을 적용하고 싶다고 가정해 봅시다. 이미지 분류에서와 어떻게 다를 수 있을까요? 힌트: 잘린 이미지가 객체의 작은 부분만 포함한다면 어떻게 될까요?
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/372)

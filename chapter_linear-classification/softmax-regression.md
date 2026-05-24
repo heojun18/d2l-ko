@@ -1,130 +1,124 @@
-# Softmax Regression
+# 소프트맥스 회귀
 :label:`sec_softmax`
 
-In :numref:`sec_linear_regression`, we introduced linear regression,
-working through implementations from scratch in :numref:`sec_linear_scratch`
-and again using high-level APIs of a deep learning framework
-in :numref:`sec_linear_concise` to do the heavy lifting.
+:numref:`sec_linear_regression`에서 저희는 선형 회귀를 소개했고,
+:numref:`sec_linear_scratch`에서는 처음부터 구현하는 과정을 살펴봤으며,
+:numref:`sec_linear_concise`에서는 무거운 작업을 처리하기 위해
+딥러닝 프레임워크의 고수준 API를 다시 활용해 보았습니다.
 
-Regression is the hammer we reach for when
-we want to answer *how much?* or *how many?* questions.
-If you want to predict the number of dollars (price)
-at which a house will be sold,
-or the number of wins a baseball team might have,
-or the number of days that a patient
-will remain hospitalized before being discharged,
-then you are probably looking for a regression model.
-However, even within regression models,
-there are important distinctions.
-For instance, the price of a house
-will never be negative and changes might often be *relative* to its baseline price.
-As such, it might be more effective to regress
-on the logarithm of the price.
-Likewise, the number of days a patient spends in hospital
-is a *discrete nonnegative* random variable.
-As such, least mean squares might not be an ideal approach either.
-This sort of time-to-event modeling
-comes with a host of other complications that are dealt with
-in a specialized subfield called *survival modeling*.
+회귀는 *얼마나?* 또는 *몇 개나?*와 같은 질문에
+답하고자 할 때 저희가 꺼내 드는 망치입니다.
+주택이 팔릴 가격(달러)을 예측하거나,
+야구팀이 거둘 승수를 예측하거나,
+환자가 퇴원하기 전까지 입원해 있을 일수를 예측하고 싶다면,
+아마도 회귀 모델을 찾고 있을 것입니다.
+그러나 회귀 모델 안에서도
+중요한 차이들이 있습니다.
+예를 들어 주택 가격은
+결코 음수가 될 수 없으며, 변동은 종종 기준 가격에 *상대적*일 수 있습니다.
+따라서 가격의 로그 값에 대해 회귀하는 것이
+더 효과적일 수 있습니다.
+마찬가지로 환자가 입원하는 일수는
+*이산적이고 음이 아닌* 확률 변수입니다.
+따라서 최소 제곱법도 이상적인 접근법이 아닐 수 있습니다.
+이러한 종류의 사건 발생 시간 모델링은
+*생존 분석(survival modeling)*이라 불리는 특화된 하위 분야에서
+다뤄지는 여러 다른 복잡한 문제들을 동반합니다.
 
-The point here is not to overwhelm you but just
-to let you know that there is a lot more to estimation
-than simply minimizing squared errors.
-And more broadly, there is a lot more to supervised learning than regression.
-In this section, we focus on *classification* problems
-where we put aside *how much?* questions
-and instead focus on *which category?* questions.
+여기서 요점은 여러분을 압도하려는 것이 아니라,
+단순히 제곱 오차를 최소화하는 것 이상으로
+추정에는 훨씬 더 많은 것이 있음을 알려드리는 것입니다.
+나아가 더 넓게 보면, 지도 학습에는 회귀 외에도 훨씬 더 많은 것이 있습니다.
+이 절에서 저희는 *분류* 문제에 초점을 맞춥니다.
+여기서는 *얼마나?* 질문은 잠시 미뤄 두고,
+대신 *어느 범주?* 질문에 집중합니다.
 
 
 
-* Does this email belong in the spam folder or the inbox?
-* Is this customer more likely to sign up
-  or not to sign up for a subscription service?
-* Does this image depict a donkey, a dog, a cat, or a rooster?
-* Which movie is Aston most likely to watch next?
-* Which section of the book are you going to read next?
+* 이 이메일은 스팸 폴더에 속할까요, 받은편지함에 속할까요?
+* 이 고객이 구독 서비스에 가입할 가능성이 더 높을까요,
+  아니면 가입하지 않을 가능성이 더 높을까요?
+* 이 이미지는 당나귀, 개, 고양이, 또는 수탉을 묘사하고 있을까요?
+* Aston이 다음으로 가장 볼 가능성이 높은 영화는 무엇일까요?
+* 여러분은 이 책의 어느 절을 다음에 읽을 예정인가요?
 
-Colloquially, machine learning practitioners
-overload the word *classification*
-to describe two subtly different problems:
-(i) those where we are interested only in
-hard assignments of examples to categories (classes);
-and (ii) those where we wish to make soft assignments,
-i.e., to assess the probability that each category applies.
-The distinction tends to get blurred, in part,
-because often, even when we only care about hard assignments,
-we still use models that make soft assignments.
+일상적으로 머신러닝 실무자들은
+*분류*라는 단어를 다음과 같이 미묘하게 다른 두 가지 문제를 모두
+가리키는 용어로 폭넓게 사용합니다.
+(i) 예제를 범주(클래스)에 하드 할당(hard assignment)하는 데만 관심이 있는 경우,
+그리고 (ii) 소프트 할당(soft assignment)을 하고자 하는 경우,
+즉 각 범주가 적용될 확률을 평가하고자 하는 경우.
+이 두 가지의 구분은 종종 흐려지는 경향이 있는데,
+그 이유 중 하나는 하드 할당에만 관심이 있을 때조차도
+여전히 소프트 할당을 만드는 모델을 사용하기 때문입니다.
 
-Even more, there are cases where more than one label might be true.
-For instance, a news article might simultaneously cover
-the topics of entertainment, business, and space flight,
-but not the topics of medicine or sports.
-Thus, categorizing it into one of the above categories
-on their own would not be very useful.
-This problem is commonly known as [multi-label classification](https://en.wikipedia.org/wiki/Multi-label_classification).
-See :citet:`Tsoumakas.Katakis.2007` for an overview
-and :citet:`Huang.Xu.Yu.2015`
-for an effective algorithm when tagging images.
+더 나아가 두 개 이상의 레이블이 참일 수 있는 경우도 있습니다.
+예를 들어 한 뉴스 기사가 동시에
+연예, 비즈니스, 우주 비행 주제를 다룰 수 있지만,
+의학이나 스포츠 주제는 다루지 않을 수 있습니다.
+따라서 이를 위의 범주 중 하나로만 단독으로 분류하는 것은
+그다지 유용하지 않을 것입니다.
+이 문제는 일반적으로 [다중 레이블 분류(multi-label classification)](https://en.wikipedia.org/wiki/Multi-label_classification)로 알려져 있습니다.
+개요는 :citet:`Tsoumakas.Katakis.2007`을 참고하고,
+이미지에 태깅을 할 때 효과적인 알고리즘은
+:citet:`Huang.Xu.Yu.2015`를 참고하시기 바랍니다.
 
-## Classification
+## 분류
 :label:`subsec_classification-problem`
 
-To get our feet wet, let's start with
-a simple image classification problem.
-Here, each input consists of a $2\times2$ grayscale image.
-We can represent each pixel value with a single scalar,
-giving us four features $x_1, x_2, x_3, x_4$.
-Further, let's assume that each image belongs to one
-among the categories "cat", "chicken", and "dog".
+먼저 감을 잡기 위해
+간단한 이미지 분류 문제부터 시작해 봅시다.
+여기서 각 입력은 $2\times2$ 그레이스케일 이미지로 구성됩니다.
+각 픽셀 값을 하나의 스칼라로 표현할 수 있으며,
+이로써 네 개의 특성 $x_1, x_2, x_3, x_4$를 얻습니다.
+또한, 각 이미지가 "고양이", "닭", "개"라는
+범주 중 하나에 속한다고 가정합시다.
 
-Next, we have to choose how to represent the labels.
-We have two obvious choices.
-Perhaps the most natural impulse would be
-to choose $y \in \{1, 2, 3\}$,
-where the integers represent
-$\{\textrm{dog}, \textrm{cat}, \textrm{chicken}\}$ respectively.
-This is a great way of *storing* such information on a computer.
-If the categories had some natural ordering among them,
-say if we were trying to predict
-$\{\textrm{baby}, \textrm{toddler}, \textrm{adolescent}, \textrm{young adult}, \textrm{adult}, \textrm{geriatric}\}$,
-then it might even make sense to cast this as
-an [ordinal regression](https://en.wikipedia.org/wiki/Ordinal_regression) problem
-and keep the labels in this format.
-See :citet:`Moon.Smola.Chang.ea.2010` for an overview
-of different types of ranking loss functions
-and :citet:`Beutel.Murray.Faloutsos.ea.2014` for a Bayesian approach
-that addresses responses with more than one mode.
+다음으로, 레이블을 어떻게 표현할지 선택해야 합니다.
+두 가지 명확한 선택지가 있습니다.
+아마도 가장 자연스러운 직감은
+$y \in \{1, 2, 3\}$을 선택하는 것입니다.
+여기서 정수들은 각각
+$\{\textrm{dog}, \textrm{cat}, \textrm{chicken}\}$을 나타냅니다.
+이는 컴퓨터에 그러한 정보를 *저장*하는 훌륭한 방법입니다.
+만약 범주들 사이에 자연스러운 순서가 있다면,
+예를 들어 저희가
+$\{\textrm{baby}, \textrm{toddler}, \textrm{adolescent}, \textrm{young adult}, \textrm{adult}, \textrm{geriatric}\}$을
+예측하려 한다면,
+이를 [순서형 회귀(ordinal regression)](https://en.wikipedia.org/wiki/Ordinal_regression) 문제로 다루고
+레이블을 이 형식 그대로 유지하는 것이 합리적일 수도 있습니다.
+다양한 유형의 순위 손실 함수에 대한 개요는 :citet:`Moon.Smola.Chang.ea.2010`을,
+하나 이상의 모드를 가진 응답을 다루는 베이지안 접근법은
+:citet:`Beutel.Murray.Faloutsos.ea.2014`를 참고하시기 바랍니다.
 
-In general, classification problems do not come
-with natural orderings among the classes.
-Fortunately, statisticians long ago invented a simple way
-to represent categorical data: the *one-hot encoding*.
-A one-hot encoding is a vector
-with as many components as we have categories.
-The component corresponding to a particular instance's category is set to 1
-and all other components are set to 0.
-In our case, a label $y$ would be a three-dimensional vector,
-with $(1, 0, 0)$ corresponding to "cat", $(0, 1, 0)$ to "chicken",
-and $(0, 0, 1)$ to "dog":
+일반적으로 분류 문제에서는
+클래스들 사이에 자연스러운 순서가 존재하지 않습니다.
+다행스럽게도 통계학자들은 오래전에
+범주형 데이터를 표현하는 간단한 방법인 *원-핫 인코딩(one-hot encoding)*을 고안했습니다.
+원-핫 인코딩은 우리가 가진 범주의 수만큼 성분을 가진
+벡터입니다.
+특정 인스턴스의 범주에 해당하는 성분은 1로 설정되고
+다른 모든 성분은 0으로 설정됩니다.
+저희의 경우, 레이블 $y$는 3차원 벡터가 되며,
+$(1, 0, 0)$은 "고양이", $(0, 1, 0)$은 "닭",
+$(0, 0, 1)$은 "개"에 해당합니다.
 
 $$y \in \{(1, 0, 0), (0, 1, 0), (0, 0, 1)\}.$$
 
-### Linear Model
+### 선형 모델
 
-In order to estimate the conditional probabilities
-associated with all the possible classes,
-we need a model with multiple outputs, one per class.
-To address classification with linear models,
-we will need as many affine functions as we have outputs.
-Strictly speaking, we only need one fewer,
-since the final category has to be the difference
-between $1$ and the sum of the other categories,
-but for reasons of symmetry
-we use a slightly redundant parametrization.
-Each output corresponds to its own affine function.
-In our case, since we have 4 features and 3 possible output categories,
-we need 12 scalars to represent the weights ($w$ with subscripts),
-and 3 scalars to represent the biases ($b$ with subscripts). This yields:
+가능한 모든 클래스와 관련된 조건부 확률을 추정하려면,
+클래스마다 하나씩, 여러 출력을 가진 모델이 필요합니다.
+선형 모델로 분류 문제를 다루려면,
+출력의 수만큼 아핀 함수가 필요할 것입니다.
+엄밀히 말하면 하나 적은 수만 있어도 되는데,
+마지막 범주는 $1$에서 다른 범주의 합을 뺀 값이어야 하기 때문입니다.
+하지만 대칭성을 위한 이유로
+약간 중복된 파라미터화를 사용합니다.
+각 출력은 자체 아핀 함수에 대응됩니다.
+저희의 경우, 4개의 특성과 3개의 가능한 출력 범주가 있으므로,
+가중치를 표현하려면 12개의 스칼라($w$와 그 첨자)가 필요하고,
+편향을 표현하려면 3개의 스칼라($b$와 그 첨자)가 필요합니다. 이로부터 다음을 얻습니다.
 
 $$
 \begin{aligned}
@@ -134,211 +128,198 @@ o_3 &= x_1 w_{31} + x_2 w_{32} + x_3 w_{33} + x_4 w_{34} + b_3.
 \end{aligned}
 $$
 
-The corresponding neural network diagram
-is shown in :numref:`fig_softmaxreg`.
-Just as in linear regression,
-we use a single-layer neural network.
-And since the calculation of each output, $o_1, o_2$, and $o_3$,
-depends on every input, $x_1$, $x_2$, $x_3$, and $x_4$,
-the output layer can also be described as a *fully connected layer*.
+이에 대응되는 신경망 다이어그램은
+:numref:`fig_softmaxreg`에 나와 있습니다.
+선형 회귀에서와 마찬가지로,
+저희는 단층 신경망을 사용합니다.
+또한 각 출력 $o_1, o_2$, $o_3$의 계산이
+모든 입력 $x_1$, $x_2$, $x_3$, $x_4$에 의존하므로,
+출력 층은 *완전 연결층(fully connected layer)*이라고도 부를 수 있습니다.
 
-![Softmax regression is a single-layer neural network.](../img/softmaxreg.svg)
+![소프트맥스 회귀는 단층 신경망입니다.](../img/softmaxreg.svg)
 :label:`fig_softmaxreg`
 
-For a more concise notation we use vectors and matrices:
-$\mathbf{o} = \mathbf{W} \mathbf{x} + \mathbf{b}$ is
-much better suited for mathematics and code.
-Note that we have gathered all of our weights into a $3 \times 4$ matrix and all biases
-$\mathbf{b} \in \mathbb{R}^3$ in a vector.
+더 간결한 표기를 위해 벡터와 행렬을 사용합니다.
+$\mathbf{o} = \mathbf{W} \mathbf{x} + \mathbf{b}$는
+수학과 코드에 훨씬 더 적합합니다.
+모든 가중치를 $3 \times 4$ 행렬로 모았고, 모든 편향
+$\mathbf{b} \in \mathbb{R}^3$을 하나의 벡터로 모았음을 유의하시기 바랍니다.
 
-### The Softmax
+### 소프트맥스
 :label:`subsec_softmax_operation`
 
-Assuming a suitable loss function,
-we could try, directly, to minimize the difference
-between $\mathbf{o}$ and the labels $\mathbf{y}$.
-While it turns out that treating classification
-as a vector-valued regression problem works surprisingly well,
-it is nonetheless unsatisfactory in the following ways:
+적절한 손실 함수를 가정하면,
+$\mathbf{o}$와 레이블 $\mathbf{y}$ 사이의 차이를
+직접 최소화해 볼 수도 있습니다.
+분류를 벡터값 회귀 문제로 다루는 것이
+놀라울 정도로 잘 작동하는 것으로 밝혀졌지만,
+다음과 같은 점에서 만족스럽지 못합니다.
 
-* There is no guarantee that the outputs $o_i$ sum up to $1$ in the way we expect probabilities to behave.
-* There is no guarantee that the outputs $o_i$ are even nonnegative, even if their outputs sum up to $1$, or that they do not exceed $1$.
+* 출력 $o_i$의 합이 확률처럼 $1$이 된다는 보장이 없습니다.
+* 출력 $o_i$가 음이 아니라는 보장이 없으며, 그 합이 $1$이 되거나 $1$을 초과하지 않는다는 보장도 없습니다.
 
-Both aspects render the estimation problem difficult to solve
-and the solution very brittle to outliers.
-For instance, if we assume that there
-is a positive linear dependency
-between the number of bedrooms and the likelihood
-that someone will buy a house,
-the probability might exceed $1$
-when it comes to buying a mansion!
-As such, we need a mechanism to "squish" the outputs.
+이 두 측면 모두 추정 문제를 풀기 어렵게 만들고
+해를 이상치(outlier)에 매우 취약하게 만듭니다.
+예를 들어, 침실 수와 누군가 주택을 살 가능성 사이에
+양의 선형 의존성이 있다고 가정하면,
+저택을 사는 경우에는 확률이 $1$을 초과할 수도 있습니다!
+따라서 출력을 "찌그러뜨릴(squish)" 메커니즘이 필요합니다.
 
-There are many ways we might accomplish this goal.
-For instance, we could assume that the outputs
-$\mathbf{o}$ are corrupted versions of $\mathbf{y}$,
-where the corruption occurs by means of adding noise $\boldsymbol{\epsilon}$
-drawn from a normal distribution.
-In other words, $\mathbf{y} = \mathbf{o} + \boldsymbol{\epsilon}$,
-where $\epsilon_i \sim \mathcal{N}(0, \sigma^2)$.
-This is the so-called [probit model](https://en.wikipedia.org/wiki/Probit_model),
-first introduced by :citet:`Fechner.1860`.
-While appealing, it does not work quite as well
-nor lead to a particularly nice optimization problem,
-when compared to the softmax.
+이 목표를 달성하는 방법은 여러 가지가 있습니다.
+예를 들어, 출력 $\mathbf{o}$가
+$\mathbf{y}$의 손상된 버전이라고 가정할 수 있는데,
+이 손상은 정규 분포에서 추출된 잡음 $\boldsymbol{\epsilon}$을
+더함으로써 발생합니다.
+다시 말해 $\mathbf{y} = \mathbf{o} + \boldsymbol{\epsilon}$이며,
+여기서 $\epsilon_i \sim \mathcal{N}(0, \sigma^2)$입니다.
+이것이 이른바 [프로빗 모델(probit model)](https://en.wikipedia.org/wiki/Probit_model)이며,
+:citet:`Fechner.1860`에 의해 처음 소개되었습니다.
+매력적이긴 하지만, 소프트맥스와 비교했을 때
+그만큼 잘 작동하지도 않고
+특별히 좋은 최적화 문제로 이어지지도 않습니다.
 
-Another way to accomplish this goal
-(and to ensure nonnegativity) is to use
-an exponential function $P(y = i) \propto \exp o_i$.
-This does indeed satisfy the requirement
-that the conditional class probability
-increases with increasing $o_i$, it is monotonic,
-and all probabilities are nonnegative.
-We can then transform these values so that they add up to $1$
-by dividing each by their sum.
-This process is called *normalization*.
-Putting these two pieces together
-gives us the *softmax* function:
+이 목표를 달성하는(그리고 음이 아닌 값을 보장하는) 또 다른 방법은
+지수 함수 $P(y = i) \propto \exp o_i$를 사용하는 것입니다.
+이는 조건부 클래스 확률이 $o_i$가 증가함에 따라 증가한다는 요구사항을
+실제로 충족하며, 단조 증가하고,
+모든 확률이 음이 아닙니다.
+그런 다음 각 값을 그 합으로 나누어
+이 값들이 합쳐서 $1$이 되도록 변환할 수 있습니다.
+이 과정을 *정규화(normalization)*라고 합니다.
+이 두 조각을 합치면
+*소프트맥스(softmax)* 함수가 됩니다.
 
 $$\hat{\mathbf{y}} = \mathrm{softmax}(\mathbf{o}) \quad \textrm{where}\quad \hat{y}_i = \frac{\exp(o_i)}{\sum_j \exp(o_j)}.$$
 :eqlabel:`eq_softmax_y_and_o`
 
-Note that the largest coordinate of $\mathbf{o}$
-corresponds to the most likely class according to $\hat{\mathbf{y}}$.
-Moreover, because the softmax operation
-preserves the ordering among its arguments,
-we do not need to compute the softmax
-to determine which class has been assigned the highest probability. Thus,
+$\mathbf{o}$의 가장 큰 좌표가
+$\hat{\mathbf{y}}$에 따라 가장 가능성이 높은 클래스에 해당함을 유의하시기 바랍니다.
+더욱이 소프트맥스 연산은
+인수들 사이의 순서를 보존하므로,
+어떤 클래스에 가장 높은 확률이 할당되었는지 결정하기 위해
+소프트맥스를 계산할 필요가 없습니다. 따라서,
 
 $$
 \operatorname*{argmax}_j \hat y_j = \operatorname*{argmax}_j o_j.
 $$
 
 
-The idea of a softmax dates back to :citet:`Gibbs.1902`,
-who adapted ideas from physics.
-Dating even further back, Boltzmann,
-the father of modern statistical physics,
-used this trick to model a distribution
-over energy states in gas molecules.
-In particular, he discovered that the prevalence
-of a state of energy in a thermodynamic ensemble,
-such as the molecules in a gas,
-is proportional to $\exp(-E/kT)$.
-Here, $E$ is the energy of a state,
-$T$ is the temperature, and $k$ is the Boltzmann constant.
-When statisticians talk about increasing or decreasing
-the "temperature" of a statistical system,
-they refer to changing $T$
-in order to favor lower or higher energy states.
-Following Gibbs' idea, energy equates to error.
-Energy-based models :cite:`Ranzato.Boureau.Chopra.ea.2007`
-use this point of view when describing
-problems in deep learning.
+소프트맥스라는 아이디어는 :citet:`Gibbs.1902`까지 거슬러 올라가는데,
+그는 물리학의 아이디어를 차용했습니다.
+훨씬 더 거슬러 올라가면, 현대 통계물리학의 아버지인
+볼츠만(Boltzmann)이
+기체 분자의 에너지 상태에 대한 분포를 모델링하기 위해
+이 기법을 사용했습니다.
+특히 그는 기체 분자와 같은
+열역학적 앙상블에서 어떤 에너지 상태의 출현 빈도가
+$\exp(-E/kT)$에 비례한다는 것을 발견했습니다.
+여기서 $E$는 상태의 에너지,
+$T$는 온도, $k$는 볼츠만 상수입니다.
+통계학자들이 통계 시스템의 "온도"를 높이거나 낮춘다고 말할 때,
+이는 더 낮거나 더 높은 에너지 상태를 선호하도록
+$T$를 변화시키는 것을 의미합니다.
+깁스의 아이디어에 따르면, 에너지는 오차에 해당합니다.
+에너지 기반 모델(energy-based models) :cite:`Ranzato.Boureau.Chopra.ea.2007`은
+딥러닝에서 문제를 기술할 때
+이러한 관점을 사용합니다.
 
-### Vectorization
+### 벡터화
 :label:`subsec_softmax_vectorization`
 
-To improve computational efficiency,
-we vectorize calculations in minibatches of data.
-Assume that we are given a minibatch $\mathbf{X} \in \mathbb{R}^{n \times d}$
-of $n$ examples with dimensionality (number of inputs) $d$.
-Moreover, assume that we have $q$ categories in the output.
-Then the weights satisfy $\mathbf{W} \in \mathbb{R}^{d \times q}$
-and the bias satisfies $\mathbf{b} \in \mathbb{R}^{1\times q}$.
+계산 효율성을 높이기 위해,
+저희는 데이터의 미니배치 단위로 계산을 벡터화합니다.
+$n$개의 예제와 차원(입력 수) $d$를 가진
+미니배치 $\mathbf{X} \in \mathbb{R}^{n \times d}$가 주어졌다고 가정합시다.
+또한, 출력에서 $q$개의 범주를 가진다고 가정합시다.
+그러면 가중치는 $\mathbf{W} \in \mathbb{R}^{d \times q}$를 만족하고
+편향은 $\mathbf{b} \in \mathbb{R}^{1\times q}$를 만족합니다.
 
 $$ \begin{aligned} \mathbf{O} &= \mathbf{X} \mathbf{W} + \mathbf{b}, \\ \hat{\mathbf{Y}} & = \mathrm{softmax}(\mathbf{O}). \end{aligned} $$
 :eqlabel:`eq_minibatch_softmax_reg`
 
-This accelerates the dominant operation into
-a matrix--matrix product $\mathbf{X} \mathbf{W}$.
-Moreover, since each row in $\mathbf{X}$ represents a data example,
-the softmax operation itself can be computed *rowwise*:
-for each row of $\mathbf{O}$, exponentiate all entries
-and then normalize them by the sum.
-Note, though, that care must be taken
-to avoid exponentiating and taking logarithms of large numbers,
-since this can cause numerical overflow or underflow.
-Deep learning frameworks take care of this automatically.
+이는 지배적인 연산을
+행렬-행렬 곱 $\mathbf{X} \mathbf{W}$로 가속화합니다.
+또한 $\mathbf{X}$의 각 행이 하나의 데이터 예제를 나타내므로,
+소프트맥스 연산 자체도 *행 단위(rowwise)*로 계산될 수 있습니다.
+즉, $\mathbf{O}$의 각 행에 대해 모든 항목에 지수를 취한 다음
+그 합으로 정규화합니다.
+다만 큰 수에 지수를 취하거나 로그를 취하는 것을 피하도록
+주의해야 함을 유의하시기 바랍니다.
+이는 수치적 오버플로우 또는 언더플로우를 일으킬 수 있기 때문입니다.
+딥러닝 프레임워크는 이를 자동으로 처리해 줍니다.
 
-## Loss Function
+## 손실 함수
 :label:`subsec_softmax-regression-loss-func`
 
-Now that we have a mapping from features $\mathbf{x}$
-to probabilities $\mathbf{\hat{y}}$,
-we need a way to optimize the accuracy of this mapping.
-We will rely on maximum likelihood estimation,
-the very same method that we encountered
-when providing a probabilistic justification
-for the mean squared error loss in
-:numref:`subsec_normal_distribution_and_squared_loss`.
+이제 특성 $\mathbf{x}$에서
+확률 $\mathbf{\hat{y}}$로의 매핑을 얻었으니,
+이 매핑의 정확도를 최적화할 방법이 필요합니다.
+저희는 최대 가능도 추정(maximum likelihood estimation)에 의존할 것입니다.
+이는 :numref:`subsec_normal_distribution_and_squared_loss`에서
+평균 제곱 오차 손실에 대한 확률론적 정당화를 제공할 때
+저희가 만났던 바로 그 방법입니다.
 
-### Log-Likelihood
+### 로그 가능도
 
-The softmax function gives us a vector $\hat{\mathbf{y}}$,
-which we can interpret as the (estimated) conditional probabilities
-of each class, given any input $\mathbf{x}$,
-such as $\hat{y}_1$ = $P(y=\textrm{cat} \mid \mathbf{x})$.
-In the following we assume that for a dataset
-with features $\mathbf{X}$ the labels $\mathbf{Y}$
-are represented using a one-hot encoding label vector.
-We can compare the estimates with reality
-by checking how probable the actual classes are
-according to our model, given the features:
+소프트맥스 함수는 저희에게 벡터 $\hat{\mathbf{y}}$를 제공하며,
+이를 어떤 입력 $\mathbf{x}$가 주어졌을 때
+각 클래스의 (추정된) 조건부 확률로 해석할 수 있습니다.
+예를 들어 $\hat{y}_1$ = $P(y=\textrm{cat} \mid \mathbf{x})$와 같습니다.
+이후에서 저희는 특성 $\mathbf{X}$를 가진 데이터셋에 대해
+레이블 $\mathbf{Y}$가 원-핫 인코딩 레이블 벡터를 사용해
+표현된다고 가정합니다.
+모델에 따라 특성이 주어졌을 때 실제 클래스가 얼마나 가능한지를 확인하여
+추정값을 실제와 비교할 수 있습니다.
 
 $$
 P(\mathbf{Y} \mid \mathbf{X}) = \prod_{i=1}^n P(\mathbf{y}^{(i)} \mid \mathbf{x}^{(i)}).
 $$
 
-We are allowed to use the factorization
-since we assume that each label is drawn independently
-from its respective distribution $P(\mathbf{y}\mid\mathbf{x}^{(i)})$.
-Since maximizing the product of terms is awkward,
-we take the negative logarithm to obtain the equivalent problem
-of minimizing the negative log-likelihood:
+각 레이블이 자신의 분포 $P(\mathbf{y}\mid\mathbf{x}^{(i)})$로부터
+독립적으로 추출된다고 가정하므로 이 인수분해를 사용할 수 있습니다.
+항들의 곱을 최대화하는 것은 다루기 번거롭기 때문에,
+음의 로그를 취하여 음의 로그 가능도를 최소화하는
+동등한 문제를 얻습니다.
 
 $$
 -\log P(\mathbf{Y} \mid \mathbf{X}) = \sum_{i=1}^n -\log P(\mathbf{y}^{(i)} \mid \mathbf{x}^{(i)})
 = \sum_{i=1}^n l(\mathbf{y}^{(i)}, \hat{\mathbf{y}}^{(i)}),
 $$
 
-where for any pair of label $\mathbf{y}$
-and model prediction $\hat{\mathbf{y}}$
-over $q$ classes, the loss function $l$ is
+여기서 $q$개 클래스에 대한 레이블 $\mathbf{y}$와
+모델 예측 $\hat{\mathbf{y}}$의 어떤 쌍에 대해서도,
+손실 함수 $l$은 다음과 같습니다.
 
 $$ l(\mathbf{y}, \hat{\mathbf{y}}) = - \sum_{j=1}^q y_j \log \hat{y}_j. $$
 :eqlabel:`eq_l_cross_entropy`
 
-For reasons explained later on,
-the loss function in :eqref:`eq_l_cross_entropy`
-is commonly called the *cross-entropy loss*.
-Since $\mathbf{y}$ is a one-hot vector of length $q$,
-the sum over all its coordinates $j$ vanishes for all but one term.
-Note that the loss $l(\mathbf{y}, \hat{\mathbf{y}})$
-is bounded from below by $0$
-whenever $\hat{\mathbf{y}}$ is a probability vector:
-no single entry is larger than $1$,
-hence their negative logarithm cannot be lower than $0$;
-$l(\mathbf{y}, \hat{\mathbf{y}}) = 0$ only if we predict
-the actual label with *certainty*.
-This can never happen for any finite setting of the weights
-because taking a softmax output towards $1$
-requires taking the corresponding input $o_i$ to infinity
-(or all other outputs $o_j$ for $j \neq i$ to negative infinity).
-Even if our model could assign an output probability of $0$,
-any error made when assigning such high confidence
-would incur infinite loss ($-\log 0 = \infty$).
+이후에 설명될 이유로,
+:eqref:`eq_l_cross_entropy`의 손실 함수는
+일반적으로 *교차 엔트로피 손실(cross-entropy loss)*이라고 불립니다.
+$\mathbf{y}$는 길이 $q$의 원-핫 벡터이므로,
+모든 좌표 $j$에 대한 합은 하나의 항을 제외하고는 모두 0이 됩니다.
+손실 $l(\mathbf{y}, \hat{\mathbf{y}})$는
+$\hat{\mathbf{y}}$가 확률 벡터일 때 $0$ 이상의 값으로 아래에서 유계입니다.
+어떤 개별 항목도 $1$보다 클 수 없으므로,
+그 음의 로그는 $0$보다 작을 수 없습니다.
+$l(\mathbf{y}, \hat{\mathbf{y}}) = 0$이 되는 것은
+저희가 실제 레이블을 *확실하게(certainty)* 예측할 때뿐입니다.
+이는 가중치의 어떠한 유한한 설정에서도 결코 일어날 수 없는데,
+소프트맥스 출력을 $1$에 가깝게 만들려면
+해당 입력 $o_i$를 무한대로 보내야 하기 때문입니다
+(또는 $j \neq i$인 다른 모든 출력 $o_j$를 음의 무한대로 보내야 합니다).
+만약 모델이 출력 확률 $0$을 할당할 수 있다고 해도,
+그런 높은 확신으로 잘못된 예측을 했을 때는
+무한한 손실을 떠안게 될 것입니다($-\log 0 = \infty$).
 
 
-### Softmax and Cross-Entropy Loss
+### 소프트맥스와 교차 엔트로피 손실
 :label:`subsec_softmax_and_derivatives`
 
-Since the softmax function
-and the corresponding cross-entropy loss are so common,
-it is worth understanding a bit better how they are computed.
-Plugging :eqref:`eq_softmax_y_and_o` into the definition of the loss
-in :eqref:`eq_l_cross_entropy`
-and using the definition of the softmax we obtain
+소프트맥스 함수와 그에 대응하는 교차 엔트로피 손실이 너무나 흔하기 때문에,
+이들이 어떻게 계산되는지를 좀 더 잘 이해해 둘 가치가 있습니다.
+:eqref:`eq_softmax_y_and_o`를 :eqref:`eq_l_cross_entropy`의 손실 정의에 대입하고
+소프트맥스의 정의를 사용하면 다음을 얻습니다.
 
 $$
 \begin{aligned}
@@ -348,202 +329,185 @@ l(\mathbf{y}, \hat{\mathbf{y}}) &=  - \sum_{j=1}^q y_j \log \frac{\exp(o_j)}{\su
 \end{aligned}
 $$
 
-To understand a bit better what is going on,
-consider the derivative with respect to any logit $o_j$. We get
+무슨 일이 일어나고 있는지 좀 더 잘 이해하기 위해,
+임의의 로짓 $o_j$에 대한 미분을 살펴봅시다. 다음을 얻습니다.
 
 $$
 \partial_{o_j} l(\mathbf{y}, \hat{\mathbf{y}}) = \frac{\exp(o_j)}{\sum_{k=1}^q \exp(o_k)} - y_j = \mathrm{softmax}(\mathbf{o})_j - y_j.
 $$
 
-In other words, the derivative is the difference
-between the probability assigned by our model,
-as expressed by the softmax operation,
-and what actually happened, as expressed
-by elements in the one-hot label vector.
-In this sense, it is very similar
-to what we saw in regression,
-where the gradient was the difference
-between the observation $y$ and estimate $\hat{y}$.
-This is not a coincidence.
-In any exponential family model,
-the gradients of the log-likelihood are given by precisely this term.
-This fact makes computing gradients easy in practice.
+다시 말해, 미분은 소프트맥스 연산으로 표현된
+모델이 할당한 확률과
+원-핫 레이블 벡터의 원소로 표현된
+실제 일어난 일 사이의 차이입니다.
+이런 의미에서, 회귀에서 보았던 것과 매우 유사합니다.
+회귀에서는 기울기가
+관측값 $y$와 추정값 $\hat{y}$ 사이의 차이였습니다.
+이는 우연이 아닙니다.
+어떤 지수족(exponential family) 모델에서든
+로그 가능도의 기울기는 정확히 이 항으로 주어집니다.
+이 사실은 실제로 기울기 계산을 쉽게 만들어 줍니다.
 
-Now consider the case where we observe not just a single outcome
-but an entire distribution over outcomes.
-We can use the same representation as before for the label $\mathbf{y}$.
-The only difference is that rather
-than a vector containing only binary entries,
-say $(0, 0, 1)$, we now have a generic probability vector,
-say $(0.1, 0.2, 0.7)$.
-The math that we used previously to define the loss $l$
-in :eqref:`eq_l_cross_entropy`
-still works well,
-just that the interpretation is slightly more general.
-It is the expected value of the loss for a distribution over labels.
-This loss is called the *cross-entropy loss* and it is
-one of the most commonly used losses for classification problems.
-We can demystify the name by introducing just the basics of information theory.
-In a nutshell, it measures the number of bits needed to encode what we see, $\mathbf{y}$,
-relative to what we predict that should happen, $\hat{\mathbf{y}}$.
-We provide a very basic explanation in the following. For further
-details on information theory see
-:citet:`Cover.Thomas.1999` or :citet:`mackay2003information`.
+이제 단일 결과가 아니라
+결과들에 대한 분포 전체를 관측하는 경우를 생각해 봅시다.
+레이블 $\mathbf{y}$에 대해 이전과 동일한 표현을 사용할 수 있습니다.
+유일한 차이점은 $(0, 0, 1)$처럼 이진 항목만 포함하는 벡터가 아니라
+이제 $(0.1, 0.2, 0.7)$처럼 일반적인 확률 벡터를 가진다는 점입니다.
+:eqref:`eq_l_cross_entropy`에서 손실 $l$을 정의하기 위해 이전에 사용한 수학은
+여전히 잘 작동하며, 단지 해석이 조금 더 일반적일 뿐입니다.
+이는 레이블에 대한 분포에 대한 손실의 기댓값입니다.
+이 손실을 *교차 엔트로피 손실*이라고 부르며, 분류 문제에서
+가장 흔히 사용되는 손실 중 하나입니다.
+정보 이론의 기초만 살펴봐도 이 이름의 신비를 풀 수 있습니다.
+간단히 말해, 이는 저희가 예측한 일어나야 할 일 $\hat{\mathbf{y}}$에 비해
+저희가 관측한 $\mathbf{y}$를 인코딩하는 데 필요한 비트 수를 측정합니다.
+다음에서 매우 기본적인 설명을 제공합니다. 정보 이론에 대한 더 자세한
+내용은 :citet:`Cover.Thomas.1999` 또는
+:citet:`mackay2003information`을 참고하시기 바랍니다.
 
 
 
-## Information Theory Basics
+## 정보 이론의 기초
 :label:`subsec_info_theory_basics`
 
-Many deep learning papers use intuition and terms from information theory.
-To make sense of them, we need some common language.
-This is a survival guide.
-*Information theory* deals with the problem
-of encoding, decoding, transmitting,
-and manipulating information (also known as data).
+많은 딥러닝 논문들이 정보 이론의 직관과 용어를 사용합니다.
+이를 이해하려면 공통의 언어가 필요합니다.
+이것은 생존 가이드입니다.
+*정보 이론(Information theory)*은
+정보(데이터라고도 함)를 인코딩, 디코딩, 전송, 조작하는
+문제를 다룹니다.
 
-### Entropy
+### 엔트로피
 
-The central idea in information theory is to quantify the
-amount of information contained in data.
-This places a  limit on our ability to compress data.
-For a distribution $P$ its *entropy*, $H[P]$, is defined as:
+정보 이론의 핵심 아이디어는 데이터에 포함된
+정보의 양을 정량화하는 것입니다.
+이는 데이터를 압축할 수 있는 우리의 능력에 한계를 설정합니다.
+분포 $P$에 대해 *엔트로피(entropy)* $H[P]$는 다음과 같이 정의됩니다.
 
 $$H[P] = \sum_j - P(j) \log P(j).$$
 :eqlabel:`eq_softmax_reg_entropy`
 
-One of the fundamental theorems of information theory states
-that in order to encode data drawn randomly from the distribution $P$,
-we need at least $H[P]$ "nats" to encode it :cite:`Shannon.1948`.
-If you wonder what a "nat" is, it is the equivalent of bit
-but when using a code with base $e$ rather than one with base 2.
-Thus, one nat is $\frac{1}{\log(2)} \approx 1.44$ bit.
+정보 이론의 기본 정리 중 하나는
+분포 $P$로부터 무작위로 추출된 데이터를 인코딩하려면
+이를 인코딩하기 위해 최소 $H[P]$ "냇(nats)"이 필요하다는 것입니다 :cite:`Shannon.1948`.
+"냇"이 무엇인지 궁금하시다면, 이는 비트의 등가물이지만
+밑이 2가 아닌 밑이 $e$인 코드를 사용할 때의 단위입니다.
+따라서 1 냇은 $\frac{1}{\log(2)} \approx 1.44$ 비트입니다.
 
 
-### Surprisal
+### 놀라움(Surprisal)
 
-You might be wondering what compression has to do with prediction.
-Imagine that we have a stream of data that we want to compress.
-If it is always easy for us to predict the next token,
-then this data is easy to compress.
-Take the extreme example where every token in the stream
-always takes the same value.
-That is a very boring data stream!
-And not only it is boring, but it is also easy to predict.
-Because the tokens are always the same,
-we do not have to transmit any information
-to communicate the contents of the stream.
-Easy to predict, easy to compress.
+압축이 예측과 무슨 관련이 있는지 궁금하실 수 있습니다.
+저희가 압축하고 싶은 데이터 스트림을 가지고 있다고 상상해 봅시다.
+다음 토큰을 항상 쉽게 예측할 수 있다면,
+이 데이터는 압축하기 쉽습니다.
+스트림의 모든 토큰이 항상 같은 값을 갖는
+극단적인 예를 생각해 봅시다.
+이는 매우 지루한 데이터 스트림입니다!
+그리고 지루할 뿐만 아니라 예측하기도 쉽습니다.
+토큰이 항상 같으므로,
+스트림의 내용을 전달하기 위해 어떤 정보도
+전송할 필요가 없습니다.
+예측하기 쉽고, 압축하기 쉽습니다.
 
-However if we cannot perfectly predict every event,
-then we might sometimes be surprised.
-Our surprise is greater when an event is assigned lower probability.
-Claude Shannon settled on $\log \frac{1}{P(j)} = -\log P(j)$
-to quantify one's *surprisal* at observing an event $j$
-having assigned it a (subjective) probability $P(j)$.
-The entropy defined in :eqref:`eq_softmax_reg_entropy`
-is then the *expected surprisal*
-when one assigned the correct probabilities
-that truly match the data-generating process.
+그러나 모든 사건을 완벽하게 예측할 수 없다면,
+때때로 놀랄 수 있습니다.
+어떤 사건에 낮은 확률을 할당했을 때 우리의 놀라움은 더 커집니다.
+클로드 섀넌(Claude Shannon)은 (주관적인) 확률 $P(j)$를 할당한 사건 $j$를
+관측했을 때의 *놀라움(surprisal)*을 정량화하기 위해
+$\log \frac{1}{P(j)} = -\log P(j)$를 채택했습니다.
+:eqref:`eq_softmax_reg_entropy`에서 정의된 엔트로피는
+데이터 생성 과정과 진정으로 일치하는 올바른 확률을 할당했을 때의
+*기대 놀라움(expected surprisal)*입니다.
 
 
-### Cross-Entropy Revisited
+### 교차 엔트로피 다시 살펴보기
 
-So if entropy is the level of surprise experienced
-by someone who knows the true probability,
-then you might be wondering, what is cross-entropy?
-The cross-entropy *from* $P$ *to* $Q$, denoted $H(P, Q)$,
-is the expected surprisal of an observer with subjective probabilities $Q$
-upon seeing data that was actually generated according to probabilities $P$.
-This is given by $H(P, Q) \stackrel{\textrm{def}}{=} \sum_j - P(j) \log Q(j)$.
-The lowest possible cross-entropy is achieved when $P=Q$.
-In this case, the cross-entropy from $P$ to $Q$ is $H(P, P)= H(P)$.
+따라서 엔트로피가 진정한 확률을 알고 있는 사람이 경험하는
+놀라움의 수준이라면, 교차 엔트로피는 무엇인지 궁금하실 것입니다.
+$P$ *로부터* $Q$ *로의* 교차 엔트로피, $H(P, Q)$로 표기되는 것은,
+실제로 확률 $P$에 따라 생성된 데이터를 보았을 때
+주관적 확률 $Q$를 가진 관측자의 기대 놀라움입니다.
+이는 $H(P, Q) \stackrel{\textrm{def}}{=} \sum_j - P(j) \log Q(j)$로 주어집니다.
+가능한 가장 낮은 교차 엔트로피는 $P=Q$일 때 달성됩니다.
+이 경우 $P$로부터 $Q$로의 교차 엔트로피는 $H(P, P)= H(P)$입니다.
 
-In short, we can think of the cross-entropy classification objective
-in two ways: (i) as maximizing the likelihood of the observed data;
-and (ii) as minimizing our surprisal (and thus the number of bits)
-required to communicate the labels.
+요컨대, 교차 엔트로피 분류 목적 함수를 두 가지 방식으로 생각할 수 있습니다.
+(i) 관측 데이터의 가능도를 최대화하는 것으로서, 그리고
+(ii) 레이블을 전달하는 데 필요한 놀라움(따라서 비트 수)을
+최소화하는 것으로서.
 
-## Summary and Discussion
+## 요약 및 논의
 
-In this section, we encountered the first nontrivial loss function,
-allowing us to optimize over *discrete* output spaces.
-Key in its design was that we took a probabilistic approach,
-treating discrete categories as instances of draws from a probability distribution.
-As a side effect, we encountered the softmax,
-a convenient activation function that transforms
-outputs of an ordinary neural network layer
-into valid discrete probability distributions.
-We saw that the derivative of the cross-entropy loss
-when combined with softmax
-behaves very similarly
-to the derivative of squared error;
-namely by taking the difference between
-the expected behavior and its prediction.
-And, while we were only able to
-scratch the very surface of it,
-we encountered exciting connections
-to statistical physics and information theory.
+이 절에서 저희는 첫 번째 자명하지 않은 손실 함수를 만났습니다.
+이 함수는 *이산적인* 출력 공간에 대해 최적화할 수 있게 해 줍니다.
+그 설계의 핵심은 저희가 확률론적 접근법을 취하여
+이산 범주를 확률 분포로부터의 추출 인스턴스로 다루었다는 점입니다.
+부수적인 효과로, 저희는 소프트맥스를 만났습니다.
+이는 일반적인 신경망 층의 출력을 유효한 이산 확률 분포로 변환하는
+편리한 활성화 함수입니다.
+교차 엔트로피 손실의 미분이 소프트맥스와 결합되었을 때
+제곱 오차의 미분과 매우 유사하게 동작한다는 것,
+즉 기대 동작과 그 예측 사이의 차이를 취한다는 것을 보았습니다.
+그리고 표면을 살짝 훑어보는 것에 불과했지만,
+통계물리학 및 정보 이론과의 흥미진진한 연결을 만났습니다.
 
-While this is enough to get you on your way,
-and hopefully enough to whet your appetite,
-we hardly dived deep here.
-Among other things, we skipped over computational considerations.
-Specifically, for any fully connected layer with $d$ inputs and $q$ outputs,
-the parametrization and computational cost is $\mathcal{O}(dq)$,
-which can be prohibitively high in practice.
-Fortunately, this cost of transforming $d$ inputs into $q$ outputs
-can be reduced through approximation and compression.
-For instance Deep Fried Convnets :cite:`Yang.Moczulski.Denil.ea.2015`
-uses a combination of permutations,
-Fourier transforms, and scaling
-to reduce the cost from quadratic to log-linear.
-Similar techniques work for more advanced
-structural matrix approximations :cite:`sindhwani2015structured`.
-Lastly, we can use quaternion-like decompositions
-to reduce the cost to $\mathcal{O}(\frac{dq}{n})$,
-again if we are willing to trade off a small amount of accuracy
-for computational and storage cost :cite:`Zhang.Tay.Zhang.ea.2021`
-based on a compression factor $n$.
-This is an active area of research.
-What makes it challenging is that
-we do not necessarily strive
-for the most compact representation
-or the smallest number of floating point operations
-but rather for the solution
-that can be executed most efficiently on modern GPUs.
+이것만으로도 여러분이 한 걸음 내딛는 데 충분하고,
+바라건대 흥미를 자극하는 데도 충분하겠지만,
+저희는 여기서 깊이 파고들지는 않았습니다.
+다른 것들 중에서도, 저희는 계산적 고려 사항을 건너뛰었습니다.
+구체적으로, $d$개의 입력과 $q$개의 출력을 가진 어떤 완전 연결층에 대해서도,
+파라미터화와 계산 비용은 $\mathcal{O}(dq)$이며,
+이는 실제로 감당하기 어려울 만큼 높을 수 있습니다.
+다행스럽게도 $d$개의 입력을 $q$개의 출력으로 변환하는 이 비용은
+근사와 압축을 통해 줄일 수 있습니다.
+예를 들어 Deep Fried Convnets :cite:`Yang.Moczulski.Denil.ea.2015`는
+순열, 푸리에 변환, 스케일링의 조합을 사용하여
+비용을 이차에서 로그 선형으로 줄입니다.
+유사한 기법이 더 발전된
+구조적 행렬 근사에도 적용됩니다 :cite:`sindhwani2015structured`.
+마지막으로, 쿼터니언과 유사한 분해를 사용하여
+압축 인자 $n$에 기반해 계산 및 저장 비용 대신
+소량의 정확도를 기꺼이 트레이드오프할 의향이 있다면
+비용을 $\mathcal{O}(\frac{dq}{n})$으로 줄일 수 있습니다 :cite:`Zhang.Tay.Zhang.ea.2021`.
+이것은 활발한 연구 영역입니다.
+이 분야를 어렵게 만드는 것은
+저희가 반드시 가장 압축된 표현이나
+가장 적은 부동 소수점 연산을 추구하는 것이 아니라,
+오히려 현대 GPU에서 가장 효율적으로 실행될 수 있는
+해를 추구하기 때문입니다.
 
-## Exercises
+## 연습문제
 
-1. We can explore the connection between exponential families and softmax in some more depth.
-    1. Compute the second derivative of the cross-entropy loss $l(\mathbf{y},\hat{\mathbf{y}})$ for softmax.
-    1. Compute the variance of the distribution given by $\mathrm{softmax}(\mathbf{o})$ and show that it matches the second derivative computed above.
-1. Assume that we have three classes which occur with equal probability, i.e., the probability vector is $(\frac{1}{3}, \frac{1}{3}, \frac{1}{3})$.
-    1. What is the problem if we try to design a binary code for it?
-    1. Can you design a better code? Hint: what happens if we try to encode two independent observations? What if we encode $n$ observations jointly?
-1. When encoding signals transmitted over a physical wire, engineers do not always use binary codes. For instance, [PAM-3](https://en.wikipedia.org/wiki/Ternary_signal) uses three signal levels $\{-1, 0, 1\}$ as opposed to two levels $\{0, 1\}$. How many ternary units do you need to transmit an integer in the range $\{0, \ldots, 7\}$? Why might this be a better idea in terms of electronics?
-1. The [Bradley--Terry model](https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model) uses
-a logistic model to capture preferences. For a user to choose between apples and oranges one
-assumes scores $o_{\textrm{apple}}$ and $o_{\textrm{orange}}$. Our requirements are that larger scores should lead to a higher likelihood in choosing the associated item and that
-the item with the largest score is the most likely one to be chosen :cite:`Bradley.Terry.1952`.
-    1. Prove that softmax satisfies this requirement.
-    1. What happens if you want to allow for a default option of choosing neither apples nor oranges? Hint: now the user has three choices.
-1. Softmax gets its name from the following mapping: $\textrm{RealSoftMax}(a, b) = \log (\exp(a) + \exp(b))$.
-    1. Prove that $\textrm{RealSoftMax}(a, b) > \mathrm{max}(a, b)$.
-    1. How small can you make the difference between both functions? Hint: without loss of
-    generality you can set $b = 0$ and $a \geq b$.
-    1. Prove that this holds for $\lambda^{-1} \textrm{RealSoftMax}(\lambda a, \lambda b)$, provided that $\lambda > 0$.
-    1. Show that for $\lambda \to \infty$ we have $\lambda^{-1} \textrm{RealSoftMax}(\lambda a, \lambda b) \to \mathrm{max}(a, b)$.
-    1. Construct an analogous softmin function.
-    1. Extend this to more than two numbers.
-1. The function $g(\mathbf{x}) \stackrel{\textrm{def}}{=} \log \sum_i \exp x_i$ is sometimes also referred to as the [log-partition function](https://en.wikipedia.org/wiki/Partition_function_(mathematics)).
-    1. Prove that the function is convex. Hint: to do so, use the fact that the first derivative amounts to the probabilities from the softmax function and show that the second derivative is the variance.
-    1. Show that $g$ is translation invariant, i.e., $g(\mathbf{x} + b) = g(\mathbf{x})$.
-    1. What happens if some of the coordinates $x_i$ are very large? What happens if they're all very small?
-    1. Show that if we choose $b = \mathrm{max}_i x_i$ we end up with a numerically stable implementation.
-1. Assume that we have some probability distribution $P$. Suppose we pick another distribution $Q$ with $Q(i) \propto P(i)^\alpha$ for $\alpha > 0$.
-    1. Which choice of $\alpha$ corresponds to doubling the temperature? Which choice corresponds to halving it?
-    1. What happens if we let the temperature approach $0$?
-    1. What happens if we let the temperature approach $\infty$?
+1. 지수족과 소프트맥스 사이의 연관성을 좀 더 깊이 탐구해 볼 수 있습니다.
+    1. 소프트맥스에 대한 교차 엔트로피 손실 $l(\mathbf{y},\hat{\mathbf{y}})$의 이계 도함수를 계산하시오.
+    1. $\mathrm{softmax}(\mathbf{o})$로 주어진 분포의 분산을 계산하고, 위에서 계산한 이계 도함수와 일치함을 보이시오.
+1. 같은 확률로 발생하는 세 개의 클래스가 있다고 가정합시다. 즉 확률 벡터는 $(\frac{1}{3}, \frac{1}{3}, \frac{1}{3})$입니다.
+    1. 이에 대한 이진 코드를 설계하려고 하면 어떤 문제가 있을까요?
+    1. 더 나은 코드를 설계할 수 있을까요? 힌트: 두 개의 독립적인 관측을 인코딩하려고 하면 어떻게 될까요? $n$개의 관측을 함께 인코딩하면 어떨까요?
+1. 물리적 전선을 통해 전송되는 신호를 인코딩할 때, 엔지니어들이 항상 이진 코드를 사용하는 것은 아닙니다. 예를 들어, [PAM-3](https://en.wikipedia.org/wiki/Ternary_signal)은 두 개의 신호 레벨 $\{0, 1\}$ 대신 세 개의 신호 레벨 $\{-1, 0, 1\}$을 사용합니다. $\{0, \ldots, 7\}$ 범위의 정수를 전송하기 위해 몇 개의 삼진 단위가 필요한가요? 왜 이것이 전자 공학 측면에서 더 좋은 아이디어일까요?
+1. [Bradley--Terry 모델](https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model)은
+선호도를 포착하기 위해 로지스틱 모델을 사용합니다. 사용자가 사과와 오렌지 중 선택하는 경우,
+점수 $o_{\textrm{apple}}$과 $o_{\textrm{orange}}$를 가정합니다. 저희의 요구사항은 더 큰 점수가 관련 항목을 선택할 가능성을 더 높게 만들어야 하고,
+가장 큰 점수를 가진 항목이 선택될 가능성이 가장 높아야 한다는 것입니다 :cite:`Bradley.Terry.1952`.
+    1. 소프트맥스가 이 요구사항을 만족함을 증명하시오.
+    1. 사과와 오렌지 중 어느 것도 선택하지 않는 기본 옵션을 허용하고 싶다면 어떻게 될까요? 힌트: 이제 사용자는 세 가지 선택지를 가집니다.
+1. 소프트맥스는 다음 매핑에서 이름을 따왔습니다: $\textrm{RealSoftMax}(a, b) = \log (\exp(a) + \exp(b))$.
+    1. $\textrm{RealSoftMax}(a, b) > \mathrm{max}(a, b)$임을 증명하시오.
+    1. 두 함수 사이의 차이를 얼마나 작게 만들 수 있나요? 힌트: 일반성을 잃지 않고
+    $b = 0$과 $a \geq b$로 설정할 수 있습니다.
+    1. $\lambda > 0$이라는 조건하에 $\lambda^{-1} \textrm{RealSoftMax}(\lambda a, \lambda b)$에 대해서도 이것이 성립함을 증명하시오.
+    1. $\lambda \to \infty$일 때 $\lambda^{-1} \textrm{RealSoftMax}(\lambda a, \lambda b) \to \mathrm{max}(a, b)$임을 보이시오.
+    1. 유사한 소프트민(softmin) 함수를 만드시오.
+    1. 이를 두 개 이상의 수로 확장하시오.
+1. 함수 $g(\mathbf{x}) \stackrel{\textrm{def}}{=} \log \sum_i \exp x_i$는 때때로 [로그 분배 함수(log-partition function)](https://en.wikipedia.org/wiki/Partition_function_(mathematics))라고도 합니다.
+    1. 이 함수가 볼록함을 증명하시오. 힌트: 이를 위해 일계 도함수가 소프트맥스 함수로부터 얻은 확률에 해당한다는 사실을 사용하고, 이계 도함수가 분산임을 보이시오.
+    1. $g$가 평행 이동 불변임을 보이시오. 즉, $g(\mathbf{x} + b) = g(\mathbf{x})$입니다.
+    1. 일부 좌표 $x_i$가 매우 큰 경우 어떻게 될까요? 모두 매우 작은 경우는 어떻게 될까요?
+    1. $b = \mathrm{max}_i x_i$를 선택하면 수치적으로 안정적인 구현이 됨을 보이시오.
+1. 어떤 확률 분포 $P$가 있다고 가정합시다. $\alpha > 0$에 대해 $Q(i) \propto P(i)^\alpha$인 또 다른 분포 $Q$를 고른다고 가정합시다.
+    1. 어떤 $\alpha$의 선택이 온도를 두 배로 늘리는 것에 해당하나요? 어떤 선택이 절반으로 줄이는 것에 해당하나요?
+    1. 온도를 $0$에 가깝게 하면 어떻게 될까요?
+    1. 온도를 $\infty$에 가깝게 하면 어떻게 될까요?
 
-[Discussions](https://discuss.d2l.ai/t/46)
+[토론](https://discuss.d2l.ai/t/46)

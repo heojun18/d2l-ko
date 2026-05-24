@@ -1,24 +1,24 @@
-# Natural Language Inference: Fine-Tuning BERT
+# 자연어 추론: BERT 파인튜닝
 :label:`sec_natural-language-inference-bert`
 
-In earlier sections of this chapter,
-we have designed an attention-based architecture
-(in :numref:`sec_natural-language-inference-attention`)
-for the natural language inference task
-on the SNLI dataset (as described in :numref:`sec_natural-language-inference-and-dataset`).
-Now we revisit this task by fine-tuning BERT.
-As discussed in :numref:`sec_finetuning-bert`,
-natural language inference is a sequence-level text pair classification problem,
-and fine-tuning BERT only requires an additional MLP-based architecture,
-as illustrated in :numref:`fig_nlp-map-nli-bert`.
+이 장의 앞선 절들에서,
+저희는 SNLI 데이터셋(:numref:`sec_natural-language-inference-and-dataset`에서 설명됨)의
+자연어 추론 작업을 위한
+어텐션 기반 아키텍처를(:numref:`sec_natural-language-inference-attention`에서)
+설계했습니다.
+이제 BERT를 파인튜닝하여 이 작업을 다시 살펴봅니다.
+:numref:`sec_finetuning-bert`에서 논의한 것처럼,
+자연어 추론은 시퀀스 수준 텍스트 쌍 분류 문제이며,
+BERT 파인튜닝은 :numref:`fig_nlp-map-nli-bert`에 나타난 것처럼
+추가적인 MLP 기반 아키텍처만을 요구합니다.
 
-![This section feeds pretrained BERT to an MLP-based architecture for natural language inference.](../img/nlp-map-nli-bert.svg)
+![이 절에서는 자연어 추론을 위해 사전 학습된 BERT를 MLP 기반 아키텍처에 입력합니다.](../img/nlp-map-nli-bert.svg)
 :label:`fig_nlp-map-nli-bert`
 
-In this section,
-we will download a pretrained small version of BERT,
-then fine-tune it
-for natural language inference on the SNLI dataset.
+이 절에서는,
+저희가 사전 학습된 작은 버전의 BERT를 다운로드한 다음,
+SNLI 데이터셋에서의 자연어 추론을 위해
+이를 파인튜닝할 것입니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -42,17 +42,17 @@ from torch import nn
 import os
 ```
 
-## [**Loading Pretrained BERT**]
+## [**사전 학습된 BERT 로딩하기**]
 
-We have explained how to pretrain BERT on the WikiText-2 dataset in
-:numref:`sec_bert-dataset` and :numref:`sec_bert-pretraining`
-(note that the original BERT model is pretrained on much bigger corpora).
-As discussed in :numref:`sec_bert-pretraining`,
-the original BERT model has hundreds of millions of parameters.
-In the following,
-we provide two versions of pretrained BERT:
-"bert.base" is about as big as the original BERT base model that requires a lot of computational resources to fine-tune,
-while "bert.small" is a small version to facilitate demonstration.
+저희는 :numref:`sec_bert-dataset`과 :numref:`sec_bert-pretraining`에서
+WikiText-2 데이터셋으로 BERT를 사전 학습하는 방법을 설명했습니다
+(원본 BERT 모델은 훨씬 더 큰 말뭉치에서 사전 학습됨에 유의하세요).
+:numref:`sec_bert-pretraining`에서 논의한 것처럼,
+원본 BERT 모델은 수억 개의 파라미터를 가지고 있습니다.
+다음에서,
+저희는 두 가지 버전의 사전 학습된 BERT를 제공합니다:
+"bert.base"는 파인튜닝에 많은 계산 자원을 요구하는 원본 BERT base 모델과 거의 같은 크기이며,
+"bert.small"은 시연을 용이하게 하기 위한 작은 버전입니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -70,9 +70,9 @@ d2l.DATA_HUB['bert.small'] = (d2l.DATA_URL + 'bert.small.torch.zip',
                               'c72329e68a732bef0452e4b96a1c341c8910f81f')
 ```
 
-Either pretrained BERT model contains a "vocab.json" file that defines the vocabulary set
-and a "pretrained.params" file of the pretrained parameters.
-We implement the following `load_pretrained_model` function to [**load pretrained BERT parameters**].
+두 사전 학습된 BERT 모델 모두 어휘 집합을 정의하는 "vocab.json" 파일과
+사전 학습된 파라미터의 "pretrained.params" 파일을 포함합니다.
+저희는 [**사전 학습된 BERT 파라미터를 로드**]하기 위해 다음 `load_pretrained_model` 함수를 구현합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -111,9 +111,9 @@ def load_pretrained_model(pretrained_model, num_hiddens, ffn_num_hiddens,
     return bert, vocab
 ```
 
-To facilitate demonstration on most of machines,
-we will load and fine-tune the small version ("bert.small") of the pretrained BERT in this section.
-In the exercise, we will show how to fine-tune the much larger "bert.base" to significantly improve the testing accuracy.
+대부분의 머신에서 시연을 용이하게 하기 위해,
+저희는 이 절에서 사전 학습된 BERT의 작은 버전("bert.small")을 로드하고 파인튜닝할 것입니다.
+연습문제에서는, 테스트 정확도를 상당히 향상시키기 위해 훨씬 큰 "bert.base"를 파인튜닝하는 방법을 보여드릴 것입니다.
 
 ```{.python .input}
 #@tab all
@@ -123,21 +123,21 @@ bert, vocab = load_pretrained_model(
     num_blks=2, dropout=0.1, max_len=512, devices=devices)
 ```
 
-## [**The Dataset for Fine-Tuning BERT**]
+## [**BERT 파인튜닝을 위한 데이터셋**]
 
-For the downstream task natural language inference on the SNLI dataset,
-we define a customized dataset class `SNLIBERTDataset`.
-In each example,
-the premise and hypothesis form a pair of text sequence
-and is packed into one BERT input sequence as depicted in :numref:`fig_bert-two-seqs`.
-Recall :numref:`subsec_bert_input_rep` that segment IDs
-are used to distinguish the premise and the hypothesis in a BERT input sequence.
-With the predefined maximum length of a BERT input sequence (`max_len`),
-the last token of the longer of the input text pair keeps getting removed until
-`max_len` is met.
-To accelerate generation of the SNLI dataset
-for fine-tuning BERT,
-we use 4 worker processes to generate training or testing examples in parallel.
+SNLI 데이터셋의 다운스트림 작업 자연어 추론을 위해,
+저희는 커스터마이즈된 데이터셋 클래스 `SNLIBERTDataset`을 정의합니다.
+각 예제에서,
+전제와 가설은 텍스트 시퀀스 쌍을 형성하고
+:numref:`fig_bert-two-seqs`에 나타난 것처럼 하나의 BERT 입력 시퀀스로 패킹됩니다.
+세그먼트 ID가 BERT 입력 시퀀스에서 전제와 가설을 구분하는 데 사용됨을
+:numref:`subsec_bert_input_rep`에서 상기하세요.
+BERT 입력 시퀀스의 미리 정의된 최대 길이(`max_len`)와 함께,
+입력 텍스트 쌍 중 더 긴 것의 마지막 토큰이
+`max_len`을 만족할 때까지 계속 제거됩니다.
+BERT 파인튜닝을 위한
+SNLI 데이터셋의 생성을 가속화하기 위해,
+저희는 학습 또는 테스트 예제를 병렬로 생성하기 위해 4개의 워커 프로세스를 사용합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -247,11 +247,11 @@ class SNLIBERTDataset(torch.utils.data.Dataset):
         return len(self.all_token_ids)
 ```
 
-After downloading the SNLI dataset,
-we [**generate training and testing examples**]
-by instantiating the `SNLIBERTDataset` class.
-Such examples will be read in minibatches during training and testing
-of natural language inference.
+SNLI 데이터셋을 다운로드한 후,
+저희는 `SNLIBERTDataset` 클래스를 인스턴스화하여
+[**학습 및 테스트 예제를 생성**]합니다.
+이러한 예제는 자연어 추론의 학습과 테스트 동안
+미니배치로 읽힐 것입니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -281,17 +281,17 @@ test_iter = torch.utils.data.DataLoader(test_set, batch_size,
                                   num_workers=num_workers)
 ```
 
-## Fine-Tuning BERT
+## BERT 파인튜닝
 
-As :numref:`fig_bert-two-seqs` indicates,
-fine-tuning BERT for natural language inference
-requires only an extra MLP consisting of two fully connected layers
-(see `self.hidden` and `self.output` in the following `BERTClassifier` class).
-[**This MLP transforms the
-BERT representation of the special “&lt;cls&gt;” token**],
-which encodes the information of both the premise and the hypothesis,
-(**into three outputs of natural language inference**):
-entailment, contradiction, and neutral.
+:numref:`fig_bert-two-seqs`가 나타내는 것처럼,
+자연어 추론을 위한 BERT 파인튜닝은
+두 개의 완전 연결 레이어로 구성된 추가적인 MLP만을 요구합니다
+(다음 `BERTClassifier` 클래스의 `self.hidden`과 `self.output`을 참조하세요).
+[**이 MLP는
+특수 “&lt;cls&gt;” 토큰의 BERT 표현을**] 변환하여,
+이 토큰은 전제와 가설 모두의 정보를 인코딩하며,
+(**자연어 추론의 세 가지 출력으로 변환합니다**):
+함의, 모순, 그리고 중립입니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -323,12 +323,12 @@ class BERTClassifier(nn.Module):
         return self.output(self.hidden(encoded_X[:, 0, :]))
 ```
 
-In the following,
-the pretrained BERT model `bert` is fed into the `BERTClassifier` instance `net` for
-the downstream application.
-In common implementations of BERT fine-tuning,
-only the parameters of the output layer of the additional MLP (`net.output`) will be learned from scratch.
-All the parameters of the pretrained BERT encoder (`net.encoder`) and the hidden layer of the additional MLP (`net.hidden`) will be fine-tuned.
+다음에서,
+사전 학습된 BERT 모델 `bert`는
+다운스트림 응용을 위해 `BERTClassifier` 인스턴스 `net`에 입력됩니다.
+BERT 파인튜닝의 일반적인 구현에서,
+추가적인 MLP의 출력 레이어(`net.output`)의 파라미터만이 처음부터 학습될 것입니다.
+사전 학습된 BERT 인코더(`net.encoder`)와 추가적인 MLP의 은닉 레이어(`net.hidden`)의 모든 파라미터는 파인튜닝될 것입니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -341,26 +341,24 @@ net.output.initialize(ctx=devices)
 net = BERTClassifier(bert)
 ```
 
-Recall that
-in :numref:`sec_bert`
-both the `MaskLM` class and the `NextSentencePred` class
-have parameters in their employed MLPs.
-These parameters are part of those in the pretrained BERT model
-`bert`, and thus part of parameters in `net`.
-However, such parameters are only for computing
-the masked language modeling loss
-and the next sentence prediction loss
-during pretraining.
-These two loss functions are irrelevant to fine-tuning downstream applications,
-thus the parameters of the employed MLPs in 
-`MaskLM` and `NextSentencePred` are not updated (staled) when BERT is fine-tuned.
+:numref:`sec_bert`에서
+`MaskLM` 클래스와 `NextSentencePred` 클래스
+모두 사용된 MLP에 파라미터가 있다는 것을 상기하세요.
+이러한 파라미터는 사전 학습된 BERT 모델
+`bert`의 파라미터의 일부이며, 따라서 `net`의 파라미터의 일부입니다.
+그러나, 그러한 파라미터는 사전 학습 동안 마스크된 언어 모델링 손실과
+다음 문장 예측 손실을 계산하는 데에만
+사용됩니다.
+이 두 손실 함수는 다운스트림 응용의 파인튜닝과는 무관하므로,
+BERT가 파인튜닝될 때
+`MaskLM`과 `NextSentencePred`에서 사용된 MLP의 파라미터는 업데이트되지 않습니다(stale).
 
-To allow parameters with stale gradients,
-the flag `ignore_stale_grad=True` is set in the `step` function of `d2l.train_batch_ch13`.
-We use this function to train and evaluate the model `net` using the training set
-(`train_iter`) and the testing set (`test_iter`) of SNLI.
-Due to the limited computational resources, [**the training**] and testing accuracy
-can be further improved: we leave its discussions in the exercises.
+오래된(stale) 그래디언트를 가진 파라미터를 허용하기 위해,
+`d2l.train_batch_ch13`의 `step` 함수에서 플래그 `ignore_stale_grad=True`가 설정됩니다.
+저희는 SNLI의 학습 세트(`train_iter`)와 테스트 세트(`test_iter`)를 사용하여
+모델 `net`을 학습하고 평가하기 위해 이 함수를 사용합니다.
+제한된 계산 자원으로 인해, [**학습**] 및 테스트 정확도는
+더 향상될 수 있습니다: 그 논의는 연습문제에 남겨둡니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -380,22 +378,22 @@ net(next(iter(train_iter))[0])
 d2l.train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs, devices)
 ```
 
-## Summary
+## 요약
 
-* We can fine-tune the pretrained BERT model for downstream applications, such as natural language inference on the SNLI dataset.
-* During fine-tuning, the BERT model becomes part of the model for the downstream application. Parameters that are only related to pretraining loss will not be updated during fine-tuning. 
+* 저희는 SNLI 데이터셋의 자연어 추론과 같은 다운스트림 응용을 위해 사전 학습된 BERT 모델을 파인튜닝할 수 있습니다.
+* 파인튜닝 동안, BERT 모델은 다운스트림 응용을 위한 모델의 일부가 됩니다. 사전 학습 손실에만 관련된 파라미터는 파인튜닝 동안 업데이트되지 않을 것입니다.
 
 
 
-## Exercises
+## 연습문제
 
-1. Fine-tune a much larger pretrained BERT model that is about as big as the original BERT base model if your computational resource allows. Set arguments in the `load_pretrained_model` function as: replacing 'bert.small' with 'bert.base', increasing values of `num_hiddens=256`, `ffn_num_hiddens=512`, `num_heads=4`, and `num_blks=2` to 768, 3072, 12, and 12, respectively. By increasing fine-tuning epochs (and possibly tuning other hyperparameters), can you get a testing accuracy higher than 0.86?
-1. How to truncate a pair of sequences according to their ratio of length? Compare this pair truncation method and the one used in the `SNLIBERTDataset` class. What are their pros and cons?
+1. 계산 자원이 허용한다면 원본 BERT base 모델과 거의 같은 크기인 훨씬 더 큰 사전 학습된 BERT 모델을 파인튜닝하세요. `load_pretrained_model` 함수의 인자를 다음과 같이 설정하세요: 'bert.small'을 'bert.base'로 대체하고, `num_hiddens=256`, `ffn_num_hiddens=512`, `num_heads=4`, `num_blks=2`의 값을 각각 768, 3072, 12, 12로 증가시키세요. 파인튜닝 에포크를 증가시키면(그리고 다른 하이퍼파라미터를 조정하면), 0.86보다 높은 테스트 정확도를 얻을 수 있습니까?
+1. 시퀀스 쌍을 그 길이의 비율에 따라 어떻게 잘라낼 수 있습니까? 이 쌍 자르기 방법과 `SNLIBERTDataset` 클래스에서 사용된 방법을 비교해 보세요. 각각의 장단점은 무엇입니까?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/397)
+[토론](https://discuss.d2l.ai/t/397)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1526)
+[토론](https://discuss.d2l.ai/t/1526)
 :end_tab:

@@ -1,18 +1,17 @@
-# Pretraining word2vec
+# word2vec 사전 학습
 :label:`sec_word2vec_pretraining`
 
 
-We go on to implement the skip-gram
-model defined in
-:numref:`sec_word2vec`.
-Then
-we will pretrain word2vec using negative sampling
-on the PTB dataset.
-First of all,
-let's obtain the data iterator
-and the vocabulary for this dataset
-by calling the `d2l.load_data_ptb`
-function, which was described in :numref:`sec_word2vec_data`
+저희는
+:numref:`sec_word2vec`에서 정의된
+스킵그램 모델을 계속 구현해 나가겠습니다.
+그런 다음
+PTB 데이터셋에서 네거티브 샘플링을 사용해 word2vec을 사전 학습할 것입니다.
+먼저,
+:numref:`sec_word2vec_data`에서 설명된
+`d2l.load_data_ptb` 함수를 호출하여
+이 데이터셋에 대한 데이터 반복자와
+어휘를 얻어 봅시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -39,26 +38,27 @@ data_iter, vocab = d2l.load_data_ptb(batch_size, max_window_size,
                                      num_noise_words)
 ```
 
-## The Skip-Gram Model
+## 스킵그램 모델
 
-We implement the skip-gram model
-by using embedding layers and batch matrix multiplications.
-First, let's review
-how embedding layers work.
+저희는 임베딩 레이어와 배치 행렬 곱셈을 사용하여
+스킵그램 모델을 구현합니다.
+먼저,
+임베딩 레이어가 어떻게 작동하는지 복습해 봅시다.
 
 
-### Embedding Layer
+### 임베딩 레이어
 
-As described in :numref:`sec_seq2seq`,
-an embedding layer
-maps a token's index to its feature vector.
-The weight of this layer
-is a matrix whose number of rows equals to
-the dictionary size (`input_dim`) and
-number of columns equals to
-the vector dimension for each token (`output_dim`).
-After a word embedding model is trained,
-this weight is what we need.
+:numref:`sec_seq2seq`에서 설명했듯이,
+임베딩 레이어는
+토큰의 인덱스를 그 특징 벡터로 매핑합니다.
+이 레이어의 가중치는
+행의 수가
+사전 크기(`input_dim`)와 같고,
+열의 수가
+각 토큰에 대한 벡터 차원(`output_dim`)과 같은
+행렬입니다.
+단어 임베딩 모델이 학습된 후,
+이 가중치가 저희가 필요한 것입니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -74,19 +74,18 @@ print(f'Parameter embedding_weight ({embed.weight.shape}, '
       f'dtype={embed.weight.dtype})')
 ```
 
-The input of an embedding layer is the
-index of a token (word).
-For any token index $i$,
-its vector representation
-can be obtained from
-the $i^\textrm{th}$ row of the weight matrix
-in the embedding layer.
-Since the vector dimension (`output_dim`)
-was set to 4,
-the embedding layer
-returns vectors with shape (2, 3, 4)
-for a minibatch of token indices with shape
-(2, 3).
+임베딩 레이어의 입력은
+토큰(단어)의 인덱스입니다.
+임의의 토큰 인덱스 $i$에 대해,
+그 벡터 표현은
+임베딩 레이어의 가중치 행렬의
+$i^\textrm{번째}$ 행에서
+얻을 수 있습니다.
+벡터 차원(`output_dim`)이
+4로 설정되었으므로,
+임베딩 레이어는
+형상 (2, 3)의 토큰 인덱스 미니배치에 대해
+형상 (2, 3, 4)의 벡터를 반환합니다.
 
 ```{.python .input}
 #@tab all
@@ -94,27 +93,23 @@ x = d2l.tensor([[1, 2, 3], [4, 5, 6]])
 embed(x)
 ```
 
-### Defining the Forward Propagation
+### 순전파 정의
 
-In the forward propagation,
-the input of the skip-gram model
-includes
-the center word indices `center`
-of shape (batch size, 1)
-and
-the concatenated context and noise word indices `contexts_and_negatives`
-of shape (batch size, `max_len`),
-where `max_len`
-is defined
-in :numref:`subsec_word2vec-minibatch-loading`.
-These two variables are first transformed from the
-token indices into vectors via the embedding layer,
-then their batch matrix multiplication
-(described in :numref:`subsec_batch_dot`)
-returns
-an output of shape (batch size, 1, `max_len`).
-Each element in the output is the dot product of
-a center word vector and a context or noise word vector.
+순전파에서,
+스킵그램 모델의 입력은
+형상 (배치 크기, 1)의 중심 단어 인덱스 `center`와
+형상 (배치 크기, `max_len`)의 연결된 문맥 및 노이즈 단어 인덱스 `contexts_and_negatives`를
+포함합니다.
+여기서 `max_len`은
+:numref:`subsec_word2vec-minibatch-loading`에서 정의됩니다.
+이 두 변수는 먼저
+임베딩 레이어를 통해 토큰 인덱스에서 벡터로 변환된 후,
+그들의 배치 행렬 곱셈
+(:numref:`subsec_batch_dot`에서 설명됨)은
+형상 (배치 크기, 1, `max_len`)의 출력을
+반환합니다.
+출력의 각 원소는
+중심 단어 벡터와 문맥 또는 노이즈 단어 벡터의 내적입니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -134,7 +129,7 @@ def skip_gram(center, contexts_and_negatives, embed_v, embed_u):
     return pred
 ```
 
-Let's print the output shape of this `skip_gram` function for some example inputs.
+이 `skip_gram` 함수의 출력 형상을 몇 가지 예제 입력에 대해 출력해 봅시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -147,18 +142,18 @@ skip_gram(torch.ones((2, 1), dtype=torch.long),
           torch.ones((2, 4), dtype=torch.long), embed, embed).shape
 ```
 
-## Training
+## 학습
 
-Before training the skip-gram model with negative sampling,
-let's first define its loss function.
+네거티브 샘플링으로 스킵그램 모델을 학습하기 전에,
+먼저 그 손실 함수를 정의합시다.
 
 
-### Binary Cross-Entropy Loss
+### 이진 교차 엔트로피 손실
 
-According to the definition of the loss function
-for negative sampling in :numref:`subsec_negative-sampling`, 
-we will use 
-the binary cross-entropy loss.
+:numref:`subsec_negative-sampling`의 네거티브 샘플링에 대한
+손실 함수의 정의에 따라,
+저희는
+이진 교차 엔트로피 손실을 사용할 것입니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -180,14 +175,12 @@ class SigmoidBCELoss(nn.Module):
 loss = SigmoidBCELoss()
 ```
 
-Recall our descriptions
-of the mask variable
-and the label variable in
-:numref:`subsec_word2vec-minibatch-loading`.
-The following
-calculates the 
-binary cross-entropy loss
-for the given variables.
+:numref:`subsec_word2vec-minibatch-loading`의 마스크 변수와 레이블 변수에 대한
+저희의 설명을 떠올려 보십시오.
+다음은
+주어진 변수에 대한
+이진 교차 엔트로피 손실을
+계산합니다.
 
 ```{.python .input}
 #@tab all
@@ -197,16 +190,15 @@ mask = d2l.tensor([[1, 1, 1, 1], [1, 1, 0, 0]])
 loss(pred, label, mask) * mask.shape[1] / mask.sum(axis=1)
 ```
 
-Below shows
-how the above results are calculated
-(in a less efficient way)
-using the
-sigmoid activation function
-in the binary cross-entropy loss.
-We can consider 
-the two outputs as
-two normalized losses
-that are averaged over non-masked predictions.
+아래는 이진 교차 엔트로피 손실에서
+시그모이드 활성화 함수를 사용해
+위의 결과가 (효율이 떨어지는 방식으로)
+어떻게 계산되는지 보여줍니다.
+저희는
+두 출력을
+마스킹되지 않은 예측에 대해 평균낸
+두 개의 정규화된 손실로
+간주할 수 있습니다.
 
 ```{.python .input}
 #@tab all
@@ -217,14 +209,13 @@ print(f'{(sigmd(1.1) + sigmd(2.2) + sigmd(-3.3) + sigmd(4.4)) / 4:.4f}')
 print(f'{(sigmd(-1.1) + sigmd(-2.2)) / 2:.4f}')
 ```
 
-### Initializing Model Parameters
+### 모델 파라미터 초기화
 
-We define two embedding layers
-for all the words in the vocabulary
-when they are used as center words
-and context words, respectively.
-The word vector dimension
-`embed_size` is set to 100.
+저희는 어휘 내 모든 단어가
+중심 단어와 문맥 단어로 각각 사용될 때를 위해
+두 개의 임베딩 레이어를 정의합니다.
+단어 벡터 차원
+`embed_size`는 100으로 설정됩니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -243,9 +234,9 @@ net = nn.Sequential(nn.Embedding(num_embeddings=len(vocab),
                                  embedding_dim=embed_size))
 ```
 
-### Defining the Training Loop
+### 학습 루프 정의
 
-The training loop is defined below. Because of the existence of padding, the calculation of the loss function is slightly different compared to the previous training functions.
+학습 루프는 아래에 정의되어 있습니다. 패딩의 존재 때문에, 손실 함수의 계산은 이전의 학습 함수와 약간 다릅니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -309,7 +300,7 @@ def train(net, data_iter, lr, num_epochs, device=d2l.try_gpu()):
           f'{metric[1] / timer.stop():.1f} tokens/sec on {str(device)}')
 ```
 
-Now we can train a skip-gram model using negative sampling.
+이제 네거티브 샘플링을 사용해 스킵그램 모델을 학습할 수 있습니다.
 
 ```{.python .input}
 #@tab all
@@ -317,17 +308,14 @@ lr, num_epochs = 0.002, 5
 train(net, data_iter, lr, num_epochs)
 ```
 
-## Applying Word Embeddings
+## 단어 임베딩 적용
 :label:`subsec_apply-word-embed`
 
 
-After training the word2vec model,
-we can use the cosine similarity
-of word vectors from the trained model
-to 
-find words from the dictionary
-that are most semantically similar
-to an input word.
+word2vec 모델을 학습한 후,
+저희는 학습된 모델의 단어 벡터의 코사인 유사도를 사용하여
+입력 단어와 의미적으로 가장 유사한
+사전 내 단어들을 찾을 수 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -358,16 +346,16 @@ def get_similar_tokens(query_token, k, embed):
 get_similar_tokens('chip', 3, net[0])
 ```
 
-## Summary
+## 요약
 
-* We can train a skip-gram model with negative sampling using embedding layers and the binary cross-entropy loss.
-* Applications of word embeddings include finding semantically similar words for a given word based on the cosine similarity of word vectors.
+* 저희는 임베딩 레이어와 이진 교차 엔트로피 손실을 사용해 네거티브 샘플링으로 스킵그램 모델을 학습할 수 있습니다.
+* 단어 임베딩의 응용으로는 단어 벡터의 코사인 유사도에 기반하여 주어진 단어에 대해 의미적으로 유사한 단어를 찾는 것이 있습니다.
 
 
-## Exercises
+## 연습문제
 
-1. Using the trained model, find semantically similar words for other input words. Can you improve the results by tuning hyperparameters?
-1. When a training corpus is huge, we often sample context words and noise words for the center words in the current minibatch *when updating model parameters*. In other words, the same center word may have different context words or noise words in different training epochs. What are the benefits of this method? Try to implement this training method.
+1. 학습된 모델을 사용하여, 다른 입력 단어에 대해 의미적으로 유사한 단어를 찾으십시오. 하이퍼파라미터를 조정함으로써 결과를 개선할 수 있습니까?
+1. 학습 말뭉치가 매우 클 때, 저희는 *모델 파라미터를 업데이트할 때* 현재 미니배치의 중심 단어에 대해 종종 문맥 단어와 노이즈 단어를 샘플링합니다. 다시 말해, 같은 중심 단어가 서로 다른 학습 에포크에서 서로 다른 문맥 단어나 노이즈 단어를 가질 수 있습니다. 이 방법의 이점은 무엇입니까? 이 학습 방법을 구현해 보십시오.
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/384)

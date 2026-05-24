@@ -1,180 +1,164 @@
-# Forward Propagation, Backward Propagation, and Computational Graphs
+# 순전파, 역전파, 그리고 계산 그래프
 :label:`sec_backprop`
 
-So far, we have trained our models
-with minibatch stochastic gradient descent.
-However, when we implemented the algorithm,
-we only worried about the calculations involved
-in *forward propagation* through the model.
-When it came time to calculate the gradients,
-we just invoked the backpropagation function provided by the deep learning framework.
+지금까지 저희는 미니배치 확률적 경사 하강법으로
+모델을 훈련해 왔습니다.
+하지만 알고리즘을 구현할 때,
+저희는 모델을 통한 *순전파*와 관련된 계산만
+신경 썼습니다.
+기울기를 계산할 때가 되면,
+저희는 단순히 딥러닝 프레임워크가 제공하는 역전파 함수를 호출했습니다.
 
-The automatic calculation of gradients
-profoundly simplifies
-the implementation of deep learning algorithms.
-Before automatic differentiation,
-even small changes to complicated models required
-recalculating complicated derivatives by hand.
-Surprisingly often, academic papers had to allocate
-numerous pages to deriving update rules.
-While we must continue to rely on automatic differentiation
-so we can focus on the interesting parts,
-you ought to know how these gradients
-are calculated under the hood
-if you want to go beyond a shallow
-understanding of deep learning.
+기울기의 자동 계산은
+딥러닝 알고리즘의 구현을
+크게 단순화합니다.
+자동 미분 이전에는,
+복잡한 모델에 작은 변경만 가해도
+복잡한 도함수를 손으로 다시 계산해야 했습니다.
+놀랍게도 자주, 학술 논문은
+업데이트 규칙을 유도하는 데에만 수많은 페이지를
+할애해야 했습니다.
+저희가 흥미로운 부분에 집중할 수 있도록
+계속해서 자동 미분에 의존해야겠지만,
+딥러닝에 대한 얕은 이해를
+넘어서고 싶다면, 이러한 기울기가
+내부에서 어떻게 계산되는지 알아야 합니다.
 
-In this section, we take a deep dive
-into the details of *backward propagation*
-(more commonly called *backpropagation*).
-To convey some insight for both the
-techniques and their implementations,
-we rely on some basic mathematics and computational graphs.
-To start, we focus our exposition on
-a one-hidden-layer MLP
-with weight decay ($\ell_2$ regularization, to be described in subsequent chapters).
+이 절에서, 저희는 *역전파*((더 흔히는 *backpropagation*이라고 불립니다))의
+세부 사항을 깊이 살펴봅니다.
+기법과 그 구현에 대한 어느 정도의 통찰을 전달하기 위해,
+저희는 몇 가지 기본 수학과 계산 그래프에 의존합니다.
+시작을 위해, 저희는 가중치 감쇠(($\ell_2$ 정규화, 이후 장에서 설명)))를 가진
+단일 은닉층 MLP에 설명을 집중합니다.
 
-## Forward Propagation
+## 순전파
 
-*Forward propagation* (or *forward pass*) refers to the calculation and storage
-of intermediate variables (including outputs)
-for a neural network in order
-from the input layer to the output layer.
-We now work step-by-step through the mechanics
-of a neural network with one hidden layer.
-This may seem tedious but in the eternal words
-of funk virtuoso James Brown,
-you must "pay the cost to be the boss".
+*순전파* ((또는 *forward pass*))는 입력층에서 출력층까지
+순서대로 신경망의 중간 변수((출력 포함))를
+계산하고 저장하는 것을 가리킵니다.
+이제 저희는 하나의 은닉층을 가진 신경망의 메커니즘을
+단계별로 살펴봅니다.
+지루해 보일 수도 있지만, 펑크의 거장
+James Brown의 영원한 말씀처럼,
+여러분은 "보스가 되려면 그 대가를 치러야" 합니다.
 
 
-For the sake of simplicity, let's assume
-that the input example is $\mathbf{x}\in \mathbb{R}^d$
-and that our hidden layer does not include a bias term.
-Here the intermediate variable is:
+단순함을 위해, 입력 예제가 $\mathbf{x}\in \mathbb{R}^d$이고
+저희 은닉층이 편향 항을 포함하지 않는다고 가정합시다.
+여기서 중간 변수는 다음과 같습니다.
 
 $$\mathbf{z}= \mathbf{W}^{(1)} \mathbf{x},$$
 
-where $\mathbf{W}^{(1)} \in \mathbb{R}^{h \times d}$
-is the weight parameter of the hidden layer.
-After running the intermediate variable
-$\mathbf{z}\in \mathbb{R}^h$ through the
-activation function $\phi$
-we obtain our hidden activation vector of length $h$:
+여기서 $\mathbf{W}^{(1)} \in \mathbb{R}^{h \times d}$는
+은닉층의 가중치 파라미터입니다.
+중간 변수 $\mathbf{z}\in \mathbb{R}^h$를
+활성화 함수 $\phi$에 통과시킨 후
+저희는 길이 $h$의 은닉 활성화 벡터를 얻습니다.
 
 $$\mathbf{h}= \phi (\mathbf{z}).$$
 
-The hidden layer output $\mathbf{h}$
-is also an intermediate variable.
-Assuming that the parameters of the output layer
-possess only a weight of
-$\mathbf{W}^{(2)} \in \mathbb{R}^{q \times h}$,
-we can obtain an output layer variable
-with a vector of length $q$:
+은닉층 출력 $\mathbf{h}$도
+중간 변수입니다.
+출력층의 파라미터가
+오직 $\mathbf{W}^{(2)} \in \mathbb{R}^{q \times h}$의 가중치만
+가진다고 가정하면,
+저희는 길이 $q$의 벡터를 갖는 출력층 변수를
+얻을 수 있습니다.
 
 $$\mathbf{o}= \mathbf{W}^{(2)} \mathbf{h}.$$
 
-Assuming that the loss function is $l$
-and the example label is $y$,
-we can then calculate the loss term
-for a single data example,
+손실 함수가 $l$이고
+예제 레이블이 $y$라고 가정하면,
+저희는 단일 데이터 예제에 대한
+손실 항을 다음과 같이 계산할 수 있습니다.
 
 $$L = l(\mathbf{o}, y).$$
 
-As we will see the definition of $\ell_2$ regularization
-to be introduced later,
-given the hyperparameter $\lambda$,
-the regularization term is
+나중에 도입될 $\ell_2$ 정규화의 정의에서 보게 되듯이,
+하이퍼파라미터 $\lambda$가 주어지면,
+정규화 항은 다음과 같습니다.
 
 $$s = \frac{\lambda}{2} \left(\|\mathbf{W}^{(1)}\|_\textrm{F}^2 + \|\mathbf{W}^{(2)}\|_\textrm{F}^2\right),$$
 :eqlabel:`eq_forward-s`
 
-where the Frobenius norm of the matrix
-is simply the $\ell_2$ norm applied
-after flattening the matrix into a vector.
-Finally, the model's regularized loss
-on a given data example is:
+여기서 행렬의 프로베니우스 노름은
+단순히 행렬을 벡터로 평탄화한 후 적용된
+$\ell_2$ 노름입니다.
+마지막으로, 주어진 데이터 예제에 대한 모델의 정규화된 손실은
+다음과 같습니다.
 
 $$J = L + s.$$
 
-We refer to $J$ as the *objective function*
-in the following discussion.
+저희는 다음 논의에서 $J$를
+*목적 함수*라고 부릅니다.
 
 
-## Computational Graph of Forward Propagation
+## 순전파의 계산 그래프
 
-Plotting *computational graphs* helps us visualize
-the dependencies of operators
-and variables within the calculation.
-:numref:`fig_forward` contains the graph associated
-with the simple network described above,
-where squares denote variables and circles denote operators.
-The lower-left corner signifies the input
-and the upper-right corner is the output.
-Notice that the directions of the arrows
-(which illustrate data flow)
-are primarily rightward and upward.
+*계산 그래프*를 그리면 계산 내의 연산자와 변수의
+의존성을 시각화하는 데 도움이 됩니다.
+:numref:`fig_forward`는 위에서 설명한 단순한 네트워크에 해당하는
+그래프를 담고 있으며,
+여기서 사각형은 변수를, 원은 연산자를 나타냅니다.
+왼쪽 아래 모서리는 입력을 나타내고
+오른쪽 위 모서리는 출력입니다.
+((데이터 흐름을 보여주는)) 화살표의 방향이
+주로 오른쪽과 위쪽을 향한다는 점에 유의하세요.
 
-![Computational graph of forward propagation.](../img/forward.svg)
+![순전파의 계산 그래프.](../img/forward.svg)
 :label:`fig_forward`
 
-## Backpropagation
+## 역전파
 
-*Backpropagation* refers to the method of calculating
-the gradient of neural network parameters.
-In short, the method traverses the network in reverse order,
-from the output to the input layer,
-according to the *chain rule* from calculus.
-The algorithm stores any intermediate variables
-(partial derivatives)
-required while calculating the gradient
-with respect to some parameters.
-Assume that we have functions
-$\mathsf{Y}=f(\mathsf{X})$
-and $\mathsf{Z}=g(\mathsf{Y})$,
-in which the input and the output
-$\mathsf{X}, \mathsf{Y}, \mathsf{Z}$
-are tensors of arbitrary shapes.
-By using the chain rule,
-we can compute the derivative
-of $\mathsf{Z}$ with respect to $\mathsf{X}$ via
+*역전파*는 신경망 파라미터의 기울기를 계산하는
+방법을 가리킵니다.
+간단히 말해, 이 방법은 미적분의 *연쇄 법칙*에 따라
+출력에서 입력층으로 역순으로
+네트워크를 순회합니다.
+알고리즘은 어떤 파라미터에 대한 기울기를
+계산하면서 필요한 중간 변수
+((편도함수))를 저장합니다.
+함수
+$\mathsf{Y}=f(\mathsf{X})$와 $\mathsf{Z}=g(\mathsf{Y})$가
+있다고 가정하고, 여기서 입력과 출력
+$\mathsf{X}, \mathsf{Y}, \mathsf{Z}$는
+임의 형상의 텐서라고 합시다.
+연쇄 법칙을 사용함으로써,
+저희는 다음을 통해 $\mathsf{X}$에 대한 $\mathsf{Z}$의
+도함수를 계산할 수 있습니다.
 
 $$\frac{\partial \mathsf{Z}}{\partial \mathsf{X}} = \textrm{prod}\left(\frac{\partial \mathsf{Z}}{\partial \mathsf{Y}}, \frac{\partial \mathsf{Y}}{\partial \mathsf{X}}\right).$$
 
-Here we use the $\textrm{prod}$ operator
-to multiply its arguments
-after the necessary operations,
-such as transposition and swapping input positions,
-have been carried out.
-For vectors, this is straightforward:
-it is simply matrix--matrix multiplication.
-For higher dimensional tensors,
-we use the appropriate counterpart.
-The operator $\textrm{prod}$ hides all the notational overhead.
+여기서 저희는 $\textrm{prod}$ 연산자를 사용하여
+전치 및 입력 위치 교환과 같은 필요한 연산이
+수행된 후 인수들을 곱합니다.
+벡터의 경우, 이는 직관적입니다.
+단순히 행렬(-)행렬 곱셈입니다.
+더 높은 차원의 텐서의 경우,
+저희는 적절한 대응물을 사용합니다.
+$\textrm{prod}$ 연산자는 모든 표기적 부담을 숨깁니다.
 
-Recall that
-the parameters of the simple network with one hidden layer,
-whose computational graph is in :numref:`fig_forward`,
-are $\mathbf{W}^{(1)}$ and $\mathbf{W}^{(2)}$.
-The objective of backpropagation is to
-calculate the gradients $\partial J/\partial \mathbf{W}^{(1)}$
-and $\partial J/\partial \mathbf{W}^{(2)}$.
-To accomplish this, we apply the chain rule
-and calculate, in turn, the gradient of
-each intermediate variable and parameter.
-The order of calculations are reversed
-relative to those performed in forward propagation,
-since we need to start with the outcome of the computational graph
-and work our way towards the parameters.
-The first step is to calculate the gradients
-of the objective function $J=L+s$
-with respect to the loss term $L$
-and the regularization term $s$:
+:numref:`fig_forward`에 계산 그래프가 있는, 하나의 은닉층을 가진 단순한 네트워크의
+파라미터는 $\mathbf{W}^{(1)}$과 $\mathbf{W}^{(2)}$임을
+떠올려 봅시다.
+역전파의 목표는
+기울기 $\partial J/\partial \mathbf{W}^{(1)}$과
+$\partial J/\partial \mathbf{W}^{(2)}$를 계산하는 것입니다.
+이를 달성하기 위해, 저희는 연쇄 법칙을 적용하고
+각 중간 변수와 파라미터의 기울기를
+차례로 계산합니다.
+순전파에서 수행되는 계산과 비교하여 계산 순서가 뒤집힙니다.
+왜냐하면 저희는 계산 그래프의 결과에서 시작하여
+파라미터를 향해 거꾸로 진행해야 하기 때문입니다.
+첫 단계는 손실 항 $L$과 정규화 항 $s$에 대한
+목적 함수 $J=L+s$의 기울기를
+계산하는 것입니다.
 
 $$\frac{\partial J}{\partial L} = 1 \; \textrm{and} \; \frac{\partial J}{\partial s} = 1.$$
 
-Next, we compute the gradient of the objective function
-with respect to variable of the output layer $\mathbf{o}$
-according to the chain rule:
+다음으로, 저희는 연쇄 법칙에 따라
+출력층 변수 $\mathbf{o}$에 대한 목적 함수의 기울기를
+계산합니다.
 
 $$
 \frac{\partial J}{\partial \mathbf{o}}
@@ -183,27 +167,26 @@ $$
 \in \mathbb{R}^q.
 $$
 
-Next, we calculate the gradients
-of the regularization term
-with respect to both parameters:
+다음으로, 저희는 두 파라미터 모두에 대한
+정규화 항의 기울기를 계산합니다.
 
 $$\frac{\partial s}{\partial \mathbf{W}^{(1)}} = \lambda \mathbf{W}^{(1)}
 \; \textrm{and} \;
 \frac{\partial s}{\partial \mathbf{W}^{(2)}} = \lambda \mathbf{W}^{(2)}.$$
 
-Now we are able to calculate the gradient
-$\partial J/\partial \mathbf{W}^{(2)} \in \mathbb{R}^{q \times h}$
-of the model parameters closest to the output layer.
-Using the chain rule yields:
+이제 저희는 출력층에 가장 가까운 모델 파라미터의
+기울기 $\partial J/\partial \mathbf{W}^{(2)} \in \mathbb{R}^{q \times h}$를
+계산할 수 있습니다.
+연쇄 법칙을 사용하면 다음을 얻습니다.
 
 $$\frac{\partial J}{\partial \mathbf{W}^{(2)}}= \textrm{prod}\left(\frac{\partial J}{\partial \mathbf{o}}, \frac{\partial \mathbf{o}}{\partial \mathbf{W}^{(2)}}\right) + \textrm{prod}\left(\frac{\partial J}{\partial s}, \frac{\partial s}{\partial \mathbf{W}^{(2)}}\right)= \frac{\partial J}{\partial \mathbf{o}} \mathbf{h}^\top + \lambda \mathbf{W}^{(2)}.$$
 :eqlabel:`eq_backprop-J-h`
 
-To obtain the gradient with respect to $\mathbf{W}^{(1)}$
-we need to continue backpropagation
-along the output layer to the hidden layer.
-The gradient with respect to the hidden layer output
-$\partial J/\partial \mathbf{h} \in \mathbb{R}^h$ is given by
+$\mathbf{W}^{(1)}$에 대한 기울기를 얻으려면,
+저희는 출력층을 따라 은닉층까지 역전파를
+계속해야 합니다.
+은닉층 출력에 대한 기울기
+$\partial J/\partial \mathbf{h} \in \mathbb{R}^h$는 다음과 같이 주어집니다.
 
 
 $$
@@ -212,11 +195,11 @@ $$
 = {\mathbf{W}^{(2)}}^\top \frac{\partial J}{\partial \mathbf{o}}.
 $$
 
-Since the activation function $\phi$ applies elementwise,
-calculating the gradient $\partial J/\partial \mathbf{z} \in \mathbb{R}^h$
-of the intermediate variable $\mathbf{z}$
-requires that we use the elementwise multiplication operator,
-which we denote by $\odot$:
+활성화 함수 $\phi$가 원소별로 적용되므로,
+중간 변수 $\mathbf{z}$의 기울기
+$\partial J/\partial \mathbf{z} \in \mathbb{R}^h$를 계산하려면
+저희는 $\odot$로 표기하는 원소별 곱셈 연산자를
+사용해야 합니다.
 
 $$
 \frac{\partial J}{\partial \mathbf{z}}
@@ -224,10 +207,10 @@ $$
 = \frac{\partial J}{\partial \mathbf{h}} \odot \phi'\left(\mathbf{z}\right).
 $$
 
-Finally, we can obtain the gradient
-$\partial J/\partial \mathbf{W}^{(1)} \in \mathbb{R}^{h \times d}$
-of the model parameters closest to the input layer.
-According to the chain rule, we get
+마지막으로, 저희는 입력층에 가장 가까운 모델 파라미터의
+기울기 $\partial J/\partial \mathbf{W}^{(1)} \in \mathbb{R}^{h \times d}$를
+얻을 수 있습니다.
+연쇄 법칙에 따라 저희는 다음을 얻습니다.
 
 $$
 \frac{\partial J}{\partial \mathbf{W}^{(1)}}
@@ -237,62 +220,63 @@ $$
 
 
 
-## Training Neural Networks
+## 신경망 훈련
 
-When training neural networks,
-forward and backward propagation depend on each other.
-In particular, for forward propagation,
-we traverse the computational graph in the direction of dependencies
-and compute all the variables on its path.
-These are then used for backpropagation
-where the compute order on the graph is reversed.
+신경망을 훈련할 때,
+순전파와 역전파는 서로 의존합니다.
+특히, 순전파의 경우,
+저희는 의존성 방향으로 계산 그래프를 순회하며
+그 경로상의 모든 변수를 계산합니다.
+이들은 이후 그래프의 계산 순서가 뒤집히는
+역전파에서 사용됩니다.
 
-Take the aforementioned simple network as an illustrative example.
-On the one hand,
-computing the regularization term :eqref:`eq_forward-s`
-during forward propagation
-depends on the current values of model parameters $\mathbf{W}^{(1)}$ and $\mathbf{W}^{(2)}$.
-They are given by the optimization algorithm according to backpropagation in the most recent iteration.
-On the other hand,
-the gradient calculation for the parameter
-:eqref:`eq_backprop-J-h` during backpropagation
-depends on the current value of the hidden layer output $\mathbf{h}$,
-which is given by forward propagation.
-
-
-Therefore when training neural networks, once model parameters are initialized,
-we alternate forward propagation with backpropagation,
-updating model parameters using gradients given by backpropagation.
-Note that backpropagation reuses the stored intermediate values from forward propagation to avoid duplicate calculations.
-One of the consequences is that we need to retain
-the intermediate values until backpropagation is complete.
-This is also one of the reasons why training
-requires significantly more memory than plain prediction.
-Besides, the size of such intermediate values is roughly
-proportional to the number of network layers and the batch size.
-Thus,
-training deeper networks using larger batch sizes
-more easily leads to *out-of-memory* errors.
+앞서 언급한 단순한 네트워크를 예시로 들어 봅시다.
+한편으로,
+순전파 동안 정규화 항 :eqref:`eq_forward-s`을
+계산하는 것은
+모델 파라미터 $\mathbf{W}^{(1)}$과 $\mathbf{W}^{(2)}$의
+현재 값에 의존합니다.
+이들은 가장 최근 반복에서 역전파에 따라 최적화 알고리즘이 제공합니다.
+다른 한편으로,
+역전파 동안 파라미터에 대한
+기울기 계산 :eqref:`eq_backprop-J-h`은
+은닉층 출력 $\mathbf{h}$의 현재 값에 의존하며,
+이는 순전파에 의해 주어집니다.
 
 
-## Summary
+따라서 신경망을 훈련할 때, 모델 파라미터가 초기화된 후에는,
+저희는 순전파와 역전파를 번갈아 수행하면서,
+역전파가 제공하는 기울기를 사용해 모델 파라미터를 업데이트합니다.
+역전파는 중복 계산을 피하기 위해 순전파에서 저장된 중간 값을 재사용한다는 점에 유의하세요.
+그 결과 중 하나로, 저희는
+역전파가 완료될 때까지 중간 값을 유지해야 합니다.
+이것이 또한 훈련이
+단순한 예측보다 훨씬 더 많은 메모리를 필요로 하는 이유 중 하나입니다.
+게다가, 이러한 중간 값의 크기는 대략
+네트워크 층의 수와 배치 크기에 비례합니다.
+따라서,
+더 큰 배치 크기를 사용해 더 깊은 네트워크를 훈련하는 것은
+*메모리 부족* 오류로 더 쉽게 이어집니다.
 
-Forward propagation sequentially calculates and stores intermediate variables within the computational graph defined by the neural network. It proceeds from the input to the output layer.
-Backpropagation sequentially calculates and stores the gradients of intermediate variables and parameters within the neural network in the reversed order.
-When training deep learning models, forward propagation and backpropagation are interdependent,
-and training requires significantly more memory than prediction.
+
+## 요약
+
+순전파는 신경망에 의해 정의된 계산 그래프 내의 중간 변수를 순차적으로 계산하고 저장합니다. 이는 입력층에서 출력층으로 진행됩니다.
+역전파는 신경망 내의 중간 변수와 파라미터의 기울기를 역순으로 순차적으로 계산하고 저장합니다.
+딥러닝 모델을 훈련할 때, 순전파와 역전파는 상호 의존적이며,
+훈련은 예측보다 훨씬 더 많은 메모리를 필요로 합니다.
 
 
-## Exercises
+## 연습문제
 
-1. Assume that the inputs $\mathbf{X}$ to some scalar function $f$ are $n \times m$ matrices. What is the dimensionality of the gradient of $f$ with respect to $\mathbf{X}$?
-1. Add a bias to the hidden layer of the model described in this section (you do not need to include bias in the regularization term).
-    1. Draw the corresponding computational graph.
-    1. Derive the forward and backward propagation equations.
-1. Compute the memory footprint for training and prediction in the model described in this section.
-1. Assume that you want to compute second derivatives. What happens to the computational graph? How long do you expect the calculation to take?
-1. Assume that the computational graph is too large for your GPU.
-    1. Can you partition it over more than one GPU?
-    1. What are the advantages and disadvantages over training on a smaller minibatch?
+1. 어떤 스칼라 함수 $f$에 대한 입력 $\mathbf{X}$가 $n \times m$ 행렬이라고 가정합시다. $\mathbf{X}$에 대한 $f$의 기울기의 차원은 무엇인가요?
+1. 이 절에서 설명한 모델의 은닉층에 편향을 추가하세요 ((정규화 항에 편향을 포함할 필요는 없습니다)).
+    1. 해당 계산 그래프를 그리세요.
+    1. 순전파와 역전파 방정식을 유도하세요.
+1. 이 절에서 설명한 모델에서 훈련과 예측에 대한 메모리 사용량을 계산하세요.
+1. 2계 도함수를 계산하고 싶다고 가정합시다. 계산 그래프에 어떤 일이 일어나나요? 계산이 얼마나 오래 걸릴 것으로 예상하나요?
+1. 계산 그래프가 GPU에 비해 너무 크다고 가정합시다.
+    1. 이를 하나 이상의 GPU에 걸쳐 분할할 수 있나요?
+    1. 더 작은 미니배치로 훈련하는 것에 비해 장단점은 무엇인가요?
 
 [Discussions](https://discuss.d2l.ai/t/102)

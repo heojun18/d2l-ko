@@ -3,34 +3,29 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Linear Regression Implementation from Scratch
+# 선형 회귀의 처음부터 구현하기
 :label:`sec_linear_scratch`
 
-We are now ready to work through 
-a fully functioning implementation 
-of linear regression. 
-In this section, 
-(**we will implement the entire method from scratch,
-including (i) the model; (ii) the loss function;
-(iii) a minibatch stochastic gradient descent optimizer;
-and (iv) the training function 
-that stitches all of these pieces together.**)
-Finally, we will run our synthetic data generator
-from :numref:`sec_synthetic-regression-data`
-and apply our model
-on the resulting dataset. 
-While modern deep learning frameworks 
-can automate nearly all of this work,
-implementing things from scratch is the only way
-to make sure that you really know what you are doing.
-Moreover, when it is time to customize models,
-defining our own layers or loss functions,
-understanding how things work under the hood will prove handy.
-In this section, we will rely only 
-on tensors and automatic differentiation.
-Later, we will introduce a more concise implementation,
-taking advantage of the bells and whistles of deep learning frameworks 
-while retaining the structure of what follows below.
+이제 저희는 선형 회귀의 완전히 작동하는 구현을
+하나씩 살펴볼 준비가 되었습니다.
+이 절에서는 (**전체 방법을 처음부터 구현할 것입니다.
+여기에는 (i) 모델, (ii) 손실 함수,
+(iii) 미니배치 확률적 경사 하강법 옵티마이저,
+(iv) 이 모든 조각을 한데 엮는 훈련 함수가
+포함됩니다.**)
+마지막으로 :numref:`sec_synthetic-regression-data`의
+합성 데이터 생성기를 실행하고
+그 결과 데이터셋에 모델을 적용할 것입니다.
+현대 딥러닝 프레임워크는 이 작업의 거의 전부를
+자동화할 수 있지만, 처음부터 구현하는 것은
+여러분이 무엇을 하고 있는지 정말로 안다고 확신할 수 있는 유일한 방법입니다.
+게다가 모델을 커스터마이즈해 자신만의 층이나 손실 함수를
+정의할 때가 되면, 내부에서 어떻게 작동하는지를 이해하는 것이
+유용하게 쓰일 것입니다.
+이 절에서는 텐서와 자동 미분에만 의존할 것입니다.
+나중에 아래에 이어지는 내용의 구조를 유지하면서
+딥러닝 프레임워크의 부가 기능을 활용한
+더 간결한 구현을 소개하겠습니다.
 
 ```{.python .input  n=2}
 %%tab mxnet
@@ -64,19 +59,17 @@ from jax import numpy as jnp
 import optax
 ```
 
-## Defining the Model
+## 모델 정의
 
-[**Before we can begin optimizing our model's parameters**] by minibatch SGD,
-(**we need to have some parameters in the first place.**)
-In the following we initialize weights by drawing
-random numbers from a normal distribution with mean 0
-and a standard deviation of 0.01. 
-The magic number 0.01 often works well in practice, 
-but you can specify a different value 
-through the argument `sigma`.
-Moreover we set the bias to 0.
-Note that for object-oriented design
-we add the code to the `__init__` method of a subclass of `d2l.Module` (introduced in :numref:`subsec_oo-design-models`).
+[**미니배치 SGD로 모델의 매개변수를 최적화하기 시작하기 전에,**]
+(**우선 매개변수가 좀 있어야 합니다.**)
+다음에서 저희는 평균 0과 표준 편차 0.01인
+정규 분포에서 난수를 추출해 가중치를 초기화합니다.
+마법의 숫자 0.01은 실제로 종종 잘 작동하지만,
+인수 `sigma`를 통해 다른 값을 지정할 수도 있습니다.
+또한 편향을 0으로 설정합니다.
+객체 지향 설계를 위해, `d2l.Module`(:numref:`subsec_oo-design-models`에서 소개됨)의
+하위 클래스의 `__init__` 메서드에 코드를 추가한다는 점에 유의하세요.
 
 ```{.python .input  n=6}
 %%tab pytorch, mxnet, tensorflow
@@ -114,21 +107,17 @@ class LinearRegressionScratch(d2l.Module):  #@save
         self.b = self.param('b', nn.initializers.zeros, (1))
 ```
 
-Next we must [**define our model,
-relating its input and parameters to its output.**]
-Using the same notation as :eqref:`eq_linreg-y-vec`
-for our linear model we simply take the matrix--vector product
-of the input features $\mathbf{X}$ 
-and the model weights $\mathbf{w}$,
-and add the offset $b$ to each example.
-The product $\mathbf{Xw}$ is a vector and $b$ is a scalar.
-Because of the broadcasting mechanism 
-(see :numref:`subsec_broadcasting`),
-when we add a vector and a scalar,
-the scalar is added to each component of the vector.
-The resulting `forward` method 
-is registered in the `LinearRegressionScratch` class
-via `add_to_class` (introduced in :numref:`oo-design-utilities`).
+다음으로 저희는 [**모델을 정의하고,
+입력과 매개변수를 출력에 연결해야 합니다.**]
+선형 모델에 대해 :eqref:`eq_linreg-y-vec`와 같은 표기를 사용하여,
+저희는 단순히 입력 특징 $\mathbf{X}$와 모델 가중치 $\mathbf{w}$의
+행렬--벡터 곱을 취하고, 각 예제에 오프셋 $b$를 더합니다.
+곱 $\mathbf{Xw}$는 벡터이고 $b$는 스칼라입니다.
+브로드캐스팅 메커니즘(:numref:`subsec_broadcasting` 참조) 때문에,
+벡터와 스칼라를 더할 때 스칼라는 벡터의 각 성분에 더해집니다.
+그 결과 `forward` 메서드는
+`add_to_class`(:numref:`oo-design-utilities`에서 소개됨)를 통해
+`LinearRegressionScratch` 클래스에 등록됩니다.
 
 ```{.python .input  n=8}
 %%tab all
@@ -137,19 +126,14 @@ def forward(self, X):
     return d2l.matmul(X, self.w) + self.b
 ```
 
-## Defining the Loss Function
+## 손실 함수 정의
 
-Since [**updating our model requires taking
-the gradient of our loss function,**]
-we ought to (**define the loss function first.**)
-Here we use the squared loss function
-in :eqref:`eq_mse`.
-In the implementation, we need to transform the true value `y`
-into the predicted value's shape `y_hat`.
-The result returned by the following method
-will also have the same shape as `y_hat`. 
-We also return the averaged loss value
-among all examples in the minibatch.
+[**모델을 갱신하려면 손실 함수의 경사를 취해야 하기 때문에,**]
+(**먼저 손실 함수를 정의해야 합니다.**)
+여기서는 :eqref:`eq_mse`의 제곱 손실 함수를 사용합니다.
+구현에서는 참 값 `y`를 예측값의 형태 `y_hat`으로 변환해야 합니다.
+다음 메서드가 반환하는 결과도 `y_hat`과 같은 형태를 가질 것입니다.
+또한 미니배치의 모든 예제에 대한 평균 손실 값을 반환합니다.
 
 ```{.python .input  n=9}
 %%tab pytorch, mxnet, tensorflow
@@ -168,59 +152,50 @@ def loss(self, params, X, y, state):
     return d2l.reduce_mean(l)
 ```
 
-## Defining the Optimization Algorithm
+## 최적화 알고리즘 정의
 
-As discussed in :numref:`sec_linear_regression`,
-linear regression has a closed-form solution.
-However, our goal here is to illustrate 
-how to train more general neural networks,
-and that requires that we teach you 
-how to use minibatch SGD.
-Hence we will take this opportunity
-to introduce your first working example of SGD.
-At each step, using a minibatch 
-randomly drawn from our dataset,
-we estimate the gradient of the loss
-with respect to the parameters.
-Next, we update the parameters
-in the direction that may reduce the loss.
+:numref:`sec_linear_regression`에서 논의했듯이,
+선형 회귀는 닫힌 형태의 해를 가집니다.
+그러나 여기서 저희의 목표는 더 일반적인 신경망을
+어떻게 훈련하는지 설명하는 것이며,
+이를 위해서는 여러분에게 미니배치 SGD를 어떻게 사용하는지
+가르쳐 드려야 합니다.
+따라서 이 기회를 빌려 첫 번째 작동하는 SGD 예제를 소개하겠습니다.
+각 단계에서, 저희 데이터셋에서 무작위로 추출한 미니배치를 사용하여
+매개변수에 대한 손실의 경사를 추정합니다.
+다음으로 손실을 줄일 수 있는 방향으로 매개변수를 갱신합니다.
 
-The following code applies the update, 
-given a set of parameters, a learning rate `lr`.
-Since our loss is computed as an average over the minibatch, 
-we do not need to adjust the learning rate against the batch size. 
-In later chapters we will investigate 
-how learning rates should be adjusted
-for very large minibatches as they arise 
-in distributed large-scale learning.
-For now, we can ignore this dependency.
+다음 코드는 매개변수 집합과 학습률 `lr`이 주어졌을 때
+갱신을 적용합니다.
+저희 손실은 미니배치에 대한 평균으로 계산되기 때문에,
+배치 크기에 따라 학습률을 조정할 필요는 없습니다.
+이후 장에서는 분산 대규모 학습에서 등장하는 매우 큰 미니배치의 경우
+학습률을 어떻게 조정해야 하는지 살펴볼 것입니다.
+지금은 이 의존성을 무시할 수 있습니다.
 
 :begin_tab:`mxnet`
-We define our `SGD` class, 
-a subclass of `d2l.HyperParameters` (introduced in :numref:`oo-design-utilities`),
-to have a similar API
-as the built-in SGD optimizer.
-We update the parameters in the `step` method.
-It accepts a `batch_size` argument that can be ignored.
+저희는 내장 SGD 옵티마이저와 비슷한 API를 갖도록
+`d2l.HyperParameters`(:numref:`oo-design-utilities`에서 소개됨)의
+하위 클래스인 `SGD` 클래스를 정의합니다.
+`step` 메서드에서 매개변수를 갱신합니다.
+이는 무시될 수 있는 `batch_size` 인수를 받습니다.
 :end_tab:
 
 :begin_tab:`pytorch`
-We define our `SGD` class,
-a subclass of `d2l.HyperParameters` (introduced in :numref:`oo-design-utilities`),
-to have a similar API 
-as the built-in SGD optimizer.
-We update the parameters in the `step` method.
-The `zero_grad` method sets all gradients to 0,
-which must be run before a backpropagation step.
+저희는 내장 SGD 옵티마이저와 비슷한 API를 갖도록
+`d2l.HyperParameters`(:numref:`oo-design-utilities`에서 소개됨)의
+하위 클래스인 `SGD` 클래스를 정의합니다.
+`step` 메서드에서 매개변수를 갱신합니다.
+`zero_grad` 메서드는 모든 경사를 0으로 설정하며,
+역전파 단계 전에 실행되어야 합니다.
 :end_tab:
 
 :begin_tab:`tensorflow`
-We define our `SGD` class,
-a subclass of `d2l.HyperParameters` (introduced in :numref:`oo-design-utilities`),
-to have a similar API
-as the built-in SGD optimizer.
-We update the parameters in the `apply_gradients` method.
-It accepts a list of parameter and gradient pairs.
+저희는 내장 SGD 옵티마이저와 비슷한 API를 갖도록
+`d2l.HyperParameters`(:numref:`oo-design-utilities`에서 소개됨)의
+하위 클래스인 `SGD` 클래스를 정의합니다.
+`apply_gradients` 메서드에서 매개변수를 갱신합니다.
+이는 매개변수와 경사 쌍의 리스트를 받습니다.
 :end_tab:
 
 ```{.python .input  n=11}
@@ -286,7 +261,7 @@ class SGD(d2l.HyperParameters):  #@save
         return optax.GradientTransformation(self.init, self.update)
 ```
 
-We next define the `configure_optimizers` method, which returns an instance of the `SGD` class.
+다음으로 `SGD` 클래스의 인스턴스를 반환하는 `configure_optimizers` 메서드를 정의합니다.
 
 ```{.python .input  n=14}
 %%tab all
@@ -298,44 +273,36 @@ def configure_optimizers(self):
         return SGD(self.lr)
 ```
 
-## Training
+## 훈련
 
-Now that we have all of the parts in place
-(parameters, loss function, model, and optimizer),
-we are ready to [**implement the main training loop.**]
-It is crucial that you understand this code fully
-since you will employ similar training loops
-for every other deep learning model
-covered in this book.
-In each *epoch*, we iterate through 
-the entire training dataset, 
-passing once through every example
-(assuming that the number of examples 
-is divisible by the batch size). 
-In each *iteration*, we grab a minibatch of training examples,
-and compute its loss through the model's `training_step` method. 
-Then we compute the gradients with respect to each parameter. 
-Finally, we will call the optimization algorithm
-to update the model parameters. 
-In summary, we will execute the following loop:
+이제 모든 부품(매개변수, 손실 함수, 모델, 옵티마이저)이 제자리에 있으므로,
+저희는 [**주요 훈련 루프를 구현할**] 준비가 되었습니다.
+이 코드를 완전히 이해하는 것은 매우 중요한데,
+이 책에서 다루는 다른 모든 딥러닝 모델에 대해
+비슷한 훈련 루프를 사용할 것이기 때문입니다.
+각 *에포크(epoch)*에서, 저희는 전체 훈련 데이터셋을 순회하며
+모든 예제를 한 번씩 통과합니다(예제 수가 배치 크기로 나누어떨어진다고 가정).
+각 *반복(iteration)*에서, 훈련 예제의 미니배치를 가져와
+모델의 `training_step` 메서드를 통해 손실을 계산합니다.
+그런 다음 각 매개변수에 대한 경사를 계산합니다.
+마지막으로, 모델 매개변수를 갱신하기 위해
+최적화 알고리즘을 호출합니다.
+요약하면, 다음 루프를 실행할 것입니다.
 
-* Initialize parameters $(\mathbf{w}, b)$
-* Repeat until done
-    * Compute gradient $\mathbf{g} \leftarrow \partial_{(\mathbf{w},b)} \frac{1}{|\mathcal{B}|} \sum_{i \in \mathcal{B}} l(\mathbf{x}^{(i)}, y^{(i)}, \mathbf{w}, b)$
-    * Update parameters $(\mathbf{w}, b) \leftarrow (\mathbf{w}, b) - \eta \mathbf{g}$
+* 매개변수 $(\mathbf{w}, b)$ 초기화
+* 완료될 때까지 반복
+    * 경사 $\mathbf{g} \leftarrow \partial_{(\mathbf{w},b)} \frac{1}{|\mathcal{B}|} \sum_{i \in \mathcal{B}} l(\mathbf{x}^{(i)}, y^{(i)}, \mathbf{w}, b)$ 계산
+    * 매개변수 $(\mathbf{w}, b) \leftarrow (\mathbf{w}, b) - \eta \mathbf{g}$ 갱신
  
-Recall that the synthetic regression dataset 
-that we generated in :numref:``sec_synthetic-regression-data`` 
-does not provide a validation dataset. 
-In most cases, however, 
-we will want a validation dataset 
-to measure our model quality. 
-Here we pass the validation dataloader 
-once in each epoch to measure the model performance.
-Following our object-oriented design,
-the `prepare_batch` and `fit_epoch` methods
-are registered in the `d2l.Trainer` class
-(introduced in :numref:`oo-design-training`).
+저희가 :numref:``sec_synthetic-regression-data``에서 생성한 합성 회귀 데이터셋은
+검증 데이터셋을 제공하지 않는다는 점을 떠올려 보세요.
+그러나 대부분의 경우 저희는 모델 품질을 측정하기 위한
+검증 데이터셋을 원할 것입니다.
+여기서는 모델 성능을 측정하기 위해 각 에포크에서
+검증 데이터로더를 한 번씩 통과시킵니다.
+저희의 객체 지향 설계에 따라,
+`prepare_batch`와 `fit_epoch` 메서드는
+`d2l.Trainer` 클래스(:numref:`oo-design-training`에서 소개됨)에 등록됩니다.
 
 ```{.python .input  n=15}
 %%tab all    
@@ -445,22 +412,17 @@ def fit_epoch(self):
         self.val_batch_idx += 1
 ```
 
-We are almost ready to train the model,
-but first we need some training data.
-Here we use the `SyntheticRegressionData` class 
-and pass in some ground truth parameters.
-Then we train our model with 
-the learning rate `lr=0.03` 
-and set `max_epochs=3`. 
-Note that in general, both the number of epochs 
-and the learning rate are hyperparameters.
-In general, setting hyperparameters is tricky
-and we will usually want to use a three-way split,
-one set for training, 
-a second for hyperparameter selection,
-and the third reserved for the final evaluation.
-We elide these details for now but will revise them
-later.
+저희는 모델을 훈련할 준비가 거의 다 되었지만,
+먼저 약간의 훈련 데이터가 필요합니다.
+여기서는 `SyntheticRegressionData` 클래스를 사용하고
+일부 정답 매개변수를 전달합니다.
+그런 다음 학습률 `lr=0.03`으로 모델을 훈련하고
+`max_epochs=3`으로 설정합니다.
+일반적으로 에포크 수와 학습률은 모두 하이퍼파라미터라는 점에 유의하세요.
+일반적으로 하이퍼파라미터를 설정하는 것은 까다로우며,
+저희는 보통 훈련용, 하이퍼파라미터 선택용, 최종 평가용으로
+예비된 세 갈래 분할을 사용하고자 할 것입니다.
+지금은 이러한 세부 사항을 생략하지만 나중에 다시 다룰 것입니다.
 
 ```{.python .input  n=20}
 %%tab all
@@ -470,12 +432,11 @@ trainer = d2l.Trainer(max_epochs=3)
 trainer.fit(model, data)
 ```
 
-Because we synthesized the dataset ourselves,
-we know precisely what the true parameters are.
-Thus, we can [**evaluate our success in training
-by comparing the true parameters
-with those that we learned**] through our training loop.
-Indeed they turn out to be very close to each other.
+저희가 데이터셋을 직접 합성했기 때문에,
+참 매개변수가 정확히 무엇인지 알고 있습니다.
+따라서 [**참 매개변수와 훈련 루프를 통해 학습한 매개변수를 비교함으로써
+훈련의 성공을 평가할**] 수 있습니다.
+실제로 둘은 서로 매우 가까운 것으로 드러납니다.
 
 ```{.python .input  n=21}
 %%tab pytorch
@@ -497,71 +458,56 @@ print(f"error in estimating w: {data.w - d2l.reshape(params['w'], data.w.shape)}
 print(f"error in estimating b: {data.b - params['b']}")
 ```
 
-We should not take the ability to exactly recover 
-the ground truth parameters for granted.
-In general, for deep models unique solutions
-for the parameters do not exist,
-and even for linear models,
-exactly recovering the parameters
-is only possible when no feature 
-is linearly dependent on the others.
-However, in machine learning, 
-we are often less concerned
-with recovering true underlying parameters,
-but rather with parameters 
-that lead to highly accurate prediction :cite:`Vapnik.1992`.
-Fortunately, even on difficult optimization problems,
-stochastic gradient descent can often find remarkably good solutions,
-owing partly to the fact that, for deep networks,
-there exist many configurations of the parameters
-that lead to highly accurate prediction.
+정답 매개변수를 정확히 복원할 수 있는 능력을 당연시해서는 안 됩니다.
+일반적으로 심층 모델에 대해서는 매개변수에 대한 유일한 해가 존재하지 않으며,
+선형 모델조차도 매개변수를 정확히 복원하는 것은
+어떤 특징도 다른 특징들에 선형 종속이 아닐 때만 가능합니다.
+그러나 머신러닝에서 저희는 종종 참 기저 매개변수를 복원하는 데
+덜 관심을 두고, 오히려 매우 정확한 예측으로 이어지는 매개변수에 관심을 둡니다 :cite:`Vapnik.1992`.
+다행히도 어려운 최적화 문제에서조차
+확률적 경사 하강법은 종종 놀랍도록 좋은 해를 찾을 수 있는데,
+이는 부분적으로 심층 신경망의 경우 매우 정확한 예측으로 이어지는
+매개변수의 구성이 많이 존재한다는 사실 덕분입니다.
 
 
-## Summary
+## 요약
 
-In this section, we took a significant step 
-towards designing deep learning systems 
-by implementing a fully functional 
-neural network model and training loop.
-In this process, we built a data loader, 
-a model, a loss function, an optimization procedure,
-and a visualization and monitoring tool. 
-We did this by composing a Python object 
-that contains all relevant components for training a model. 
-While this is not yet a professional-grade implementation
-it is perfectly functional and code like this 
-could already help you to solve small problems quickly.
-In the coming sections, we will see how to do this
-both *more concisely* (avoiding boilerplate code)
-and *more efficiently* (using our GPUs to their full potential).
+이 절에서 저희는 완전히 기능하는 신경망 모델과 훈련 루프를 구현함으로써
+딥러닝 시스템을 설계하는 데 중요한 한 걸음을 내디뎠습니다.
+이 과정에서 저희는 데이터 로더, 모델, 손실 함수, 최적화 절차,
+시각화 및 모니터링 도구를 만들었습니다.
+모델 훈련을 위한 모든 관련 구성 요소를 포함하는
+Python 객체를 합성함으로써 이를 수행했습니다.
+이것은 아직 전문가급 구현은 아니지만, 완벽하게 기능하며
+이와 같은 코드는 이미 작은 문제를 빠르게 해결하는 데
+도움이 될 수 있습니다.
+다음 절에서는 이를 *더 간결하게*(보일러플레이트 코드를 피하면서) 
+그리고 *더 효율적으로*(GPU를 그 잠재력을 최대한 사용하면서)
+하는 방법을 살펴보겠습니다.
 
 
 
-## Exercises
+## 연습문제
 
-1. What would happen if we were to initialize the weights to zero. Would the algorithm still work? What if we
-   initialized the parameters with variance $1000$ rather than $0.01$?
-1. Assume that you are [Georg Simon Ohm](https://en.wikipedia.org/wiki/Georg_Ohm) trying to come up
-   with a model for resistance that relates voltage and current. Can you use automatic
-   differentiation to learn the parameters of your model?
-1. Can you use [Planck's Law](https://en.wikipedia.org/wiki/Planck%27s_law) to determine the temperature of an object
-   using spectral energy density? For reference, the spectral density $B$ of radiation emanating from a black body is
-   $B(\lambda, T) = \frac{2 hc^2}{\lambda^5} \cdot \left(\exp \frac{h c}{\lambda k T} - 1\right)^{-1}$. Here
-   $\lambda$ is the wavelength, $T$ is the temperature, $c$ is the speed of light, $h$ is Planck's constant, and $k$ is the
-   Boltzmann constant. You measure the energy for different wavelengths $\lambda$ and you now need to fit the spectral
-   density curve to Planck's law.
-1. What are the problems you might encounter if you wanted to compute the second derivatives of the loss? How would
-   you fix them?
-1. Why is the `reshape` method needed in the `loss` function?
-1. Experiment using different learning rates to find out how quickly the loss function value drops. Can you reduce the
-   error by increasing the number of epochs of training?
-1. If the number of examples cannot be divided by the batch size, what happens to `data_iter` at the end of an epoch?
-1. Try implementing a different loss function, such as the absolute value loss `(y_hat - d2l.reshape(y, y_hat.shape)).abs().sum()`.
-    1. Check what happens for regular data.
-    1. Check whether there is a difference in behavior if you actively perturb some entries, such as $y_5 = 10000$, of $\mathbf{y}$.
-    1. Can you think of a cheap solution for combining the best aspects of squared loss and absolute value loss?
-       Hint: how can you avoid really large gradient values?
-1. Why do we need to reshuffle the dataset? Can you design a case where a maliciously constructed dataset would break the optimization algorithm otherwise?
+1. 가중치를 0으로 초기화한다면 어떻게 됩니까? 알고리즘이 여전히 작동할까요? 매개변수를 $0.01$ 대신 분산 $1000$으로 초기화하면 어떻게 됩니까?
+1. 여러분이 전압과 전류를 관련짓는 저항 모델을 만들고자 하는 [게오르크 시몬 옴(Georg Simon Ohm)](https://en.wikipedia.org/wiki/Georg_Ohm)이라고 가정합니다. 자동 미분을 사용해 모델의 매개변수를 학습할 수 있습니까?
+1. 스펙트럼 에너지 밀도를 사용해 물체의 온도를 결정하기 위해 [플랑크 법칙(Planck's Law)](https://en.wikipedia.org/wiki/Planck%27s_law)을 사용할 수 있습니까? 참고로, 흑체에서 방출되는 복사의 스펙트럼 밀도 $B$는
+   $B(\lambda, T) = \frac{2 hc^2}{\lambda^5} \cdot \left(\exp \frac{h c}{\lambda k T} - 1\right)^{-1}$로 주어집니다. 여기서
+   $\lambda$는 파장, $T$는 온도, $c$는 빛의 속도, $h$는 플랑크 상수, $k$는
+   볼츠만 상수입니다. 다양한 파장 $\lambda$에 대해 에너지를 측정하고, 이제 스펙트럼 밀도 곡선을
+   플랑크 법칙에 맞춰야 합니다.
+1. 손실의 이계 도함수를 계산하려고 한다면 어떤 문제에 부딪힐 수 있습니까? 어떻게
+   해결하시겠습니까?
+1. `loss` 함수에서 `reshape` 메서드가 필요한 이유는 무엇입니까?
+1. 손실 함수 값이 얼마나 빠르게 떨어지는지 알아보기 위해 다른 학습률을 사용해 실험해 보세요. 훈련의 에포크 수를 늘려서
+   오차를 줄일 수 있습니까?
+1. 예제의 수가 배치 크기로 나누어떨어지지 않으면, 에포크 끝에서 `data_iter`에 어떤 일이 일어납니까?
+1. `(y_hat - d2l.reshape(y, y_hat.shape)).abs().sum()` 같은 절대값 손실처럼 다른 손실 함수를 구현해 보세요.
+    1. 일반적인 데이터에 대해 어떤 일이 일어나는지 확인하세요.
+    1. $\mathbf{y}$의 일부 항목, 예를 들어 $y_5 = 10000$을 능동적으로 교란시키면 동작에 차이가 있는지 확인하세요.
+    1. 제곱 손실과 절대값 손실의 가장 좋은 측면을 결합하기 위한 값싼 해를 생각해 낼 수 있습니까?
+       힌트: 정말 큰 경사 값을 어떻게 피할 수 있을까요?
+1. 데이터셋을 다시 섞어야 하는 이유는 무엇입니까? 그렇게 하지 않으면 악의적으로 구성된 데이터셋이 최적화 알고리즘을 망가뜨릴 수 있는 경우를 설계할 수 있습니까?
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/42)

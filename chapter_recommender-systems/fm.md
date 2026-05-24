@@ -1,22 +1,22 @@
-# Factorization Machines
+# 인수분해 머신
 
-Factorization machines (FM), proposed by :citet:`Rendle.2010`, is a supervised algorithm that can be used for classification, regression, and ranking tasks. It quickly took notice and became a popular and impactful method for making predictions and recommendations. Particularly, it is a generalization of the linear regression model and the matrix factorization model. Moreover, it is reminiscent of support vector machines with a polynomial kernel. The strengths of factorization machines over the linear regression and matrix factorization are: (1) it can model $\chi$-way variable interactions, where $\chi$ is the number of polynomial order and is usually set to two. (2) A fast optimization algorithm associated with factorization machines can reduce the polynomial computation time to linear complexity, making it extremely efficient especially for high dimensional sparse inputs.  For these reasons, factorization machines are widely employed in modern advertisement and products recommendations. The technical details and implementations are described below.
+:citet:`Rendle.2010`이 제안한 인수분해 머신(Factorization Machines, FM)은 분류, 회귀, 랭킹 작업에 사용될 수 있는 지도 학습 알고리즘입니다. 이는 빠르게 주목받으며 예측과 추천을 만드는 인기 있고 영향력 있는 방법이 되었습니다. 특히, 이는 선형 회귀 모델과 행렬 분해 모델의 일반화입니다. 또한, 다항 커널을 사용한 서포트 벡터 머신을 연상시킵니다. 선형 회귀와 행렬 분해에 비해 인수분해 머신의 강점은 다음과 같습니다. (1) $\chi$차 변수 상호작용을 모델링할 수 있으며, 여기서 $\chi$는 다항식의 차수이며 보통 2로 설정됩니다. (2) 인수분해 머신과 연관된 빠른 최적화 알고리즘은 다항식 계산 시간을 선형 복잡도로 줄일 수 있어, 특히 고차원 희소 입력에 매우 효율적입니다. 이러한 이유로, 인수분해 머신은 현대 광고와 제품 추천에 널리 사용됩니다. 기술적 세부 사항과 구현은 아래에 설명되어 있습니다.
 
 
-## 2-Way Factorization Machines
+## 2차 인수분해 머신
 
-Formally, let $x \in \mathbb{R}^d$ denote the feature vectors of one sample, and $y$ denote the corresponding label which can be real-valued label or class label such as binary class "click/non-click". The model for a factorization machine of degree two is defined as:
+공식적으로, $x \in \mathbb{R}^d$가 한 샘플의 특징 벡터를 나타내며, $y$가 실수값 레이블이거나 이진 클래스 "클릭/비클릭"과 같은 클래스 레이블이 될 수 있는 해당 레이블을 나타낸다고 합시다. 2차 인수분해 머신 모델은 다음과 같이 정의됩니다.
 
 $$
 \hat{y}(x) = \mathbf{w}_0 + \sum_{i=1}^d \mathbf{w}_i x_i + \sum_{i=1}^d\sum_{j=i+1}^d \langle\mathbf{v}_i, \mathbf{v}_j\rangle x_i x_j
 $$
 
-where $\mathbf{w}_0 \in \mathbb{R}$ is the global bias; $\mathbf{w} \in \mathbb{R}^d$ denotes the weights of the i-th variable; $\mathbf{V} \in \mathbb{R}^{d\times k}$ represents the feature embeddings; $\mathbf{v}_i$ represents the $i^\textrm{th}$ row of $\mathbf{V}$; $k$ is the dimensionality of latent factors; $\langle\cdot, \cdot \rangle$ is the dot product of two vectors.  $\langle \mathbf{v}_i, \mathbf{v}_j \rangle$ model the interaction between the $i^\textrm{th}$ and $j^\textrm{th}$ feature. Some feature interactions can be easily understood so they can be designed by experts. However, most other feature interactions are hidden in data and difficult to identify. So modeling feature interactions automatically can greatly reduce the efforts in feature engineering. It is obvious that the first two terms correspond to the linear regression model and the last term is an extension of the matrix factorization model. If the feature $i$ represents an item and the feature $j$ represents a user, the third term is exactly the dot product between user and item embeddings. It is worth noting that FM can also generalize to higher orders (degree > 2). Nevertheless, the numerical stability might weaken the generalization.
+여기서 $\mathbf{w}_0 \in \mathbb{R}$은 전역 편향이며, $\mathbf{w} \in \mathbb{R}^d$는 i번째 변수의 가중치를 나타내며, $\mathbf{V} \in \mathbb{R}^{d\times k}$는 특징 임베딩을 나타내며, $\mathbf{v}_i$는 $\mathbf{V}$의 $i^\textrm{th}$ 행을 나타내며, $k$는 잠재 요인의 차원이며, $\langle\cdot, \cdot \rangle$은 두 벡터의 내적입니다. $\langle \mathbf{v}_i, \mathbf{v}_j \rangle$는 $i^\textrm{th}$와 $j^\textrm{th}$ 특징 간의 상호작용을 모델링합니다. 일부 특징 상호작용은 쉽게 이해될 수 있어 전문가에 의해 설계될 수 있습니다. 그러나 대부분의 다른 특징 상호작용은 데이터에 숨겨져 있어 식별하기 어렵습니다. 따라서 특징 상호작용을 자동으로 모델링하면 특징 공학에 드는 노력을 크게 줄일 수 있습니다. 처음 두 항이 선형 회귀 모델에 해당하고 마지막 항이 행렬 분해 모델의 확장임은 분명합니다. 만약 특징 $i$가 아이템을 나타내고 특징 $j$가 사용자를 나타낸다면, 세 번째 항은 정확히 사용자와 아이템 임베딩 간의 내적입니다. FM은 더 높은 차수(차수 > 2)로 일반화될 수도 있다는 점에 주목할 가치가 있습니다. 그럼에도 불구하고 수치적 안정성이 일반화 능력을 약화시킬 수 있습니다.
 
 
-## An Efficient Optimization Criterion
+## 효율적인 최적화 기준
 
-Optimizing the factorization machines in a  straight forward method leads to a complexity of $\mathcal{O}(kd^2)$ as all pairwise interactions require to be computed. To solve this inefficiency problem, we can reorganize the third term of FM which could greatly reduce the computation cost, leading to a linear time complexity ($\mathcal{O}(kd)$).  The reformulation of the pairwise interaction term is as follows:
+직관적인 방법으로 인수분해 머신을 최적화하면 모든 페어와이즈 상호작용을 계산해야 하므로 $\mathcal{O}(kd^2)$의 복잡도가 발생합니다. 이 비효율성 문제를 해결하기 위해, 저희는 FM의 세 번째 항을 재구성하여 계산 비용을 크게 줄일 수 있으며, 이는 선형 시간 복잡도($\mathcal{O}(kd)$)로 이어집니다. 페어와이즈 상호작용 항의 재구성은 다음과 같습니다.
 
 $$
 \begin{aligned}
@@ -28,9 +28,9 @@ $$
  \end{aligned}
 $$
 
-With this reformulation, the model complexity are decreased greatly. Moreover, for sparse features, only non-zero elements needs to be computed so that the overall complexity is linear to the number of non-zero features.
+이 재구성으로 모델 복잡도가 크게 감소됩니다. 또한, 희소 특징의 경우, 0이 아닌 요소만 계산하면 되므로 전체 복잡도는 0이 아닌 특징의 수에 선형입니다.
 
-To learn the FM model, we can use the MSE loss for regression task, the cross-entropy loss for classification tasks, and the BPR loss for ranking task. Standard optimizers such as stochastic gradient descent and Adam are viable for optimization.
+FM 모델을 학습하기 위해, 저희는 회귀 작업에는 MSE 손실, 분류 작업에는 교차 엔트로피 손실, 랭킹 작업에는 BPR 손실을 사용할 수 있습니다. 확률적 경사 하강법과 Adam과 같은 표준 최적화기는 최적화에 사용 가능합니다.
 
 ```{.python .input  n=2}
 #@tab mxnet
@@ -42,8 +42,8 @@ import os
 npx.set_np()
 ```
 
-## Model Implementation
-The following code implement the factorization machines. It is clear to see that FM consists a linear regression block and an efficient feature interaction block. We apply a sigmoid function over the final score since we treat the CTR prediction as a classification task.
+## 모델 구현
+다음 코드는 인수분해 머신을 구현합니다. FM이 선형 회귀 블록과 효율적인 특징 상호작용 블록으로 구성되어 있음을 명확하게 볼 수 있습니다. 저희는 CTR 예측을 분류 작업으로 다루므로 최종 점수에 시그모이드 함수를 적용합니다.
 
 ```{.python .input  n=2}
 #@tab mxnet
@@ -64,8 +64,8 @@ class FM(nn.Block):
         return x
 ```
 
-## Load the Advertising Dataset
-We use the CTR data wrapper from the last section to load the online advertising dataset.
+## 광고 데이터셋 로드
+저희는 온라인 광고 데이터셋을 로드하기 위해 지난 절의 CTR 데이터 래퍼를 사용합니다.
 
 ```{.python .input  n=3}
 #@tab mxnet
@@ -83,8 +83,8 @@ test_iter = gluon.data.DataLoader(
     num_workers=d2l.get_dataloader_workers())
 ```
 
-## Train the Model
-Afterwards, we train the model. The learning rate is set to 0.02 and the embedding size is set to 20 by default. The `Adam` optimizer and the `SigmoidBinaryCrossEntropyLoss` loss are used for model training.
+## 모델 훈련
+이후 저희는 모델을 훈련합니다. 학습률은 0.02로 설정되며 임베딩 크기는 기본적으로 20으로 설정됩니다. `Adam` 최적화기와 `SigmoidBinaryCrossEntropyLoss` 손실이 모델 훈련에 사용됩니다.
 
 ```{.python .input  n=5}
 #@tab mxnet
@@ -98,16 +98,16 @@ loss = gluon.loss.SigmoidBinaryCrossEntropyLoss()
 d2l.train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs, devices)
 ```
 
-## Summary
+## 요약
 
-* FM is a general framework that can be applied on a variety of tasks such as regression, classification, and ranking.
-* Feature interaction/crossing is important for prediction tasks and the 2-way interaction can be efficiently modeled with FM.
+* FM은 회귀, 분류, 랭킹과 같은 다양한 작업에 적용될 수 있는 일반적인 프레임워크입니다.
+* 특징 상호작용/교차는 예측 작업에 중요하며, 2차 상호작용은 FM으로 효율적으로 모델링될 수 있습니다.
 
-## Exercises
+## 연습문제
 
-* Can you test FM on other dataset such as Avazu, MovieLens, and Criteo datasets?
-* Vary the embedding size to check its impact on performance, can you observe a similar pattern as that of matrix factorization?
+* Avazu, MovieLens, Criteo 데이터셋과 같은 다른 데이터셋에서 FM을 테스트할 수 있습니까?
+* 임베딩 크기를 변화시켜 성능에 미치는 영향을 확인하십시오. 행렬 분해와 비슷한 패턴을 관찰할 수 있습니까?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/406)
+[토론](https://discuss.d2l.ai/t/406)
 :end_tab:

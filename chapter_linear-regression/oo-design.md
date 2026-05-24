@@ -3,43 +3,34 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Object-Oriented Design for Implementation
+# 구현을 위한 객체 지향 설계
 :label:`sec_oo-design`
 
-In our introduction to linear regression,
-we walked through various components
-including
-the data, the model, the loss function,
-and the optimization algorithm.
-Indeed,
-linear regression is
-one of the simplest machine learning models.
-Training it,
-however, uses many of the same components that other models in this book require.
-Therefore, 
-before diving into the implementation details
-it is worth 
-designing some of the APIs
-that we use throughout. 
-Treating components in deep learning
-as objects,
-we can start by
-defining classes for these objects
-and their interactions.
-This object-oriented design
-for implementation
-will greatly
-streamline the presentation and you might even want to use it in your projects.
+선형 회귀에 대한 소개에서 저희는
+데이터, 모델, 손실 함수, 최적화 알고리즘을 포함한
+다양한 구성 요소들을 살펴보았습니다.
+실제로 선형 회귀는 가장 단순한 머신러닝 모델 중 하나입니다.
+그러나 이를 훈련하는 데에는
+이 책의 다른 모델들이 필요로 하는
+많은 동일한 구성 요소를 사용합니다.
+따라서 구현 세부 사항으로 뛰어들기 전에
+저희가 전반에 걸쳐 사용할 일부 API를
+설계해 두는 것이 가치 있습니다.
+딥러닝의 구성 요소를 객체로 다룸으로써,
+이 객체들과 그 상호작용에 대한 클래스를
+정의하는 것에서 시작할 수 있습니다.
+구현을 위한 이 객체 지향 설계는
+설명을 크게 간소화할 것이며,
+여러분의 프로젝트에서도 사용하고 싶어질지도 모릅니다.
 
 
-Inspired by open-source libraries such as [PyTorch Lightning](https://www.pytorchlightning.ai/),
-at a high level
-we wish to have three classes: 
-(i) `Module` contains models, losses, and optimization methods; 
-(ii) `DataModule` provides data loaders for training and validation; 
-(iii) both classes are combined using the `Trainer` class, which allows us to
-train models on a variety of hardware platforms. 
-Most code in this book adapts `Module` and `DataModule`. We will touch upon the `Trainer` class only when we discuss GPUs, CPUs, parallel training, and optimization algorithms.
+[PyTorch Lightning](https://www.pytorchlightning.ai/) 같은 오픈 소스 라이브러리에서 영감을 받아,
+고수준에서 저희는 세 가지 클래스를 갖고자 합니다.
+(i) `Module`은 모델, 손실, 최적화 메서드를 포함하고,
+(ii) `DataModule`은 훈련과 검증을 위한 데이터 로더를 제공하며,
+(iii) 두 클래스는 `Trainer` 클래스를 사용해 결합되어,
+저희가 다양한 하드웨어 플랫폼에서 모델을 훈련할 수 있게 해 줍니다.
+이 책의 대부분의 코드는 `Module`과 `DataModule`을 차용합니다. `Trainer` 클래스는 GPU, CPU, 병렬 훈련, 최적화 알고리즘을 논의할 때에만 다룰 것입니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -79,11 +70,10 @@ import time
 from typing import Any
 ```
 
-## Utilities
+## 유틸리티
 :label:`oo-design-utilities`
 
-We need a few utilities to simplify object-oriented programming in Jupyter notebooks. One of the challenges is that class definitions tend to be fairly long blocks of code. Notebook readability demands short code fragments, interspersed with explanations, a requirement incompatible with the style of programming common for Python libraries. The first
-utility function allows us to register functions as methods in a class *after* the class has been created. In fact, we can do so *even after* we have created instances of the class! It allows us to split the implementation of a class into multiple code blocks.
+주피터 노트북에서 객체 지향 프로그래밍을 단순화하기 위해 몇 가지 유틸리티가 필요합니다. 한 가지 어려움은 클래스 정의가 상당히 긴 코드 블록이 되는 경향이 있다는 점입니다. 노트북의 가독성은 설명 사이사이에 짧은 코드 조각을 요구하는데, 이는 Python 라이브러리에서 일반적인 프로그래밍 스타일과 양립할 수 없는 요건입니다. 첫 번째 유틸리티 함수는 클래스가 생성된 *후에* 함수를 클래스의 메서드로 등록할 수 있게 해 줍니다. 실제로 클래스의 인스턴스를 생성한 *후에도* 그렇게 할 수 있습니다! 이를 통해 클래스의 구현을 여러 코드 블록으로 나눌 수 있습니다.
 
 ```{.python .input}
 %%tab all
@@ -94,7 +84,7 @@ def add_to_class(Class):  #@save
     return wrapper
 ```
 
-Let's have a quick look at how to use it. We plan to implement a class `A` with a method `do`. Instead of having code for both `A` and `do` in the same code block, we can first declare the class `A` and create an instance `a`.
+이를 어떻게 사용하는지 빠르게 살펴봅시다. 저희는 `do` 메서드를 가진 클래스 `A`를 구현할 계획입니다. `A`와 `do`에 대한 코드를 같은 코드 블록에 두는 대신, 먼저 클래스 `A`를 선언하고 인스턴스 `a`를 생성할 수 있습니다.
 
 ```{.python .input}
 %%tab all
@@ -105,7 +95,7 @@ class A:
 a = A()
 ```
 
-Next we define the method `do` as we normally would, but not in class `A`'s scope. Instead, we decorate this method by `add_to_class` with class `A` as its argument. In doing so, the method is able to access the member variables of `A` just as we would expect had it been included as part of `A`'s definition. Let's see what happens when we invoke it for the instance `a`.
+다음으로 보통 하듯이 메서드 `do`를 정의하되, 클래스 `A`의 범위 안에서 정의하지 않습니다. 대신 이 메서드를 클래스 `A`를 인수로 하는 `add_to_class`로 데코레이트합니다. 이렇게 하면 이 메서드는 마치 `A`의 정의의 일부로 포함되었던 것처럼 `A`의 멤버 변수에 접근할 수 있습니다. 인스턴스 `a`에 대해 호출하면 어떤 일이 일어나는지 봅시다.
 
 ```{.python .input}
 %%tab all
@@ -116,7 +106,7 @@ def do(self):
 a.do()
 ```
 
-The second one is a utility class that saves all arguments in a class's `__init__` method as class attributes. This allows us to extend constructor call signatures implicitly without additional code.
+두 번째는 클래스의 `__init__` 메서드의 모든 인수를 클래스 속성으로 저장하는 유틸리티 클래스입니다. 이를 통해 추가 코드 없이 암묵적으로 생성자 호출 시그니처를 확장할 수 있습니다.
 
 ```{.python .input}
 %%tab all
@@ -126,7 +116,7 @@ class HyperParameters:  #@save
         raise NotImplemented
 ```
 
-We defer its implementation into :numref:`sec_utils`. To use it, we define our class that inherits from `HyperParameters` and calls `save_hyperparameters` in the `__init__` method.
+이 구현은 :numref:`sec_utils`로 미룹니다. 이를 사용하기 위해, `HyperParameters`를 상속받고 `__init__` 메서드에서 `save_hyperparameters`를 호출하는 클래스를 정의합니다.
 
 ```{.python .input}
 %%tab all
@@ -140,9 +130,9 @@ class B(d2l.HyperParameters):
 b = B(a=1, b=2, c=3)
 ```
 
-The final utility allows us to plot experiment progress interactively while it is going on. In deference to the much more powerful (and complex) [TensorBoard](https://www.tensorflow.org/tensorboard) we name it `ProgressBoard`. The  implementation is deferred to :numref:`sec_utils`. For now, let's simply see it in action.
+마지막 유틸리티는 실험이 진행되는 동안 실험 진행 상황을 인터랙티브하게 그릴 수 있게 해 줍니다. 훨씬 더 강력한 (그리고 복잡한) [TensorBoard](https://www.tensorflow.org/tensorboard)에 경의를 표하여 이를 `ProgressBoard`라고 이름 지었습니다. 구현은 :numref:`sec_utils`로 미룹니다. 지금은 그저 실제 작동하는 모습을 봅시다.
 
-The `draw` method plots a point `(x, y)` in the figure, with `label` specified in the legend. The optional `every_n` smooths the line by only showing $1/n$ points in the figure. Their values are averaged from the $n$ neighbor points in the original figure.
+`draw` 메서드는 범례에 지정된 `label`로 그림에 점 `(x, y)`를 그립니다. 선택적인 `every_n`은 그림에 $1/n` 점만 표시하여 선을 부드럽게 만듭니다. 이들의 값은 원래 그림의 $n$개 이웃 점들로부터 평균을 냅니다.
 
 ```{.python .input}
 %%tab all
@@ -158,7 +148,7 @@ class ProgressBoard(d2l.HyperParameters):  #@save
         raise NotImplemented
 ```
 
-In the following example, we draw `sin` and `cos` with a different smoothness. If you run this code block, you will see the lines grow in animation.
+다음 예제에서는 다른 부드러움으로 `sin`과 `cos`를 그립니다. 이 코드 블록을 실행하면, 선들이 애니메이션으로 자라나는 것을 보게 될 것입니다.
 
 ```{.python .input}
 %%tab all
@@ -168,17 +158,17 @@ for x in np.arange(0, 10, 0.1):
     board.draw(x, np.cos(x), 'cos', every_n=10)
 ```
 
-## Models
+## 모델
 :label:`subsec_oo-design-models`
 
-The `Module` class is the base class of all models we will implement. At the very least we need three methods. The first, `__init__`, stores the learnable parameters, the `training_step` method accepts a data batch to return the loss value, and finally, `configure_optimizers` returns the optimization method, or a list of them, that is used to update the learnable parameters. Optionally we can define `validation_step` to report the evaluation measures.
-Sometimes we put the code for computing the output into a separate `forward` method to make it more reusable.
+`Module` 클래스는 저희가 구현할 모든 모델의 기본 클래스입니다. 최소한 세 개의 메서드가 필요합니다. 첫째, `__init__`은 학습 가능한 매개변수를 저장합니다. `training_step` 메서드는 데이터 배치를 받아 손실 값을 반환합니다. 마지막으로 `configure_optimizers`는 학습 가능한 매개변수를 갱신하는 데 사용되는 최적화 메서드(혹은 그 목록)를 반환합니다. 선택적으로 평가 척도를 보고하기 위해 `validation_step`을 정의할 수 있습니다.
+때로는 재사용성을 높이기 위해 출력을 계산하는 코드를 별도의 `forward` 메서드에 둡니다.
 
 :begin_tab:`jax`
-With the introduction of [dataclasses](https://docs.python.org/3/library/dataclasses.html)
-in Python 3.7, classes decorated with `@dataclass` automatically add magic
-methods such as `__init__` and `__repr__`. The member variables are defined
-using type annotations. All Flax modules are Python 3.7 dataclasses.
+Python 3.7에서 [dataclasses](https://docs.python.org/3/library/dataclasses.html)가 도입되면서,
+`@dataclass`로 데코레이트된 클래스는 `__init__`과 `__repr__` 같은
+매직 메서드를 자동으로 추가합니다. 멤버 변수는 타입 주석을 사용해 정의됩니다.
+모든 Flax 모듈은 Python 3.7 dataclass입니다.
 :end_tab:
 
 ```{.python .input}
@@ -323,30 +313,30 @@ class Module(d2l.nn_Module, d2l.HyperParameters):  #@save
 ```
 
 :begin_tab:`mxnet`
-You may notice that `Module` is a subclass of `nn.Block`, the base class of neural networks in Gluon.
-It provides convenient features for handling neural networks. For example, if we define a `forward` method, such as `forward(self, X)`, then for an instance `a` we can invoke this method by `a(X)`. This works since it calls the `forward` method in the built-in `__call__` method. You can find more details and examples about `nn.Block` in :numref:`sec_model_construction`.
+`Module`은 Gluon의 신경망 기본 클래스인 `nn.Block`의 하위 클래스라는 것을 알 수 있습니다.
+이는 신경망을 다루기 위한 편리한 기능을 제공합니다. 예를 들어 `forward(self, X)` 같은 `forward` 메서드를 정의하면, 인스턴스 `a`에 대해 `a(X)`로 이 메서드를 호출할 수 있습니다. 이는 내장된 `__call__` 메서드에서 `forward` 메서드를 호출하기 때문에 작동합니다. `nn.Block`에 대한 더 자세한 내용과 예제는 :numref:`sec_model_construction`에서 찾을 수 있습니다.
 :end_tab:
 
 :begin_tab:`pytorch`
-You may notice that `Module` is a subclass of `nn.Module`, the base class of neural networks in PyTorch.
-It provides convenient features for handling neural networks. For example, if we define a `forward` method, such as `forward(self, X)`, then for an instance `a` we can invoke this method by `a(X)`. This works since it calls the `forward` method in the built-in `__call__` method. You can find more details and examples about `nn.Module` in :numref:`sec_model_construction`.
+`Module`은 PyTorch의 신경망 기본 클래스인 `nn.Module`의 하위 클래스라는 것을 알 수 있습니다.
+이는 신경망을 다루기 위한 편리한 기능을 제공합니다. 예를 들어 `forward(self, X)` 같은 `forward` 메서드를 정의하면, 인스턴스 `a`에 대해 `a(X)`로 이 메서드를 호출할 수 있습니다. 이는 내장된 `__call__` 메서드에서 `forward` 메서드를 호출하기 때문에 작동합니다. `nn.Module`에 대한 더 자세한 내용과 예제는 :numref:`sec_model_construction`에서 찾을 수 있습니다.
 :end_tab:
 
 :begin_tab:`tensorflow`
-You may notice that `Module` is a subclass of `tf.keras.Model`, the base class of neural networks in TensorFlow.
-It provides convenient features for handling neural networks. For example, it invokes the `call` method in the built-in `__call__` method. Here we redirect `call` to the `forward` method, saving its arguments as a class attribute. We do this to make our code more similar to other framework implementations.
+`Module`은 TensorFlow의 신경망 기본 클래스인 `tf.keras.Model`의 하위 클래스라는 것을 알 수 있습니다.
+이는 신경망을 다루기 위한 편리한 기능을 제공합니다. 예를 들어, 내장된 `__call__` 메서드에서 `call` 메서드를 호출합니다. 여기서는 `call`을 `forward` 메서드로 리다이렉트하고, 그 인수들을 클래스 속성으로 저장합니다. 다른 프레임워크 구현과 더 비슷하게 만들기 위해 이렇게 합니다.
 :end_tab:
 
 :begin_tab:`jax`
-You may notice that `Module` is a subclass of `linen.Module`, the base class of neural networks in Flax.
-It provides convenient features for handling neural networks. For example, it handles the model parameters, provides the `nn.compact` decorator to simplify code, invokes the `__call__` method among other things.
-Here we also redirect `__call__` to the `forward` method. We do this to make our code more similar to other framework implementations.
+`Module`은 Flax의 신경망 기본 클래스인 `linen.Module`의 하위 클래스라는 것을 알 수 있습니다.
+이는 신경망을 다루기 위한 편리한 기능을 제공합니다. 예를 들어, 모델 매개변수를 처리하고, 코드를 단순화하는 `nn.compact` 데코레이터를 제공하며, `__call__` 메서드 등을 호출합니다.
+여기서도 `__call__`을 `forward` 메서드로 리다이렉트합니다. 이는 다른 프레임워크 구현과 코드를 더 비슷하게 만들기 위함입니다.
 :end_tab:
 
-##  Data
+##  데이터
 :label:`oo-design-data`
 
-The `DataModule` class is the base class for data. Quite frequently the `__init__` method is used to prepare the data. This includes downloading and preprocessing if needed. The `train_dataloader` returns the data loader for the training dataset. A data loader is a (Python) generator that yields a data batch each time it is used. This batch is then fed into the `training_step` method of `Module` to compute the loss. There is an optional `val_dataloader` to return the validation dataset loader. It behaves in the same manner, except that it yields data batches for the `validation_step` method in `Module`.
+`DataModule` 클래스는 데이터를 위한 기본 클래스입니다. 꽤 자주 `__init__` 메서드가 데이터를 준비하는 데 사용됩니다. 여기에는 필요한 경우 다운로드와 전처리가 포함됩니다. `train_dataloader`는 훈련 데이터셋용 데이터 로더를 반환합니다. 데이터 로더는 사용될 때마다 데이터 배치를 산출하는 (Python) 제너레이터입니다. 이 배치는 그 후 `Module`의 `training_step` 메서드로 전달되어 손실을 계산합니다. 검증 데이터셋 로더를 반환하는 선택적인 `val_dataloader`도 있습니다. 이는 `Module`의 `validation_step` 메서드를 위한 데이터 배치를 산출한다는 점만 제외하면 같은 방식으로 동작합니다.
 
 ```{.python .input}
 %%tab all
@@ -370,15 +360,15 @@ class DataModule(d2l.HyperParameters):  #@save
         return self.get_dataloader(train=False)
 ```
 
-## Training
+## 훈련
 :label:`oo-design-training`
 
 :begin_tab:`pytorch, mxnet, tensorflow`
-The `Trainer` class trains the learnable parameters in the `Module` class with data specified in `DataModule`. The key method is `fit`, which accepts two arguments: `model`, an instance of `Module`, and `data`, an instance of `DataModule`. It then iterates over the entire dataset `max_epochs` times to train the model. As before, we will defer the implementation of this method to later chapters.
+`Trainer` 클래스는 `DataModule`에 지정된 데이터로 `Module` 클래스의 학습 가능한 매개변수를 훈련합니다. 핵심 메서드는 두 인수를 받는 `fit`입니다. `model`은 `Module`의 인스턴스이고, `data`는 `DataModule`의 인스턴스입니다. 그런 다음 모델을 훈련하기 위해 전체 데이터셋을 `max_epochs` 번 반복합니다. 이전과 마찬가지로, 이 메서드의 구현은 이후 장으로 미룰 것입니다.
 :end_tab:
 
 :begin_tab:`jax`
-The `Trainer` class trains the learnable parameters `params` with data specified in `DataModule`. The key method is `fit`, which accepts three arguments: `model`, an instance of `Module`, `data`, an instance of `DataModule`, and `key`, a JAX `PRNGKeyArray`. We make the `key` argument optional here to simplify the interface, but it is recommended to always pass and initialize the model parameters with a root key in JAX and Flax. It then iterates over the entire dataset `max_epochs` times to train the model. As before, we will defer the implementation of this method to later chapters.
+`Trainer` 클래스는 `DataModule`에 지정된 데이터로 학습 가능한 매개변수 `params`를 훈련합니다. 핵심 메서드는 세 인수를 받는 `fit`입니다. `model`은 `Module`의 인스턴스, `data`는 `DataModule`의 인스턴스, `key`는 JAX `PRNGKeyArray`입니다. 인터페이스를 단순화하기 위해 여기서 `key` 인수를 선택 사항으로 만들었지만, JAX와 Flax에서는 항상 루트 키로 모델 매개변수를 전달하고 초기화하는 것이 권장됩니다. 그런 다음 모델을 훈련하기 위해 전체 데이터셋을 `max_epochs` 번 반복합니다. 이전과 마찬가지로, 이 메서드의 구현은 이후 장으로 미룰 것입니다.
 :end_tab:
 
 ```{.python .input}
@@ -457,27 +447,24 @@ class Trainer(d2l.HyperParameters):  #@save
         raise NotImplementedError
 ```
 
-## Summary
+## 요약
 
-To highlight the object-oriented design
-for our future deep learning implementation,
-the above classes simply show how their objects 
-store data and interact with each other.
-We will keep enriching implementations of these classes,
-such as via `@add_to_class`,
-in the rest of the book.
-Moreover,
-these fully implemented classes
-are saved in the [D2L library](https://github.com/d2l-ai/d2l-en/tree/master/d2l),
-a *lightweight toolkit* that makes structured modeling for deep learning easy. 
-In particular, it facilitates reusing many components between projects without changing much at all. For instance, we can replace just the optimizer, just the model, just the dataset, etc.;
-this degree of modularity pays dividends throughout the book in terms of conciseness and simplicity (this is why we added it) and it can do the same for your own projects. 
+저희의 향후 딥러닝 구현을 위한 객체 지향 설계를 강조하기 위해,
+위의 클래스들은 단순히 그 객체들이 어떻게 데이터를 저장하고
+서로 상호작용하는지를 보여줍니다.
+저희는 책의 나머지 부분에서 `@add_to_class` 등을 통해
+이 클래스들의 구현을 계속 풍부하게 만들 것입니다.
+또한, 이 완전히 구현된 클래스들은
+[D2L 라이브러리](https://github.com/d2l-ai/d2l-en/tree/master/d2l)에 저장되어 있으며,
+이는 딥러닝을 위한 구조화된 모델링을 쉽게 만들어 주는 *경량 툴킷*입니다.
+특히, 거의 아무것도 바꾸지 않고도 프로젝트들 사이에서 많은 구성 요소를 재사용하는 것을 용이하게 합니다. 예를 들어, 옵티마이저만, 모델만, 데이터셋만 등을 교체할 수 있습니다.
+이러한 수준의 모듈성은 간결함과 단순성 측면에서 책 전반에 걸쳐 보상을 가져다 주며(이것이 저희가 추가한 이유입니다), 여러분 자신의 프로젝트에서도 같은 일을 할 수 있습니다.
 
 
-## Exercises
+## 연습문제
 
-1. Locate full implementations of the above classes that are saved in the [D2L library](https://github.com/d2l-ai/d2l-en/tree/master/d2l). We strongly recommend that you look at the implementation in detail once you have gained some more familiarity with deep learning modeling.
-1. Remove the `save_hyperparameters` statement in the `B` class. Can you still print `self.a` and `self.b`? Optional: if you have dived into the full implementation of the `HyperParameters` class, can you explain why?
+1. [D2L 라이브러리](https://github.com/d2l-ai/d2l-en/tree/master/d2l)에 저장된 위 클래스들의 전체 구현을 찾아보세요. 딥러닝 모델링에 좀 더 익숙해진 후에 그 구현을 자세히 살펴볼 것을 강력히 권장합니다.
+1. `B` 클래스에서 `save_hyperparameters` 문을 제거하세요. 여전히 `self.a`와 `self.b`를 출력할 수 있습니까? 선택 사항: `HyperParameters` 클래스의 전체 구현을 깊이 살펴보았다면, 그 이유를 설명할 수 있습니까?
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/6645)

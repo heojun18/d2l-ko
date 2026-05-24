@@ -3,32 +3,30 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Linear Regression
+# 선형 회귀
 :label:`sec_linear_regression`
 
-*Regression* problems pop up whenever we want to predict a numerical value.
-Common examples include predicting prices (of homes, stocks, etc.),
-predicting the length of stay (for patients in the hospital),
-forecasting demand (for retail sales), among numerous others.
-Not every prediction problem is one of classical regression.
-Later on, we will introduce classification problems,
-where the goal is to predict membership among a set of categories.
+*회귀(Regression)* 문제는 수치 값을 예측하고자 할 때마다 등장합니다.
+일반적인 예로는 가격 예측(주택, 주식 등),
+입원 기간 예측(병원 환자의 경우),
+수요 예측(소매 판매의 경우) 등 수많은 사례가 있습니다.
+모든 예측 문제가 고전적인 회귀 문제는 아닙니다.
+이후에는 분류 문제를 다룰 텐데,
+이는 어떤 범주들의 집합 중 어디에 속하는지를 예측하는 것이 목표입니다.
 
-As a running example, suppose that we wish
-to estimate the prices of houses (in dollars)
-based on their area (in square feet) and age (in years).
-To develop a model for predicting house prices,
-we need to get our hands on data,
-including the sales price, area, and age for each home.
-In the terminology of machine learning,
-the dataset is called a *training dataset* or *training set*,
-and each row (containing the data corresponding to one sale)
-is called an *example* (or *data point*, *instance*, *sample*).
-The thing we are trying to predict (price)
-is called a *label* (or *target*).
-The variables (age and area)
-upon which the predictions are based
-are called *features* (or *covariates*).
+진행 예시로, 면적(평방피트)과 연식(년) 정보를 바탕으로
+주택 가격(달러)을 추정하고자 한다고 가정해 봅시다.
+주택 가격을 예측하는 모델을 개발하려면,
+각 주택의 판매 가격, 면적, 연식이 포함된
+데이터를 확보해야 합니다.
+머신러닝 용어로 이 데이터셋은 *훈련 데이터셋(training dataset)*
+또는 *훈련 세트(training set)*라고 부르며,
+각 행(한 건의 판매에 해당하는 데이터를 담고 있는)은
+*예제(example)*(또는 *데이터 포인트(data point)*, *인스턴스(instance)*, *샘플(sample)*)라고 합니다.
+저희가 예측하고자 하는 대상(가격)은
+*레이블(label)*(또는 *타깃(target)*)이라고 합니다.
+예측의 근거가 되는 변수들(연식과 면적)은
+*특징(feature)*(또는 *공변량(covariate)*)이라고 합니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -68,190 +66,172 @@ import math
 import time
 ```
 
-## Basics
+## 기초
 
-*Linear regression* is both the simplest
-and most popular among the standard tools
-for tackling regression problems.
-Dating back to the dawn of the 19th century :cite:`Legendre.1805,Gauss.1809`,
-linear regression flows from a few simple assumptions.
-First, we assume that the relationship
-between features $\mathbf{x}$ and target $y$
-is approximately linear,
-i.e., that the conditional mean $E[Y \mid X=\mathbf{x}]$
-can be expressed as a weighted sum
-of the features $\mathbf{x}$.
-This setup allows that the target value
-may still deviate from its expected value
-on account of observation noise.
-Next, we can impose the assumption that any such noise
-is well behaved, following a Gaussian distribution.
-Typically, we will use $n$ to denote
-the number of examples in our dataset.
-We use superscripts to enumerate samples and targets,
-and subscripts to index coordinates.
-More concretely,
-$\mathbf{x}^{(i)}$ denotes the $i^{\textrm{th}}$ sample
-and $x_j^{(i)}$ denotes its $j^{\textrm{th}}$ coordinate.
+*선형 회귀(Linear regression)*는 회귀 문제를 다루는
+표준 도구 중에서 가장 단순하면서도 가장 널리 사용되는 방법입니다.
+19세기 초로 거슬러 올라가는 :cite:`Legendre.1805,Gauss.1809`
+선형 회귀는 몇 가지 단순한 가정에서 출발합니다.
+첫째, 특징 $\mathbf{x}$와 타깃 $y$ 사이의 관계가
+대략적으로 선형이라고 가정합니다.
+즉, 조건부 평균 $E[Y \mid X=\mathbf{x}]$가
+특징 $\mathbf{x}$의 가중합으로 표현될 수 있다고 봅니다.
+이러한 설정은 관측 잡음으로 인해 타깃 값이
+기대값에서 벗어날 수도 있음을 허용합니다.
+다음으로, 이러한 잡음이 가우시안 분포를 따르며
+잘 거동한다는 가정을 추가할 수 있습니다.
+일반적으로 $n$을 데이터셋의 예제 개수를 나타내는 데 사용합니다.
+샘플과 타깃을 열거할 때는 위 첨자를 사용하고,
+좌표를 인덱싱할 때는 아래 첨자를 사용합니다.
+좀 더 구체적으로,
+$\mathbf{x}^{(i)}$는 $i$번째 샘플을 나타내고,
+$x_j^{(i)}$는 그 샘플의 $j$번째 좌표를 나타냅니다.
 
-### Model
+### 모델
 :label:`subsec_linear_model`
 
-At the heart of every solution is a model
-that describes how features can be transformed
-into an estimate of the target.
-The assumption of linearity means that
-the expected value of the target (price) can be expressed
-as a weighted sum of the features (area and age):
+모든 해법의 중심에는 특징을 어떻게
+타깃의 추정값으로 변환할지를 기술하는 모델이 있습니다.
+선형성 가정은 타깃의 기대값(가격)이
+특징(면적과 연식)의 가중합으로 표현될 수 있음을 의미합니다.
 
 $$\textrm{price} = w_{\textrm{area}} \cdot \textrm{area} + w_{\textrm{age}} \cdot \textrm{age} + b.$$
 :eqlabel:`eq_price-area`
 
-Here $w_{\textrm{area}}$ and $w_{\textrm{age}}$
-are called *weights*, and $b$ is called a *bias*
-(or *offset* or *intercept*).
-The weights determine the influence of each feature on our prediction.
-The bias determines the value of the estimate when all features are zero.
-Even though we will never see any newly-built homes with precisely zero area,
-we still need the bias because it allows us
-to express all linear functions of our features
-(rather than restricting us to lines that pass through the origin).
-Strictly speaking, :eqref:`eq_price-area` is an *affine transformation* of input features, which is characterized by a *linear transformation* of features via a weighted sum, combined with a *translation* via the added bias.
-Given a dataset, our goal is to choose
-the weights $\mathbf{w}$ and the bias $b$
-that, on average, make our model's predictions
-fit the true prices observed in the data as closely as possible.
+여기서 $w_{\textrm{area}}$와 $w_{\textrm{age}}$는
+*가중치(weight)*라고 부르고, $b$는 *편향(bias)*
+(또는 *오프셋(offset)*이나 *절편(intercept)*)이라고 부릅니다.
+가중치는 각 특징이 예측에 미치는 영향을 결정합니다.
+편향은 모든 특징이 0일 때 추정값이 어떤 값을 가질지를 결정합니다.
+신축 주택 중 면적이 정확히 0인 집을 보는 일은 결코 없겠지만,
+저희가 특징의 모든 선형 함수를 표현할 수 있도록 해 주기 때문에
+(원점을 지나는 직선으로만 제한되지 않도록) 편향은 여전히 필요합니다.
+엄밀히 말하면 :eqref:`eq_price-area`는 입력 특징의 *아핀 변환(affine transformation)*이며,
+가중합을 통한 특징의 *선형 변환(linear transformation)*과 더해진 편향에 의한 *평행 이동(translation)*으로 특징지어집니다.
+데이터셋이 주어졌을 때, 저희의 목표는 평균적으로 모델의 예측이
+데이터에서 관측된 실제 가격에 가능한 한 가깝게 들어맞도록
+가중치 $\mathbf{w}$와 편향 $b$를 선택하는 것입니다.
 
 
-In disciplines where it is common to focus
-on datasets with just a few features,
-explicitly expressing models long-form,
-as in :eqref:`eq_price-area`, is common.
-In machine learning, we usually work
-with high-dimensional datasets,
-where it is more convenient to employ
-compact linear algebra notation.
-When our inputs consist of $d$ features,
-we can assign each an index (between $1$ and $d$)
-and express our prediction $\hat{y}$
-(in general the "hat" symbol denotes an estimate) as
+몇 개의 특징만 있는 데이터셋에 초점을 맞추는 것이 일반적인 분야에서는,
+:eqref:`eq_price-area`에서처럼
+모델을 명시적으로 길게 풀어 표현하는 것이 일반적입니다.
+머신러닝에서는 보통 고차원 데이터셋을 다루기 때문에,
+간결한 선형대수 표기를 사용하는 것이 더 편리합니다.
+입력이 $d$개의 특징으로 이루어져 있을 때,
+각각에 인덱스($1$부터 $d$까지)를 부여하고
+예측 $\hat{y}$를 다음과 같이 표현할 수 있습니다
+(일반적으로 "hat" 기호는 추정값을 나타냅니다).
 
 $$\hat{y} = w_1  x_1 + \cdots + w_d  x_d + b.$$
 
-Collecting all features into a vector $\mathbf{x} \in \mathbb{R}^d$
-and all weights into a vector $\mathbf{w} \in \mathbb{R}^d$,
-we can express our model compactly via the dot product
-between $\mathbf{w}$ and $\mathbf{x}$:
+모든 특징을 벡터 $\mathbf{x} \in \mathbb{R}^d$에,
+모든 가중치를 벡터 $\mathbf{w} \in \mathbb{R}^d$에 모으면,
+$\mathbf{w}$와 $\mathbf{x}$의 내적을 사용해
+저희 모델을 간결하게 표현할 수 있습니다.
 
 $$\hat{y} = \mathbf{w}^\top \mathbf{x} + b.$$
 :eqlabel:`eq_linreg-y`
 
-In :eqref:`eq_linreg-y`, the vector $\mathbf{x}$
-corresponds to the features of a single example.
-We will often find it convenient
-to refer to features of our entire dataset of $n$ examples
-via the *design matrix* $\mathbf{X} \in \mathbb{R}^{n \times d}$.
-Here, $\mathbf{X}$ contains one row for every example
-and one column for every feature.
-For a collection of features $\mathbf{X}$,
-the predictions $\hat{\mathbf{y}} \in \mathbb{R}^n$
-can be expressed via the matrix--vector product:
+:eqref:`eq_linreg-y`에서 벡터 $\mathbf{x}$는
+하나의 예제의 특징에 해당합니다.
+저희는 $n$개의 예제로 구성된 전체 데이터셋의 특징을
+*설계 행렬(design matrix)* $\mathbf{X} \in \mathbb{R}^{n \times d}$로
+참조하는 것이 종종 편리합니다.
+여기서 $\mathbf{X}$는 모든 예제에 대해 하나의 행과
+모든 특징에 대해 하나의 열을 가집니다.
+특징들의 모음 $\mathbf{X}$에 대해,
+예측값 $\hat{\mathbf{y}} \in \mathbb{R}^n$은
+행렬--벡터 곱으로 표현할 수 있습니다.
 
 $${\hat{\mathbf{y}}} = \mathbf{X} \mathbf{w} + b,$$
 :eqlabel:`eq_linreg-y-vec`
 
-where broadcasting (:numref:`subsec_broadcasting`) is applied during the summation.
-Given features of a training dataset $\mathbf{X}$
-and corresponding (known) labels $\mathbf{y}$,
-the goal of linear regression is to find
-the weight vector $\mathbf{w}$ and the bias term $b$
-such that, given features of a new data example
-sampled from the same distribution as $\mathbf{X}$,
-the new example's label will (in expectation)
-be predicted with the smallest error.
+여기서 합산 과정에 브로드캐스팅(:numref:`subsec_broadcasting`)이 적용됩니다.
+훈련 데이터셋의 특징 $\mathbf{X}$와
+대응하는 (알려진) 레이블 $\mathbf{y}$가 주어졌을 때,
+선형 회귀의 목표는 $\mathbf{X}$와 같은 분포에서
+샘플링된 새로운 데이터 예제의 특징이 주어졌을 때
+그 예제의 레이블이 (기대값 측면에서) 가장 작은 오차로 예측되도록
+가중치 벡터 $\mathbf{w}$와 편향 항 $b$를 찾는 것입니다.
 
-Even if we believe that the best model for
-predicting $y$ given $\mathbf{x}$ is linear,
-we would not expect to find a real-world dataset of $n$ examples where
-$y^{(i)}$ exactly equals $\mathbf{w}^\top \mathbf{x}^{(i)}+b$
-for all $1 \leq i \leq n$.
-For example, whatever instruments we use to observe
-the features $\mathbf{X}$ and labels $\mathbf{y}$, there might be a small amount of measurement error.
-Thus, even when we are confident
-that the underlying relationship is linear,
-we will incorporate a noise term to account for such errors.
+$\mathbf{x}$가 주어졌을 때 $y$를 예측하는 최선의 모델이
+선형이라고 믿는다고 하더라도,
+모든 $1 \leq i \leq n$에 대해 $y^{(i)}$가
+$\mathbf{w}^\top \mathbf{x}^{(i)}+b$와 정확히 일치하는
+$n$개 예제의 실제 데이터셋을 찾을 수 있다고 기대해서는 안 됩니다.
+예를 들어, 특징 $\mathbf{X}$와 레이블 $\mathbf{y}$를 관측하는 데
+어떤 기기를 사용하든 약간의 측정 오차가 있을 수 있습니다.
+따라서 기저 관계가 선형이라고 확신하는 경우에도,
+그러한 오차를 설명하기 위해 잡음 항을 포함시킬 것입니다.
 
-Before we can go about searching for the best *parameters*
-(or *model parameters*) $\mathbf{w}$ and $b$,
-we will need two more things:
-(i) a measure of the quality of some given model;
-and (ii) a procedure for updating the model to improve its quality.
+최적의 *매개변수(parameter)*(또는 *모델 매개변수(model parameter)*)
+$\mathbf{w}$와 $b$를 찾아 나서기 전에,
+두 가지가 더 필요합니다.
+(i) 주어진 모델의 품질을 측정하는 척도,
+(ii) 품질을 개선하기 위해 모델을 갱신하는 절차입니다.
 
-### Loss Function
+### 손실 함수
 :label:`subsec_linear-regression-loss-function`
 
-Naturally, fitting our model to the data requires
-that we agree on some measure of *fitness*
-(or, equivalently, of *unfitness*).
-*Loss functions* quantify the distance
-between the *real* and *predicted* values of the target.
-The loss will usually be a nonnegative number
-where smaller values are better
-and perfect predictions incur a loss of 0.
-For regression problems, the most common loss function is the squared error.
-When our prediction for an example $i$ is $\hat{y}^{(i)}$
-and the corresponding true label is $y^{(i)}$,
-the *squared error* is given by:
+자연스럽게, 모델을 데이터에 맞추려면
+어떤 *적합도(fitness)*(또는 동등하게 *부적합도(unfitness)*) 척도에
+합의해야 합니다.
+*손실 함수(loss function)*는 타깃의 *실제* 값과 *예측* 값 사이의
+거리를 정량화합니다.
+손실은 보통 작은 값일수록 좋은 음이 아닌 수이며,
+완벽한 예측은 0의 손실을 낳습니다.
+회귀 문제에서 가장 일반적인 손실 함수는 제곱 오차입니다.
+예제 $i$에 대한 예측이 $\hat{y}^{(i)}$이고
+대응하는 실제 레이블이 $y^{(i)}$일 때,
+*제곱 오차(squared error)*는 다음과 같이 주어집니다.
 
 $$l^{(i)}(\mathbf{w}, b) = \frac{1}{2} \left(\hat{y}^{(i)} - y^{(i)}\right)^2.$$
 :eqlabel:`eq_mse`
 
-The constant $\frac{1}{2}$ makes no real difference
-but proves to be notationally convenient,
-since it cancels out when we take the derivative of the loss.
-Because the training dataset is given to us,
-and thus is out of our control,
-the empirical error is only a function of the model parameters.
-In :numref:`fig_fit_linreg`, we visualize the fit of a linear regression model
-in a problem with one-dimensional inputs.
+상수 $\frac{1}{2}$는 실질적인 차이를 만들지는 않지만,
+손실의 도함수를 취할 때 상쇄되기 때문에
+표기상 편리한 것으로 드러납니다.
+훈련 데이터셋은 저희에게 주어진 것이고
+따라서 저희가 통제할 수 있는 것이 아니므로,
+경험적 오차(empirical error)는 모델 매개변수만의 함수입니다.
+:numref:`fig_fit_linreg`에서는 1차원 입력을 가진 문제에서
+선형 회귀 모델의 적합 결과를 시각화합니다.
 
-![Fitting a linear regression model to one-dimensional data.](../img/fit-linreg.svg)
+![1차원 데이터에 선형 회귀 모델을 적합한 결과.](../img/fit-linreg.svg)
 :label:`fig_fit_linreg`
 
-Note that large differences between
-estimates $\hat{y}^{(i)}$ and targets $y^{(i)}$
-lead to even larger contributions to the loss,
-due to its quadratic form
-(this quadraticity can be a double-edge sword; while it encourages the model to avoid large errors
-it can also lead to excessive sensitivity to anomalous data).
-To measure the quality of a model on the entire dataset of $n$ examples,
-we simply average (or equivalently, sum)
-the losses on the training set:
+추정값 $\hat{y}^{(i)}$와 타깃 $y^{(i)}$ 사이의 큰 차이는
+손실의 이차 형태로 인해 더 큰 손실 기여로 이어진다는 점에
+유의하세요(이러한 이차성은 양날의 검이 될 수 있습니다.
+모델이 큰 오차를 피하도록 장려하기는 하지만,
+이상치 데이터에 과도하게 민감하게 만들 수도 있습니다).
+$n$개 예제로 이루어진 전체 데이터셋에서 모델의 품질을 측정하려면,
+단순히 훈련 세트의 손실을 평균(또는 동등하게 합산)합니다.
 
 $$L(\mathbf{w}, b) =\frac{1}{n}\sum_{i=1}^n l^{(i)}(\mathbf{w}, b) =\frac{1}{n} \sum_{i=1}^n \frac{1}{2}\left(\mathbf{w}^\top \mathbf{x}^{(i)} + b - y^{(i)}\right)^2.$$
 
-When training the model, we seek parameters ($\mathbf{w}^*, b^*$)
-that minimize the total loss across all training examples:
+모델을 훈련할 때, 저희는 모든 훈련 예제 전반에 걸친
+총 손실을 최소화하는 매개변수 ($\mathbf{w}^*, b^*$)를 찾습니다.
 
 $$\mathbf{w}^*, b^* = \operatorname*{argmin}_{\mathbf{w}, b}\  L(\mathbf{w}, b).$$
 
-### Analytic Solution
+### 해석적 해
 
-Unlike most of the models that we will cover,
-linear regression presents us with
-a surprisingly easy optimization problem.
-In particular, we can find the optimal parameters
-(as assessed on the training data)
-analytically by applying a simple formula as follows.
-First, we can subsume the bias $b$ into the parameter $\mathbf{w}$
-by appending a column to the design matrix consisting of all 1s.
-Then our prediction problem is to minimize $\|\mathbf{y} - \mathbf{X}\mathbf{w}\|^2$.
-As long as the design matrix $\mathbf{X}$ has full rank
-(no feature is linearly dependent on the others),
-then there will be just one critical point on the loss surface
-and it corresponds to the minimum of the loss over the entire domain.
-Taking the derivative of the loss with respect to $\mathbf{w}$
-and setting it equal to zero yields:
+저희가 다룰 대부분의 모델과 달리,
+선형 회귀는 놀랍도록 쉬운 최적화 문제를 제공합니다.
+특히, 다음과 같이 간단한 공식을 적용하여
+최적 매개변수(훈련 데이터에서 평가된)를
+해석적으로 찾을 수 있습니다.
+먼저, 모두 1로 구성된 열을 설계 행렬에 추가함으로써
+편향 $b$를 매개변수 $\mathbf{w}$에 통합할 수 있습니다.
+그러면 저희의 예측 문제는 $\|\mathbf{y} - \mathbf{X}\mathbf{w}\|^2$를 최소화하는 것이 됩니다.
+설계 행렬 $\mathbf{X}$가 풀랭크(full rank)인 한
+(어떤 특징도 다른 특징들에 선형 종속이 아닌 한),
+손실 곡면 위에는 단 하나의 임계점만 존재할 것이며,
+이것이 전체 도메인에서의 손실의 최솟값에 해당합니다.
+$\mathbf{w}$에 대한 손실의 도함수를 취하고
+이를 0으로 두면 다음과 같습니다.
 
 $$\begin{aligned}
     \partial_{\mathbf{w}} \|\mathbf{y} - \mathbf{X}\mathbf{w}\|^2 =
@@ -260,174 +240,167 @@ $$\begin{aligned}
     \mathbf{X}^\top \mathbf{y} = \mathbf{X}^\top \mathbf{X} \mathbf{w}.
 \end{aligned}$$
 
-Solving for $\mathbf{w}$ provides us with the optimal solution
-for the optimization problem.
-Note that this solution 
+$\mathbf{w}$에 대해 풀면 최적화 문제의 최적해가 제공됩니다.
+이 해
 
 $$\mathbf{w}^* = (\mathbf X^\top \mathbf X)^{-1}\mathbf X^\top \mathbf{y}$$
 
-will only be unique
-when the matrix $\mathbf X^\top \mathbf X$ is invertible,
-i.e., when the columns of the design matrix
-are linearly independent :cite:`Golub.Van-Loan.1996`.
+은 $\mathbf X^\top \mathbf X$ 행렬이 가역일 때,
+즉 설계 행렬의 열들이 선형 독립일 때만
+유일하다는 점에 유의하세요 :cite:`Golub.Van-Loan.1996`.
 
 
 
-While simple problems like linear regression
-may admit analytic solutions,
-you should not get used to such good fortune.
-Although analytic solutions allow for nice mathematical analysis,
-the requirement of an analytic solution is so restrictive
-that it would exclude almost all exciting aspects of deep learning.
+선형 회귀 같은 단순한 문제는
+해석적 해를 가질 수 있지만,
+이러한 행운에 익숙해져서는 안 됩니다.
+해석적 해는 멋진 수학적 분석을 가능하게 하지만,
+해석적 해의 존재라는 요건은 너무나 제한적이어서
+딥러닝의 흥미로운 측면 대부분을 배제하게 됩니다.
 
-### Minibatch Stochastic Gradient Descent
+### 미니배치 확률적 경사 하강법
 
-Fortunately, even in cases where we cannot solve the models analytically,
-we can still often train models effectively in practice.
-Moreover, for many tasks, those hard-to-optimize models
-turn out to be so much better that figuring out how to train them
-ends up being well worth the trouble.
+다행히도 모델을 해석적으로 풀 수 없는 경우에도,
+실제로는 모델을 효과적으로 훈련할 수 있는 경우가 많습니다.
+나아가, 많은 작업에서 이러한 최적화하기 어려운 모델들이
+훨씬 더 나은 것으로 드러나기 때문에,
+이들을 훈련하는 방법을 알아내는 것은
+충분히 그 수고를 들일 만한 가치가 있습니다.
 
-The key technique for optimizing nearly every deep learning model,
-and which we will call upon throughout this book,
-consists of iteratively reducing the error
-by updating the parameters in the direction
-that incrementally lowers the loss function.
-This algorithm is called *gradient descent*.
+거의 모든 딥러닝 모델을 최적화하기 위한 핵심 기법으로,
+이 책 전반에 걸쳐 활용할 것은
+손실 함수를 점진적으로 낮추는 방향으로 매개변수를 갱신하여
+반복적으로 오차를 줄이는 것입니다.
+이 알고리즘을 *경사 하강법(gradient descent)*이라고 합니다.
 
-The most naive application of gradient descent
-consists of taking the derivative of the loss function,
-which is an average of the losses computed
-on every single example in the dataset.
-In practice, this can be extremely slow:
-we must pass over the entire dataset before making a single update,
-even if the update steps might be very powerful :cite:`Liu.Nocedal.1989`.
-Even worse, if there is a lot of redundancy in the training data,
-the benefit of a full update is limited.
+경사 하강법의 가장 단순한 적용은
+데이터셋의 모든 단일 예제에서 계산된 손실의 평균인
+손실 함수의 도함수를 취하는 것입니다.
+실제로 이것은 매우 느릴 수 있습니다.
+업데이트 단계가 매우 강력하다 하더라도
+한 번의 업데이트를 하기 전에 전체 데이터셋을 훑어야 합니다 :cite:`Liu.Nocedal.1989`.
+설상가상으로 훈련 데이터에 중복이 많다면,
+전체 업데이트의 이점은 제한적입니다.
 
-The other extreme is to consider only a single example at a time and to take
-update steps based on one observation at a time.
-The resulting algorithm, *stochastic gradient descent* (SGD)
-can be an effective strategy :cite:`Bottou.2010`, even for large datasets.
-Unfortunately, SGD has drawbacks, both computational and statistical.
-One problem arises from the fact that processors are a lot faster
-multiplying and adding numbers than they are
-at moving data from main memory to processor cache.
-It is up to an order of magnitude more efficient to
-perform a matrix--vector multiplication
-than a corresponding number of vector--vector operations.
-This means that it can take a lot longer to process
-one sample at a time compared to a full batch.
-A second problem is that some of the layers,
-such as batch normalization (to be described in :numref:`sec_batch_norm`),
-only work well when we have access
-to more than one observation at a time.
+다른 극단은 한 번에 단일 예제만 고려하여
+한 번에 하나의 관측치를 기반으로 업데이트 단계를 취하는 것입니다.
+그 결과로 나오는 알고리즘인 *확률적 경사 하강법(stochastic gradient descent, SGD)*은
+대규모 데이터셋에서도 효과적인 전략이 될 수 있습니다 :cite:`Bottou.2010`.
+불행히도 SGD는 계산적, 통계적으로 모두 단점이 있습니다.
+한 가지 문제는 프로세서가 주 메모리에서 프로세서 캐시로
+데이터를 옮기는 것보다 숫자를 곱하고 더하는 데
+훨씬 빠르다는 사실에서 비롯됩니다.
+대응하는 수의 벡터--벡터 연산을 수행하는 것보다
+행렬--벡터 곱셈을 수행하는 것이
+최대 한 자릿수 더 효율적일 수 있습니다.
+이는 한 번에 하나의 샘플을 처리하는 것이
+전체 배치에 비해 훨씬 오래 걸릴 수 있음을 의미합니다.
+두 번째 문제는 배치 정규화(:numref:`sec_batch_norm`에서 설명될 예정)와 같은
+일부 층이 한 번에 하나 이상의 관측치에 접근할 수 있을 때만
+잘 동작한다는 것입니다.
 
-The solution to both problems is to pick an intermediate strategy:
-rather than taking a full batch or only a single sample at a time,
-we take a *minibatch* of observations :cite:`Li.Zhang.Chen.ea.2014`.
-The specific choice of the size of the said minibatch depends on many factors,
-such as the amount of memory, the number of accelerators,
-the choice of layers, and the total dataset size.
-Despite all that, a number between 32 and 256,
-preferably a multiple of a large power of $2$, is a good start.
-This leads us to *minibatch stochastic gradient descent*.
+두 문제 모두의 해법은 중간 전략을 선택하는 것입니다.
+전체 배치나 한 번에 하나의 샘플만 취하는 대신,
+관측치의 *미니배치(minibatch)*를 취합니다 :cite:`Li.Zhang.Chen.ea.2014`.
+미니배치의 구체적인 크기 선택은
+메모리 양, 가속기 수, 층의 선택, 전체 데이터셋 크기 등
+많은 요인에 따라 달라집니다.
+그럼에도 불구하고, 32에서 256 사이의 수,
+가급적 $2$의 큰 거듭제곱의 배수가 좋은 출발점입니다.
+이것이 저희를 *미니배치 확률적 경사 하강법(minibatch stochastic gradient descent)*으로 이끕니다.
 
-In its most basic form, in each iteration $t$,
-we first randomly sample a minibatch $\mathcal{B}_t$
-consisting of a fixed number $|\mathcal{B}|$ of training examples.
-We then compute the derivative (gradient) of the average loss
-on the minibatch with respect to the model parameters.
-Finally, we multiply the gradient
-by a predetermined small positive value $\eta$,
-called the *learning rate*,
-and subtract the resulting term from the current parameter values.
-We can express the update as follows:
+가장 기본적인 형태에서, 각 반복 $t$마다
+먼저 고정된 수 $|\mathcal{B}|$개의 훈련 예제로 구성된
+미니배치 $\mathcal{B}_t$를 무작위로 샘플링합니다.
+그런 다음 미니배치에 대한 평균 손실의 모델 매개변수에 대한
+도함수(경사)를 계산합니다.
+마지막으로, 경사에 *학습률(learning rate)*이라고 부르는
+미리 정해진 작은 양수 값 $\eta$를 곱하고,
+그 결과 항을 현재 매개변수 값에서 뺍니다.
+업데이트를 다음과 같이 표현할 수 있습니다.
 
 $$(\mathbf{w},b) \leftarrow (\mathbf{w},b) - \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}_t} \partial_{(\mathbf{w},b)} l^{(i)}(\mathbf{w},b).$$
 
-In summary, minibatch SGD proceeds as follows:
-(i) initialize the values of the model parameters, typically at random;
-(ii) iteratively sample random minibatches from the data,
-updating the parameters in the direction of the negative gradient.
-For quadratic losses and affine transformations,
-this has a closed-form expansion:
+요약하면, 미니배치 SGD는 다음과 같이 진행됩니다.
+(i) 일반적으로 무작위로 모델 매개변수의 값을 초기화한다.
+(ii) 데이터에서 반복적으로 무작위 미니배치를 샘플링하면서
+음의 경사 방향으로 매개변수를 갱신한다.
+이차 손실과 아핀 변환의 경우,
+이는 다음과 같은 닫힌 형태의 전개를 가집니다.
 
 $$\begin{aligned} \mathbf{w} & \leftarrow \mathbf{w} - \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}_t} \partial_{\mathbf{w}} l^{(i)}(\mathbf{w}, b) && = \mathbf{w} - \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}_t} \mathbf{x}^{(i)} \left(\mathbf{w}^\top \mathbf{x}^{(i)} + b - y^{(i)}\right)\\ b &\leftarrow b -  \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}_t} \partial_b l^{(i)}(\mathbf{w}, b) &&  = b - \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}_t} \left(\mathbf{w}^\top \mathbf{x}^{(i)} + b - y^{(i)}\right). \end{aligned}$$
 :eqlabel:`eq_linreg_batch_update`
 
-Since we pick a minibatch $\mathcal{B}$
-we need to normalize by its size $|\mathcal{B}|$.
-Frequently minibatch size and learning rate are user-defined.
-Such tunable parameters that are not updated
-in the training loop are called *hyperparameters*.
-They can be tuned automatically by a number of techniques, such as Bayesian optimization
-:cite:`Frazier.2018`. In the end, the quality of the solution is
-typically assessed on a separate *validation dataset* (or *validation set*).
+미니배치 $\mathcal{B}$를 고르기 때문에
+그 크기 $|\mathcal{B}|$로 정규화해야 합니다.
+미니배치 크기와 학습률은 자주 사용자가 정의합니다.
+훈련 루프에서 업데이트되지 않는 그러한 조정 가능한 매개변수를
+*하이퍼파라미터(hyperparameter)*라고 부릅니다.
+이들은 베이지안 최적화 :cite:`Frazier.2018` 같은
+여러 기법을 통해 자동으로 조정될 수 있습니다.
+결국 해의 품질은 일반적으로 별도의
+*검증 데이터셋(validation dataset)*(또는 *검증 세트(validation set)*)에서 평가됩니다.
 
-After training for some predetermined number of iterations
-(or until some other stopping criterion is met),
-we record the estimated model parameters,
-denoted $\hat{\mathbf{w}}, \hat{b}$.
-Note that even if our function is truly linear and noiseless,
-these parameters will not be the exact minimizers of the loss, nor even deterministic.
-Although the algorithm converges slowly towards the minimizers
-it typically will not find them exactly in a finite number of steps.
-Moreover, the minibatches $\mathcal{B}$
-used for updating the parameters are chosen at random.
-This breaks determinism.
+미리 정해진 횟수만큼 반복하여 훈련한 후
+(또는 다른 어떤 정지 기준이 충족될 때까지),
+저희는 추정된 모델 매개변수를 기록하며,
+이를 $\hat{\mathbf{w}}, \hat{b}$로 표시합니다.
+저희 함수가 진정으로 선형이고 잡음이 없더라도,
+이 매개변수들이 손실의 정확한 최소화 지점이 아니며
+결정론적이지도 않다는 점에 유의하세요.
+알고리즘은 최소화 지점을 향해 천천히 수렴하지만
+일반적으로 유한한 단계 안에서 정확히 그것들을 찾지는 못합니다.
+게다가 매개변수 갱신에 사용되는 미니배치 $\mathcal{B}$는
+무작위로 선택됩니다.
+이는 결정론을 깨뜨립니다.
 
-Linear regression happens to be a learning problem
-with a global minimum
-(whenever $\mathbf{X}$ is full rank, or equivalently,
-whenever $\mathbf{X}^\top \mathbf{X}$ is invertible).
-However, the loss surfaces for deep networks contain many saddle points and minima.
-Fortunately, we typically do not care about finding
-an exact set of parameters but merely any set of parameters
-that leads to accurate predictions (and thus low loss).
-In practice, deep learning practitioners
-seldom struggle to find parameters
-that minimize the loss *on training sets*
+선형 회귀는 마침 전역 최솟값을 가진 학습 문제이기도 합니다
+($\mathbf{X}$가 풀랭크일 때마다, 또는 동등하게
+$\mathbf{X}^\top \mathbf{X}$가 가역일 때마다).
+그러나 심층 신경망의 손실 곡면은 많은 안장점과 최솟값을 포함합니다.
+다행히도 저희는 일반적으로 매개변수의 정확한 집합을 찾는 것이 아니라,
+정확한 예측을 (따라서 낮은 손실을) 이끌어내는
+어떤 매개변수 집합이든 찾으면 됩니다.
+실제로 딥러닝 실무자들은
+*훈련 세트에서* 손실을 최소화하는 매개변수를
+찾는 데에 거의 어려움을 겪지 않습니다
 :cite:`Izmailov.Podoprikhin.Garipov.ea.2018,Frankle.Carbin.2018`.
-The more formidable task is to find parameters
-that lead to accurate predictions on previously unseen data,
-a challenge called *generalization*.
-We return to these topics throughout the book.
+더 만만찮은 과제는 이전에 본 적 없는 데이터에서
+정확한 예측으로 이어지는 매개변수를 찾는 것이며,
+이는 *일반화(generalization)*라고 부르는 과제입니다.
+이러한 주제들은 책 전반에 걸쳐 다시 다룰 것입니다.
 
-### Predictions
+### 예측
 
-Given the model $\hat{\mathbf{w}}^\top \mathbf{x} + \hat{b}$,
-we can now make *predictions* for a new example,
-e.g., predicting the sales price of a previously unseen house
-given its area $x_1$ and age $x_2$.
-Deep learning practitioners have taken to calling the prediction phase *inference*
-but this is a bit of a misnomer---*inference* refers broadly
-to any conclusion reached on the basis of evidence,
-including both the values of the parameters
-and the likely label for an unseen instance.
-If anything, in the statistics literature
-*inference* more often denotes parameter inference
-and this overloading of terminology creates unnecessary confusion
-when deep learning practitioners talk to statisticians.
-In the following we will stick to *prediction* whenever possible.
+모델 $\hat{\mathbf{w}}^\top \mathbf{x} + \hat{b}$가 주어졌을 때,
+이제 새로운 예제에 대한 *예측(prediction)*을 할 수 있습니다.
+예를 들어, 면적 $x_1$과 연식 $x_2$가 주어진,
+이전에 본 적 없는 주택의 판매 가격을 예측할 수 있습니다.
+딥러닝 실무자들은 예측 단계를 *추론(inference)*이라고
+부르는 경향이 있지만, 이는 다소 잘못된 표현입니다.
+(*추론*은 매개변수의 값과 본 적 없는 인스턴스에 대한 가능한 레이블 모두를 포함하여,
+증거를 바탕으로 도달한 어떤 결론이든 폭넓게 지칭합니다.)
+오히려 통계 문헌에서 *추론*은 매개변수 추론을 더 자주 가리키며,
+이러한 용어의 중복은 딥러닝 실무자가 통계학자와 이야기할 때
+불필요한 혼란을 야기합니다.
+이어지는 내용에서는 가능한 한 *예측*이라는 용어를 고수할 것입니다.
 
 
 
-## Vectorization for Speed
+## 속도를 위한 벡터화
 
-When training our models, we typically want to process
-whole minibatches of examples simultaneously.
-Doing this efficiently requires that (**we**) (~~should~~)
-(**vectorize the calculations and leverage
-fast linear algebra libraries
-rather than writing costly for-loops in Python.**)
+모델을 훈련할 때, 저희는 일반적으로
+예제의 전체 미니배치를 동시에 처리하고자 합니다.
+이를 효율적으로 수행하려면 (**저희가**) (~~해야 합니다~~)
+(**Python에서 비용이 많이 드는 for 루프를 작성하기보다는
+계산을 벡터화하고 빠른 선형대수 라이브러리를 활용해야 합니다.**)
 
-To see why this matters so much,
-let's (**consider two methods for adding vectors.**)
-To start, we instantiate two 10,000-dimensional vectors
-containing all 1s.
-In the first method, we loop over the vectors with a Python for-loop.
-In the second, we rely on a single call to `+`.
+이것이 왜 그렇게 중요한지 보기 위해,
+(**벡터를 더하는 두 가지 방법을 고려해 봅시다.**)
+시작하기 위해, 모두 1로 채워진
+두 개의 10,000차원 벡터를 인스턴스화합니다.
+첫 번째 방법에서는 Python의 for 루프로 벡터를 순회합니다.
+두 번째에서는 `+`를 한 번 호출하는 것에 의존합니다.
 
 ```{.python .input}
 %%tab all
@@ -436,9 +409,8 @@ a = d2l.ones(n)
 b = d2l.ones(n)
 ```
 
-Now we can benchmark the workloads.
-First, [**we add them, one coordinate at a time,
-using a for-loop.**]
+이제 작업량을 벤치마크할 수 있습니다.
+먼저, [**for 루프를 사용해 한 번에 한 좌표씩 더해 봅니다.**]
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -470,7 +442,7 @@ for i in range(n):
 f'{time.time() - t:.5f} sec'
 ```
 
-(**Alternatively, we rely on the reloaded `+` operator to compute the elementwise sum.**)
+(**대안으로, 원소별 합을 계산하기 위해 재정의된 `+` 연산자에 의존합니다.**)
 
 ```{.python .input}
 %%tab all
@@ -479,42 +451,40 @@ d = a + b
 f'{time.time() - t:.5f} sec'
 ```
 
-The second method is dramatically faster than the first.
-Vectorizing code often yields order-of-magnitude speedups.
-Moreover, we push more of the mathematics to the library
-so we do not have to write as many calculations ourselves,
-reducing the potential for errors and increasing portability of the code.
+두 번째 방법은 첫 번째보다 극적으로 빠릅니다.
+코드를 벡터화하면 종종 자릿수 수준의 속도 향상을 얻습니다.
+게다가 더 많은 수학을 라이브러리에 떠넘김으로써
+저희가 직접 작성해야 하는 계산이 줄어들고,
+오류 가능성을 줄이며 코드의 이식성을 높입니다.
 
 
-## The Normal Distribution and Squared Loss
+## 정규 분포와 제곱 손실
 :label:`subsec_normal_distribution_and_squared_loss`
 
-So far we have given a fairly functional motivation
-of the squared loss objective:
-the optimal parameters return the conditional expectation $E[Y\mid X]$
-whenever the underlying pattern is truly linear,
-and the loss assigns large penalties for outliers.
-We can also provide a more formal motivation
-for the squared loss objective
-by making probabilistic assumptions
-about the distribution of noise.
+지금까지 저희는 제곱 손실 목적 함수에 대한
+다소 기능적인 동기를 제시했습니다.
+기저 패턴이 진정으로 선형일 때 최적 매개변수가
+조건부 기대값 $E[Y\mid X]$를 반환하며,
+손실은 이상치에 큰 페널티를 부여한다는 것이었습니다.
+잡음의 분포에 대해 확률적 가정을 함으로써
+제곱 손실 목적 함수에 대한
+더 형식적인 동기를 제공할 수도 있습니다.
 
-Linear regression was invented at the turn of the 19th century.
-While it has long been debated whether Gauss or Legendre
-first thought up the idea,
-it was Gauss who also discovered the normal distribution
-(also called the *Gaussian*).
-It turns out that the normal distribution
-and linear regression with squared loss
-share a deeper connection than common parentage.
+선형 회귀는 19세기 전환기에 발명되었습니다.
+가우스와 르장드르 중 누가 먼저 그 아이디어를 떠올렸는지에 대해서는
+오랫동안 논쟁이 있었지만,
+정규 분포(또한 *가우시안*이라고도 불림)를 발견한 것은
+가우스이기도 했습니다.
+정규 분포와 제곱 손실을 사용한 선형 회귀가
+공통의 기원 그 이상의 더 깊은 연결을
+공유한다는 사실이 밝혀졌습니다.
 
-To begin, recall that a normal distribution
-with mean $\mu$ and variance $\sigma^2$ (standard deviation $\sigma$)
-is given as
+먼저, 평균 $\mu$와 분산 $\sigma^2$(표준 편차 $\sigma$)을 가진
+정규 분포는 다음과 같이 주어진다는 것을 떠올려 봅시다.
 
 $$p(x) = \frac{1}{\sqrt{2 \pi \sigma^2}} \exp\left(-\frac{1}{2 \sigma^2} (x - \mu)^2\right).$$
 
-Below [**we define a function to compute the normal distribution**].
+아래에서 [**정규 분포를 계산하는 함수를 정의합니다**].
 
 ```{.python .input}
 %%tab all
@@ -526,7 +496,7 @@ def normal(x, mu, sigma):
         return p * np.exp(-0.5 * (x - mu)**2 / sigma**2)
 ```
 
-We can now (**visualize the normal distributions**).
+이제 (**정규 분포를 시각화**)할 수 있습니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -557,195 +527,178 @@ d2l.plot(x, [normal(x, mu, sigma) for mu, sigma in params], xlabel='x',
          legend=[f'mean {mu}, std {sigma}' for mu, sigma in params])
 ```
 
-Note that changing the mean corresponds
-to a shift along the $x$-axis,
-and increasing the variance
-spreads the distribution out,
-lowering its peak.
+평균을 바꾸면 $x$축을 따라 분포가 이동하는 것에 해당하고,
+분산을 늘리면 분포가 펼쳐지면서
+정점이 낮아진다는 점에 유의하세요.
 
-One way to motivate linear regression with squared loss
-is to assume that observations arise from noisy measurements,
-where the noise $\epsilon$ follows the normal distribution 
-$\mathcal{N}(0, \sigma^2)$:
+제곱 손실을 사용한 선형 회귀를 동기 부여하는 한 가지 방법은
+관측치가 잡음이 섞인 측정에서 발생하며,
+잡음 $\epsilon$이 정규 분포 $\mathcal{N}(0, \sigma^2)$를
+따른다고 가정하는 것입니다.
 
 $$y = \mathbf{w}^\top \mathbf{x} + b + \epsilon \textrm{ where } \epsilon \sim \mathcal{N}(0, \sigma^2).$$
 
-Thus, we can now write out the *likelihood*
-of seeing a particular $y$ for a given $\mathbf{x}$ via
+따라서 이제 주어진 $\mathbf{x}$에 대해 특정 $y$를 관측할
+*가능도(likelihood)*를 다음과 같이 적을 수 있습니다.
 
 $$P(y \mid \mathbf{x}) = \frac{1}{\sqrt{2 \pi \sigma^2}} \exp\left(-\frac{1}{2 \sigma^2} (y - \mathbf{w}^\top \mathbf{x} - b)^2\right).$$
 
-As such, the likelihood factorizes.
-According to *the principle of maximum likelihood*,
-the best values of parameters $\mathbf{w}$ and $b$ are those
-that maximize the *likelihood* of the entire dataset:
+이처럼 가능도는 인수분해됩니다.
+*최대 가능도의 원리(principle of maximum likelihood)*에 따르면,
+매개변수 $\mathbf{w}$와 $b$의 최선의 값은
+전체 데이터셋의 *가능도*를 최대화하는 값입니다.
 
 $$P(\mathbf y \mid \mathbf X) = \prod_{i=1}^{n} p(y^{(i)} \mid \mathbf{x}^{(i)}).$$
 
-The equality follows since all pairs $(\mathbf{x}^{(i)}, y^{(i)})$
-were drawn independently of each other.
-Estimators chosen according to the principle of maximum likelihood
-are called *maximum likelihood estimators*.
-While, maximizing the product of many exponential functions,
-might look difficult,
-we can simplify things significantly, without changing the objective,
-by maximizing the logarithm of the likelihood instead.
-For historical reasons, optimizations are more often expressed
-as minimization rather than maximization.
-So, without changing anything,
-we can *minimize* the *negative log-likelihood*,
-which we can express as follows:
+이 등식은 모든 쌍 $(\mathbf{x}^{(i)}, y^{(i)})$가
+서로 독립적으로 추출되었기 때문에 성립합니다.
+최대 가능도의 원리에 따라 선택된 추정량을
+*최대 가능도 추정량(maximum likelihood estimator)*이라고 부릅니다.
+많은 지수 함수의 곱을 최대화하는 것이 어려워 보일 수 있지만,
+대신 가능도의 로그를 최대화함으로써
+목적 함수를 바꾸지 않고도 상황을 크게 단순화할 수 있습니다.
+역사적인 이유로 최적화는 최대화보다는
+최소화로 표현되는 것이 더 흔합니다.
+따라서 아무것도 바꾸지 않고도
+*음의 로그 가능도(negative log-likelihood)*를 *최소화*할 수 있으며,
+이는 다음과 같이 표현됩니다.
 
 $$-\log P(\mathbf y \mid \mathbf X) = \sum_{i=1}^n \frac{1}{2} \log(2 \pi \sigma^2) + \frac{1}{2 \sigma^2} \left(y^{(i)} - \mathbf{w}^\top \mathbf{x}^{(i)} - b\right)^2.$$
 
-If we assume that $\sigma$ is fixed,
-we can ignore the first term,
-because it does not depend on $\mathbf{w}$ or $b$.
-The second term is identical
-to the squared error loss introduced earlier,
-except for the multiplicative constant $\frac{1}{\sigma^2}$.
-Fortunately, the solution does not depend on $\sigma$ either.
-It follows that minimizing the mean squared error
-is equivalent to the maximum likelihood estimation
-of a linear model under the assumption of additive Gaussian noise.
+$\sigma$가 고정되어 있다고 가정하면,
+$\mathbf{w}$나 $b$에 의존하지 않기 때문에
+첫 번째 항은 무시할 수 있습니다.
+두 번째 항은 승법 상수 $\frac{1}{\sigma^2}$를 제외하면
+앞서 소개한 제곱 오차 손실과 동일합니다.
+다행히 해는 $\sigma$에도 의존하지 않습니다.
+이로부터 평균 제곱 오차를 최소화하는 것이
+가산적 가우시안 잡음 가정 하의 선형 모델에 대한
+최대 가능도 추정과 동등하다는 결론이 따라옵니다.
 
 
-## Linear Regression as a Neural Network
+## 신경망으로서의 선형 회귀
 
-While linear models are not sufficiently rich
-to express the many complicated networks
-that we will introduce in this book,
-(artificial) neural networks are rich enough
-to subsume linear models as networks
-in which every feature is represented by an input neuron,
-all of which are connected directly to the output.
+선형 모델은 이 책에서 소개할 많은 복잡한 신경망을
+표현할 만큼 충분히 풍부하지는 않지만,
+(인공) 신경망은 모든 특징이 입력 뉴런으로 표현되고
+그 모두가 출력에 직접 연결된 신경망으로서
+선형 모델을 포섭할 만큼 충분히 풍부합니다.
 
-:numref:`fig_single_neuron` depicts
-linear regression as a neural network.
-The diagram highlights the connectivity pattern,
-such as how each input is connected to the output,
-but not the specific values taken by the weights or biases.
+:numref:`fig_single_neuron`은 선형 회귀를
+신경망으로 묘사합니다.
+이 다이어그램은 각 입력이 출력에 어떻게 연결되어 있는지와 같은
+연결 패턴을 강조하지만,
+가중치나 편향이 취하는 구체적인 값은 강조하지 않습니다.
 
-![Linear regression is a single-layer neural network.](../img/singleneuron.svg)
+![선형 회귀는 단일 층 신경망입니다.](../img/singleneuron.svg)
 :label:`fig_single_neuron`
 
-The inputs are $x_1, \ldots, x_d$.
-We refer to $d$ as the *number of inputs*
-or the *feature dimensionality* in the input layer.
-The output of the network is $o_1$.
-Because we are just trying to predict
-a single numerical value,
-we have only one output neuron.
-Note that the input values are all *given*.
-There is just a single *computed* neuron.
-In summary, we can think of linear regression
-as a single-layer fully connected neural network.
-We will encounter networks
-with far more layers
-in later chapters.
+입력은 $x_1, \ldots, x_d$입니다.
+$d$를 입력층의 *입력 수* 또는
+*특징 차원성(feature dimensionality)*이라고 합니다.
+신경망의 출력은 $o_1$입니다.
+저희는 단일 수치 값을 예측하려고 하기 때문에,
+출력 뉴런은 하나뿐입니다.
+입력 값은 모두 *주어진다*는 점에 유의하세요.
+*계산되는* 뉴런은 단 하나뿐입니다.
+요약하면, 선형 회귀를 단일 층의 완전 연결 신경망으로
+생각할 수 있습니다.
+이후 장에서는 훨씬 더 많은 층을 가진
+신경망을 만나게 될 것입니다.
 
-### Biology
+### 생물학
 
-Because linear regression predates computational neuroscience,
-it might seem anachronistic to describe
-linear regression in terms of neural networks.
-Nonetheless, they were a natural place to start
-when the cyberneticists and neurophysiologists
-Warren McCulloch and Walter Pitts began to develop
-models of artificial neurons.
-Consider the cartoonish picture
-of a biological neuron in :numref:`fig_Neuron`,
-consisting of *dendrites* (input terminals),
-the *nucleus* (CPU), the *axon* (output wire),
-and the *axon terminals* (output terminals),
-enabling connections to other neurons via *synapses*.
+선형 회귀가 계산 신경과학보다 앞서기 때문에,
+선형 회귀를 신경망의 관점에서 설명하는 것이
+시대착오적으로 보일 수 있습니다.
+그럼에도 불구하고, 인공 뉴런 모델을 개발하기 시작했을 때
+사이버네틱스 학자이자 신경생리학자인
+워런 매컬록과 월터 피츠에게는
+자연스러운 출발점이었습니다.
+:numref:`fig_Neuron`에 나오는 만화 같은
+생물학적 뉴런 그림을 살펴보세요.
+이는 *수상돌기(dendrites)*(입력 단자),
+*핵(nucleus)*(CPU), *축삭(axon)*(출력 와이어),
+*축삭 말단(axon terminals)*(출력 단자)으로 구성되어 있으며,
+*시냅스(synapse)*를 통해 다른 뉴런들과의 연결을 가능하게 합니다.
 
-![The real neuron (source: "Anatomy and Physiology" by the US National Cancer Institute's Surveillance, Epidemiology and End Results (SEER) Program).](../img/neuron.svg)
+![실제 뉴런(출처: 미국 국립 암 연구소의 감시, 역학 및 최종 결과(SEER) 프로그램의 "Anatomy and Physiology").](../img/neuron.svg)
 :label:`fig_Neuron`
 
-Information $x_i$ arriving from other neurons
-(or environmental sensors) is received in the dendrites.
-In particular, that information is weighted
-by *synaptic weights* $w_i$,
-determining the effect of the inputs,
-e.g., activation or inhibition via the product $x_i w_i$.
-The weighted inputs arriving from multiple sources
-are aggregated in the nucleus
-as a weighted sum $y = \sum_i x_i w_i + b$,
-possibly subject to some nonlinear postprocessing via a function $\sigma(y)$.
-This information is then sent via the axon to the axon terminals,
-where it reaches its destination
-(e.g., an actuator such as a muscle)
-or it is fed into another neuron via its dendrites.
+다른 뉴런(또는 환경 센서)에서 도착하는 정보 $x_i$가
+수상돌기에서 수신됩니다.
+특히 그 정보는 *시냅스 가중치(synaptic weight)* $w_i$에 의해 가중되어,
+예를 들어 $x_i w_i$ 곱을 통해 활성화 또는 억제 같은
+입력의 효과를 결정합니다.
+여러 출처에서 도착하는 가중 입력은
+핵에서 가중합 $y = \sum_i x_i w_i + b$로 집계되며,
+함수 $\sigma(y)$를 통한 비선형 후처리를 받기도 합니다.
+이 정보는 그런 다음 축삭을 통해 축삭 말단으로 보내져,
+목적지(예를 들어 근육 같은 작동체)에 도달하거나
+다른 뉴런의 수상돌기를 통해 그 뉴런으로 입력됩니다.
 
-Certainly, the high-level idea that many such units
-could be combined, provided they have the correct connectivity and learning algorithm,
-to produce far more interesting and complex behavior
-than any one neuron alone could express
-arises from our study of real biological neural systems.
-At the same time, most research in deep learning today
-draws inspiration from a much wider source.
-We invoke :citet:`Russell.Norvig.2016`
-who pointed out that although airplanes might have been *inspired* by birds,
-ornithology has not been the primary driver
-of aeronautics innovation for some centuries.
-Likewise, inspiration in deep learning these days
-comes in equal or greater measure
-from mathematics, linguistics, psychology,
-statistics, computer science, and many other fields.
+확실히, 그러한 많은 단위들이 올바른 연결성과 학습 알고리즘만 갖춘다면
+하나의 뉴런만으로 표현할 수 있는 것보다 훨씬 흥미롭고 복잡한
+거동을 만들어내기 위해 결합될 수 있다는 고차원적 아이디어는
+실제 생물학적 신경계에 대한 저희의 연구에서 비롯됩니다.
+동시에, 오늘날 딥러닝의 대부분의 연구는
+훨씬 더 광범위한 출처에서 영감을 얻습니다.
+저희는 비행기가 새에서 *영감*을 받았을 수는 있지만
+조류학이 수 세기 동안 항공학 혁신의
+주요 추동력이었던 것은 아니라고 지적한
+:citet:`Russell.Norvig.2016`를 인용합니다.
+마찬가지로 요즘 딥러닝의 영감은
+수학, 언어학, 심리학, 통계학, 컴퓨터과학 등 수많은 분야로부터
+동등하거나 더 큰 비중으로 옵니다.
 
-## Summary
+## 요약
 
-In this section, we introduced
-traditional linear regression,
-where the parameters of a linear function
-are chosen to minimize squared loss on the training set.
-We also motivated this choice of objective
-both via some practical considerations
-and through an interpretation
-of linear regression as maximimum likelihood estimation
-under an assumption of linearity and Gaussian noise.
-After discussing both computational considerations
-and connections to statistics,
-we showed how such linear models could be expressed
-as simple neural networks where the inputs
-are directly wired to the output(s).
-While we will soon move past linear models altogether,
-they are sufficient to introduce most of the components
-that all of our models require:
-parametric forms, differentiable objectives,
-optimization via minibatch stochastic gradient descent,
-and ultimately, evaluation on previously unseen data.
+이 절에서 저희는 전통적인 선형 회귀를 소개했는데,
+이는 선형 함수의 매개변수가 훈련 세트에서
+제곱 손실을 최소화하도록 선택되는 방법입니다.
+또한 몇 가지 실용적인 고려 사항과
+선형성 및 가우시안 잡음 가정 하의
+최대 가능도 추정으로서의 선형 회귀 해석을 통해
+이러한 목적 함수 선택에 동기를 부여했습니다.
+계산적 고려 사항과 통계와의 연결을 논의한 후,
+저희는 그러한 선형 모델이 입력이 출력에 직접 연결된
+단순한 신경망으로 어떻게 표현될 수 있는지 보여주었습니다.
+저희는 곧 선형 모델을 완전히 넘어설 것이지만,
+선형 모델은 저희의 모든 모델이 필요로 하는
+대부분의 구성 요소를 소개하기에 충분합니다.
+매개변수 형태, 미분 가능한 목적 함수,
+미니배치 확률적 경사 하강법을 통한 최적화,
+그리고 궁극적으로 이전에 본 적 없는 데이터에서의 평가가 그것입니다.
 
 
 
-## Exercises
+## 연습문제
 
-1. Assume that we have some data $x_1, \ldots, x_n \in \mathbb{R}$. Our goal is to find a constant $b$ such that $\sum_i (x_i - b)^2$ is minimized.
-    1. Find an analytic solution for the optimal value of $b$.
-    1. How does this problem and its solution relate to the normal distribution?
-    1. What if we change the loss from $\sum_i (x_i - b)^2$ to $\sum_i |x_i-b|$? Can you find the optimal solution for $b$?
-1. Prove that the affine functions that can be expressed by $\mathbf{x}^\top \mathbf{w} + b$ are equivalent to linear functions on $(\mathbf{x}, 1)$.
-1. Assume that you want to find quadratic functions of $\mathbf{x}$, i.e., $f(\mathbf{x}) = b + \sum_i w_i x_i + \sum_{j \leq i} w_{ij} x_{i} x_{j}$. How would you formulate this in a deep network?
-1. Recall that one of the conditions for the linear regression problem to be solvable was that the design matrix $\mathbf{X}^\top \mathbf{X}$ has full rank.
-    1. What happens if this is not the case?
-    1. How could you fix it? What happens if you add a small amount of coordinate-wise independent Gaussian noise to all entries of $\mathbf{X}$?
-    1. What is the expected value of the design matrix $\mathbf{X}^\top \mathbf{X}$ in this case?
-    1. What happens with stochastic gradient descent when $\mathbf{X}^\top \mathbf{X}$ does not have full rank?
-1. Assume that the noise model governing the additive noise $\epsilon$ is the exponential distribution. That is, $p(\epsilon) = \frac{1}{2} \exp(-|\epsilon|)$.
-    1. Write out the negative log-likelihood of the data under the model $-\log P(\mathbf y \mid \mathbf X)$.
-    1. Can you find a closed form solution?
-    1. Suggest a minibatch stochastic gradient descent algorithm to solve this problem. What could possibly go wrong (hint: what happens near the stationary point as we keep on updating the parameters)? Can you fix this?
-1. Assume that we want to design a neural network with two layers by composing two linear layers. That is, the output of the first layer becomes the input of the second layer. Why would such a naive composition not work?
-1. What happens if you want to use regression for realistic price estimation of houses or stock prices?
-    1. Show that the additive Gaussian noise assumption is not appropriate. Hint: can we have negative prices? What about fluctuations?
-    1. Why would regression to the logarithm of the price be much better, i.e., $y = \log \textrm{price}$?
-    1. What do you need to worry about when dealing with pennystock, i.e., stock with very low prices? Hint: can you trade at all possible prices? Why is this a bigger problem for cheap stock? For more information review the celebrated Black--Scholes model for option pricing :cite:`Black.Scholes.1973`.
-1. Suppose we want to use regression to estimate the *number* of apples sold in a grocery store.
-    1. What are the problems with a Gaussian additive noise model? Hint: you are selling apples, not oil.
-    1. The [Poisson distribution](https://en.wikipedia.org/wiki/Poisson_distribution) captures distributions over counts. It is given by $p(k \mid \lambda) = \lambda^k e^{-\lambda}/k!$. Here $\lambda$ is the rate function and $k$ is the number of events you see. Prove that $\lambda$ is the expected value of counts $k$.
-    1. Design a loss function associated with the Poisson distribution.
-    1. Design a loss function for estimating $\log \lambda$ instead.
+1. 어떤 데이터 $x_1, \ldots, x_n \in \mathbb{R}$이 있다고 가정합니다. 저희의 목표는 $\sum_i (x_i - b)^2$가 최소화되는 상수 $b$를 찾는 것입니다.
+    1. $b$의 최적 값에 대한 해석적 해를 찾으세요.
+    1. 이 문제와 그 해는 정규 분포와 어떻게 관련됩니까?
+    1. 손실을 $\sum_i (x_i - b)^2$에서 $\sum_i |x_i-b|$로 바꾸면 어떻게 됩니까? $b$에 대한 최적 해를 찾을 수 있습니까?
+1. $\mathbf{x}^\top \mathbf{w} + b$로 표현될 수 있는 아핀 함수가 $(\mathbf{x}, 1)$에 대한 선형 함수와 동등함을 증명하세요.
+1. $\mathbf{x}$의 이차 함수, 즉 $f(\mathbf{x}) = b + \sum_i w_i x_i + \sum_{j \leq i} w_{ij} x_{i} x_{j}$를 찾고자 한다고 가정합니다. 이를 심층 신경망에서 어떻게 정식화하겠습니까?
+1. 선형 회귀 문제가 풀릴 수 있는 조건 중 하나가 설계 행렬 $\mathbf{X}^\top \mathbf{X}$가 풀랭크여야 한다는 것이었음을 떠올려 보세요.
+    1. 그렇지 않은 경우 어떻게 됩니까?
+    1. 어떻게 해결할 수 있습니까? $\mathbf{X}$의 모든 항목에 좌표별로 독립인 작은 양의 가우시안 잡음을 추가하면 어떻게 됩니까?
+    1. 이 경우 설계 행렬 $\mathbf{X}^\top \mathbf{X}$의 기대값은 무엇입니까?
+    1. $\mathbf{X}^\top \mathbf{X}$가 풀랭크가 아닐 때 확률적 경사 하강법에는 어떤 일이 일어납니까?
+1. 가산 잡음 $\epsilon$을 지배하는 잡음 모델이 지수 분포라고 가정합니다. 즉, $p(\epsilon) = \frac{1}{2} \exp(-|\epsilon|)$입니다.
+    1. 모델 하의 데이터에 대한 음의 로그 가능도 $-\log P(\mathbf y \mid \mathbf X)$를 작성하세요.
+    1. 닫힌 형태의 해를 찾을 수 있습니까?
+    1. 이 문제를 풀기 위한 미니배치 확률적 경사 하강법 알고리즘을 제안하세요. 무엇이 잘못될 수 있습니까(힌트: 매개변수를 계속 갱신함에 따라 정류점 근처에서 어떤 일이 일어납니까)? 이를 해결할 수 있습니까?
+1. 두 개의 선형 층을 조합하여 두 층짜리 신경망을 설계하고자 한다고 가정합니다. 즉, 첫 번째 층의 출력이 두 번째 층의 입력이 됩니다. 그러한 단순한 합성이 왜 작동하지 않겠습니까?
+1. 주택이나 주식 가격의 현실적인 가격 추정에 회귀를 사용하려면 어떻게 됩니까?
+    1. 가산적 가우시안 잡음 가정이 적절하지 않음을 보이세요. 힌트: 음의 가격을 가질 수 있습니까? 변동은 어떻습니까?
+    1. 가격의 로그에 대한 회귀, 즉 $y = \log \textrm{price}$가 훨씬 더 나은 이유는 무엇입니까?
+    1. 페니 주식, 즉 매우 낮은 가격의 주식을 다룰 때 무엇을 걱정해야 합니까? 힌트: 가능한 모든 가격에 거래할 수 있습니까? 이것이 저가 주식에 더 큰 문제인 이유는 무엇입니까? 더 많은 정보는 옵션 가격 결정에 관한 유명한 블랙(Black)--숄즈(Scholes) 모델 :cite:`Black.Scholes.1973`을 검토해 보세요.
+1. 식료품점에서 판매되는 사과의 *수*를 추정하기 위해 회귀를 사용하려고 한다고 가정합니다.
+    1. 가우시안 가산 잡음 모델의 문제는 무엇입니까? 힌트: 당신은 사과를 팔지, 석유를 파는 것이 아닙니다.
+    1. [푸아송 분포](https://en.wikipedia.org/wiki/Poisson_distribution)는 카운트에 대한 분포를 나타냅니다. 이는 $p(k \mid \lambda) = \lambda^k e^{-\lambda}/k!$로 주어집니다. 여기서 $\lambda$는 율 함수이고 $k$는 보게 되는 사건의 수입니다. $\lambda$가 카운트 $k$의 기대값임을 증명하세요.
+    1. 푸아송 분포와 관련된 손실 함수를 설계하세요.
+    1. 대신 $\log \lambda$를 추정하기 위한 손실 함수를 설계하세요.
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/40)

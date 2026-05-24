@@ -3,46 +3,43 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Automatic Differentiation
+# 자동 미분
 :label:`sec_autograd`
 
-Recall from :numref:`sec_calculus` 
-that calculating derivatives is the crucial step
-in all the optimization algorithms
-that we will use to train deep networks.
-While the calculations are straightforward,
-working them out by hand can be tedious and error-prone, 
-and these issues only grow
-as our models become more complex.
+:numref:`sec_calculus`에서 도함수를 계산하는 것이
+심층 신경망을 훈련시키는 데 사용할 모든 최적화 알고리즘의
+중요한 단계임을 떠올리십시오.
+계산은 간단하지만,
+수작업으로 풀어내는 것은 지루하고 오류가 발생하기 쉬우며,
+이러한 문제들은 모델이 더 복잡해질수록
+커지기만 합니다.
 
-Fortunately all modern deep learning frameworks
-take this work off our plates
-by offering *automatic differentiation*
-(often shortened to *autograd*). 
-As we pass data through each successive function,
-the framework builds a *computational graph* 
-that tracks how each value depends on others.
-To calculate derivatives, 
-automatic differentiation 
-works backwards through this graph
-applying the chain rule. 
-The computational algorithm for applying the chain rule
-in this fashion is called *backpropagation*.
+다행히도 모든 현대 딥러닝 프레임워크는
+*자동 미분*(흔히 *autograd*로 줄여 부름)을 제공함으로써
+이 작업을 저희 손에서 가져가 줍니다.
+저희가 데이터를 각 연속적인 함수에 통과시키면,
+프레임워크는 각 값이 다른 값에 어떻게 의존하는지를 추적하는
+*계산 그래프*를 구축합니다.
+도함수를 계산하기 위해,
+자동 미분은 이 그래프를 거꾸로 통과하면서
+연쇄 법칙을 적용합니다.
+이러한 방식으로 연쇄 법칙을 적용하는 계산 알고리즘은
+*역전파*라고 부릅니다.
 
-While autograd libraries have become
-a hot concern over the past decade,
-they have a long history. 
-In fact the earliest references to autograd
-date back over half of a century :cite:`Wengert.1964`.
-The core ideas behind modern backpropagation
-date to a PhD thesis from 1980 :cite:`Speelpenning.1980`
-and were further developed in the late 1980s :cite:`Griewank.1989`.
-While backpropagation has become the default method 
-for computing gradients, it is not the only option. 
-For instance, the Julia programming language employs 
-forward propagation :cite:`Revels.Lubin.Papamarkou.2016`. 
-Before exploring methods, 
-let's first master the autograd package.
+지난 10년 동안 autograd 라이브러리가
+뜨거운 관심사가 되었지만,
+이들은 오랜 역사를 가지고 있습니다.
+실제로 autograd에 대한 가장 초기의 참고 문헌은
+반세기 전으로 거슬러 올라갑니다 :cite:`Wengert.1964`.
+현대 역전파의 핵심 아이디어는
+1980년 박사 학위 논문 :cite:`Speelpenning.1980`으로 거슬러 올라가며
+1980년대 후반에 더 발전되었습니다 :cite:`Griewank.1989`.
+역전파가 그래디언트를 계산하기 위한 기본 방법이 되었지만,
+유일한 선택지는 아닙니다.
+예를 들어, Julia 프로그래밍 언어는
+순방향 전파를 사용합니다 :cite:`Revels.Lubin.Papamarkou.2016`.
+방법들을 살펴보기에 앞서,
+먼저 autograd 패키지를 마스터해 봅시다.
 
 ```{.python .input}
 %%tab mxnet
@@ -65,13 +62,12 @@ import tensorflow as tf
 from jax import numpy as jnp
 ```
 
-## A Simple Function
+## 간단한 함수
 
-Let's assume that we are interested
-in (**differentiating the function
-$y = 2\mathbf{x}^{\top}\mathbf{x}$
-with respect to the column vector $\mathbf{x}$.**)
-To start, we assign `x` an initial value.
+저희가 (**열 벡터 $\mathbf{x}$에 대해
+함수 $y = 2\mathbf{x}^{\top}\mathbf{x}$를
+미분하는 것에**) 관심이 있다고 가정합시다.
+시작하기 위해, `x`에 초기값을 할당합니다.
 
 ```{.python .input  n=1}
 %%tab mxnet
@@ -98,20 +94,16 @@ x
 ```
 
 :begin_tab:`mxnet, pytorch, tensorflow`
-[**Before we calculate the gradient
-of $y$ with respect to $\mathbf{x}$,
-we need a place to store it.**]
-In general, we avoid allocating new memory
-every time we take a derivative 
-because deep learning requires 
-successively computing derivatives
-with respect to the same parameters
-a great many times,
-and we might risk running out of memory.
-Note that the gradient of a scalar-valued function
-with respect to a vector $\mathbf{x}$
-is vector-valued with 
-the same shape as $\mathbf{x}$.
+[**$\mathbf{x}$에 대한
+$y$의 그래디언트를 계산하기 전에,
+이를 저장할 곳이 필요합니다.**]
+일반적으로, 저희는 도함수를 취할 때마다
+새로운 메모리를 할당하는 것을 피합니다.
+딥러닝은 동일한 파라미터에 대해
+도함수를 매우 여러 번 연속적으로 계산해야 하며,
+메모리가 부족해질 위험이 있기 때문입니다.
+벡터 $\mathbf{x}$에 대한 스칼라값 함수의 그래디언트는
+$\mathbf{x}$와 같은 모양의 벡터값을 가진다는 점에 유의하십시오.
 :end_tab:
 
 ```{.python .input  n=8}
@@ -135,7 +127,7 @@ x.grad  # The gradient is None by default
 x = tf.Variable(x)
 ```
 
-(**We now calculate our function of `x` and assign the result to `y`.**)
+(**이제 `x`의 함수를 계산하고 결과를 `y`에 할당합니다.**)
 
 ```{.python .input  n=10}
 %%tab mxnet
@@ -167,31 +159,27 @@ y(x)
 ```
 
 :begin_tab:`mxnet`
-[**We can now take the gradient of `y`
-with respect to `x`**] by calling 
-its `backward` method.
-Next, we can access the gradient 
-via `x`'s `grad` attribute.
+이제 `y`의 `backward` 메서드를 호출하여
+[**`x`에 대한 `y`의 그래디언트를 취할 수 있습니다**].
+다음으로, `x`의 `grad` 속성을 통해
+그래디언트에 접근할 수 있습니다.
 :end_tab:
 
 :begin_tab:`pytorch`
-[**We can now take the gradient of `y`
-with respect to `x`**] by calling 
-its `backward` method.
-Next, we can access the gradient 
-via `x`'s `grad` attribute.
+이제 `y`의 `backward` 메서드를 호출하여
+[**`x`에 대한 `y`의 그래디언트를 취할 수 있습니다**].
+다음으로, `x`의 `grad` 속성을 통해
+그래디언트에 접근할 수 있습니다.
 :end_tab:
 
 :begin_tab:`tensorflow`
-[**We can now calculate the gradient of `y`
-with respect to `x`**] by calling 
-the `gradient` method.
+이제 `gradient` 메서드를 호출하여
+[**`x`에 대한 `y`의 그래디언트를 계산할 수 있습니다**].
 :end_tab:
 
 :begin_tab:`jax`
-[**We can now take the gradient of `y`
-with respect to `x`**] by passing through the
-`grad` transform.
+이제 `grad` 변환을 통과시켜
+[**`x`에 대한 `y`의 그래디언트를 취할 수 있습니다**].
 :end_tab:
 
 ```{.python .input}
@@ -221,10 +209,10 @@ x_grad = grad(y)(x)
 x_grad
 ```
 
-(**We already know that the gradient of the function $y = 2\mathbf{x}^{\top}\mathbf{x}$
-with respect to $\mathbf{x}$ should be $4\mathbf{x}$.**)
-We can now verify that the automatic gradient computation
-and the expected result are identical.
+(**저희는 이미 함수 $y = 2\mathbf{x}^{\top}\mathbf{x}$의
+$\mathbf{x}$에 대한 그래디언트가 $4\mathbf{x}$여야 한다는 것을 알고 있습니다.**)
+이제 자동 그래디언트 계산과
+예상 결과가 동일한지 확인할 수 있습니다.
 
 ```{.python .input  n=13}
 %%tab mxnet
@@ -247,35 +235,30 @@ x_grad == 4 * x
 ```
 
 :begin_tab:`mxnet`
-[**Now let's calculate 
-another function of `x`
-and take its gradient.**] 
-Note that MXNet resets the gradient buffer 
-whenever we record a new gradient. 
+[**이제 `x`의 다른 함수를 계산하고
+그 그래디언트를 취해 봅시다.**]
+MXNet은 새로운 그래디언트를 기록할 때마다
+그래디언트 버퍼를 리셋한다는 점에 유의하십시오.
 :end_tab:
 
 :begin_tab:`pytorch`
-[**Now let's calculate 
-another function of `x`
-and take its gradient.**]
-Note that PyTorch does not automatically 
-reset the gradient buffer 
-when we record a new gradient. 
-Instead, the new gradient
-is added to the already-stored gradient.
-This behavior comes in handy
-when we want to optimize the sum 
-of multiple objective functions.
-To reset the gradient buffer,
-we can call `x.grad.zero_()` as follows:
+[**이제 `x`의 다른 함수를 계산하고
+그 그래디언트를 취해 봅시다.**]
+PyTorch는 새로운 그래디언트를 기록할 때
+그래디언트 버퍼를 자동으로 리셋하지 않는다는 점에 유의하십시오.
+대신, 새로운 그래디언트가
+이미 저장된 그래디언트에 더해집니다.
+이러한 동작은 여러 목적 함수의 합을
+최적화하고자 할 때 유용합니다.
+그래디언트 버퍼를 리셋하려면,
+다음과 같이 `x.grad.zero_()`를 호출할 수 있습니다.
 :end_tab:
 
 :begin_tab:`tensorflow`
-[**Now let's calculate 
-another function of `x`
-and take its gradient.**]
-Note that TensorFlow resets the gradient buffer 
-whenever we record a new gradient. 
+[**이제 `x`의 다른 함수를 계산하고
+그 그래디언트를 취해 봅시다.**]
+TensorFlow는 새로운 그래디언트를 기록할 때마다
+그래디언트 버퍼를 리셋한다는 점에 유의하십시오.
 :end_tab:
 
 ```{.python .input}
@@ -307,65 +290,62 @@ y = lambda x: x.sum()
 grad(y)(x)
 ```
 
-## Backward for Non-Scalar Variables
+## 비스칼라 변수에 대한 역방향
 
-When `y` is a vector, 
-the most natural representation 
-of the derivative of  `y`
-with respect to a vector `x` 
-is a matrix called the *Jacobian*
-that contains the partial derivatives
-of each component of `y` 
-with respect to each component of `x`.
-Likewise, for higher-order `y` and `x`,
-the result of differentiation could be an even higher-order tensor.
+`y`가 벡터일 때,
+벡터 `x`에 대한 `y`의 도함수의
+가장 자연스러운 표현은
+`y`의 각 성분에 대한 `x`의 각 성분에 대한
+편미분을 포함하는
+*자코비안*이라고 불리는 행렬입니다.
+마찬가지로, 고차의 `y`와 `x`의 경우,
+미분의 결과는 훨씬 더 고차의 텐서가 될 수 있습니다.
 
-While Jacobians do show up in some
-advanced machine learning techniques,
-more commonly we want to sum up 
-the gradients of each component of `y`
-with respect to the full vector `x`,
-yielding a vector of the same shape as `x`.
-For example, we often have a vector 
-representing the value of our loss function
-calculated separately for each example among
-a *batch* of training examples.
-Here, we just want to (**sum up the gradients
-computed individually for each example**).
+자코비안은 일부 고급 머신러닝 기법에서
+나타나기는 하지만,
+더 흔하게는 전체 벡터 `x`에 대한
+`y`의 각 성분의 그래디언트를 합산해
+`x`와 같은 모양의 벡터를 얻고자 합니다.
+예를 들어, 저희는 종종 훈련 예제의 *배치* 중
+각 예제에 대해 개별적으로 계산된
+손실 함수의 값을 나타내는 벡터를 가집니다.
+여기서는 단지 (**각 예제에 대해 개별적으로 계산된
+그래디언트를 합산**)하고자 합니다.
 
 :begin_tab:`mxnet`
-MXNet handles this problem by reducing all tensors to scalars 
-by summing before computing a gradient. 
-In other words, rather than returning the Jacobian 
-$\partial_{\mathbf{x}} \mathbf{y}$,
-it returns the gradient of the sum
-$\partial_{\mathbf{x}} \sum_i y_i$. 
+MXNet은 그래디언트를 계산하기 전에 합산함으로써
+모든 텐서를 스칼라로 축소하여
+이 문제를 처리합니다.
+다시 말해, 자코비안
+$\partial_{\mathbf{x}} \mathbf{y}$를 반환하는 대신,
+합의 그래디언트
+$\partial_{\mathbf{x}} \sum_i y_i$를 반환합니다.
 :end_tab:
 
 :begin_tab:`pytorch`
-Because deep learning frameworks vary 
-in how they interpret gradients of
-non-scalar tensors,
-PyTorch takes some steps to avoid confusion.
-Invoking `backward` on a non-scalar elicits an error 
-unless we tell PyTorch how to reduce the object to a scalar. 
-More formally, we need to provide some vector $\mathbf{v}$ 
-such that `backward` will compute 
-$\mathbf{v}^\top \partial_{\mathbf{x}} \mathbf{y}$ 
-rather than $\partial_{\mathbf{x}} \mathbf{y}$. 
-This next part may be confusing,
-but for reasons that will become clear later, 
-this argument (representing $\mathbf{v}$) is named `gradient`. 
-For a more detailed description, see Yang Zhang's 
-[Medium post](https://zhang-yang.medium.com/the-gradient-argument-in-pytorchs-backward-function-explained-by-examples-68f266950c29). 
+딥러닝 프레임워크들이 비스칼라 텐서의 그래디언트를
+해석하는 방식이 다르기 때문에,
+PyTorch는 혼동을 피하기 위해 몇 가지 단계를 취합니다.
+비스칼라에 대해 `backward`를 호출하면
+객체를 스칼라로 어떻게 축소할지 PyTorch에게 알려주지 않는 한
+오류가 발생합니다.
+보다 형식적으로, 저희는 `backward`가
+$\partial_{\mathbf{x}} \mathbf{y}$ 대신
+$\mathbf{v}^\top \partial_{\mathbf{x}} \mathbf{y}$를 계산하도록
+어떤 벡터 $\mathbf{v}$를 제공해야 합니다.
+다음 부분은 혼란스러울 수 있지만,
+나중에 명확해질 이유로,
+이 인수($\mathbf{v}$를 나타내는)는 `gradient`라고 이름 붙여졌습니다.
+보다 자세한 설명은, Yang Zhang의
+[Medium 포스트](https://zhang-yang.medium.com/the-gradient-argument-in-pytorchs-backward-function-explained-by-examples-68f266950c29)를 참조하십시오.
 :end_tab:
 
 :begin_tab:`tensorflow`
-By default, TensorFlow returns the gradient of the sum.
-In other words, rather than returning 
-the Jacobian $\partial_{\mathbf{x}} \mathbf{y}$,
-it returns the gradient of the sum
-$\partial_{\mathbf{x}} \sum_i y_i$. 
+기본적으로, TensorFlow는 합의 그래디언트를 반환합니다.
+다시 말해, 자코비안
+$\partial_{\mathbf{x}} \mathbf{y}$를 반환하는 대신,
+합의 그래디언트
+$\partial_{\mathbf{x}} \sum_i y_i$를 반환합니다.
 :end_tab:
 
 ```{.python .input}
@@ -398,30 +378,27 @@ y = lambda x: x * x
 grad(lambda x: y(x).sum())(x)
 ```
 
-## Detaching Computation
+## 계산 분리하기
 
-Sometimes, we wish to [**move some calculations
-outside of the recorded computational graph.**]
-For example, say that we use the input 
-to create some auxiliary intermediate terms 
-for which we do not want to compute a gradient. 
-In this case, we need to *detach* 
-the respective computational graph
-from the final result. 
-The following toy example makes this clearer: 
-suppose we have `z = x * y` and `y = x * x` 
-but we want to focus on the *direct* influence of `x` on `z` 
-rather than the influence conveyed via `y`. 
-In this case, we can create a new variable `u`
-that takes the same value as `y` 
-but whose *provenance* (how it was created)
-has been wiped out.
-Thus `u` has no ancestors in the graph
-and gradients do not flow through `u` to `x`.
-For example, taking the gradient of `z = x * u`
-will yield the result `u`,
-(not `3 * x * x` as you might have 
-expected since `z = x * x * x`).
+때때로, 저희는 [**일부 계산을
+기록된 계산 그래프 바깥으로 이동**]시키고자 합니다.
+예를 들어, 입력을 사용하여
+그래디언트를 계산하고 싶지 않은
+보조 중간 항들을 생성한다고 합시다.
+이 경우, 해당 계산 그래프를
+최종 결과로부터 *분리*해야 합니다.
+다음의 장난감 예제가 이를 더 명확하게 해 줍니다.
+`z = x * y`이고 `y = x * x`이지만
+`y`를 통해 전달되는 영향이 아닌
+`z`에 대한 `x`의 *직접적인* 영향에 집중하고 싶다고 가정합시다.
+이 경우, `y`와 같은 값을 가지지만
+그 *출처*(어떻게 생성되었는지)가 지워진
+새로운 변수 `u`를 생성할 수 있습니다.
+따라서 `u`는 그래프에서 조상이 없고
+그래디언트는 `u`를 통해 `x`로 흐르지 않습니다.
+예를 들어, `z = x * u`의 그래디언트를 취하면
+(`z = x * x * x`이므로 예상했을 수 있는 `3 * x * x`가 아니라)
+결과 `u`를 얻게 됩니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -469,12 +446,11 @@ z = lambda x: u * x
 grad(lambda x: z(x).sum())(x) == y(x)
 ```
 
-Note that while this procedure
-detaches `y`'s ancestors
-from the graph leading to `z`, 
-the computational graph leading to `y` 
-persists and thus we can calculate
-the gradient of `y` with respect to `x`.
+이 절차가 `z`로 이어지는 그래프에서
+`y`의 조상들을 분리하지만,
+`y`로 이어지는 계산 그래프는
+지속되므로 `x`에 대한 `y`의 그래디언트를
+계산할 수 있다는 점에 유의하십시오.
 
 ```{.python .input}
 %%tab mxnet
@@ -499,22 +475,21 @@ t.gradient(y, x) == 2 * x
 grad(lambda x: y(x).sum())(x) == 2 * x
 ```
 
-## Gradients and Python Control Flow
+## 그래디언트와 Python 제어 흐름
 
-So far we reviewed cases where the path from input to output 
-was well defined via a function such as `z = x * x * x`.
-Programming offers us a lot more freedom in how we compute results. 
-For instance, we can make them depend on auxiliary variables 
-or condition choices on intermediate results. 
-One benefit of using automatic differentiation
-is that [**even if**] building the computational graph of 
-(**a function required passing through a maze of Python control flow**)
-(e.g., conditionals, loops, and arbitrary function calls),
-(**we can still calculate the gradient of the resulting variable.**)
-To illustrate this, consider the following code snippet where 
-the number of iterations of the `while` loop
-and the evaluation of the `if` statement
-both depend on the value of the input `a`.
+지금까지 저희는 입력에서 출력까지의 경로가
+`z = x * x * x`와 같은 함수를 통해 잘 정의된 경우를 살펴봤습니다.
+프로그래밍은 결과를 계산하는 방식에 훨씬 더 많은 자유를 제공합니다.
+예를 들어, 보조 변수에 의존하게 하거나
+중간 결과에 따라 선택을 조건부로 할 수 있습니다.
+자동 미분을 사용하는 한 가지 이점은
+(**함수의 계산 그래프를 구축하는 데
+Python 제어 흐름의 미로(예: 조건문, 루프, 임의의 함수 호출)를 통과해야 했더라도**)
+[**여전히**]
+(**결과 변수의 그래디언트를 계산할 수 있다는 것입니다.**)
+이를 설명하기 위해, `while` 루프의 반복 횟수와
+`if` 문의 평가가 모두 입력 `a`의 값에 의존하는
+다음 코드 조각을 살펴봅시다.
 
 ```{.python .input}
 %%tab mxnet
@@ -568,14 +543,12 @@ def f(a):
     return c
 ```
 
-Below, we call this function, passing in a random value, as input.
-Since the input is a random variable, 
-we do not know what form 
-the computational graph will take.
-However, whenever we execute `f(a)` 
-on a specific input, we realize 
-a specific computational graph
-and can subsequently run `backward`.
+아래에서, 저희는 입력으로 무작위 값을 전달하면서 이 함수를 호출합니다.
+입력이 무작위 변수이기 때문에,
+계산 그래프가 어떤 형태를 띨지 알 수 없습니다.
+그러나, 특정 입력에 대해 `f(a)`를 실행할 때마다,
+저희는 특정 계산 그래프를 실현하며
+이후에 `backward`를 실행할 수 있습니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -610,13 +583,13 @@ d = f(a)
 d_grad = grad(f)(a)
 ```
 
-Even though our function `f` is, for demonstration purposes, a bit contrived,
-its dependence on the input is quite simple: 
-it is a *linear* function of `a` 
-with piecewise defined scale. 
-As such, `f(a) / a` is a vector of constant entries 
-and, moreover, `f(a) / a` needs to match 
-the gradient of `f(a)` with respect to `a`.
+저희 함수 `f`가 시연 목적으로 다소 작위적이긴 하지만,
+입력에 대한 의존성은 매우 단순합니다.
+이는 구간별로 정의된 스케일을 갖는
+`a`의 *선형* 함수입니다.
+따라서, `f(a) / a`는 상수 항목들의 벡터이며,
+나아가, `f(a) / a`는 `a`에 대한 `f(a)`의 그래디언트와
+일치해야 합니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -638,60 +611,56 @@ d_grad == d / a
 d_grad == d / a
 ```
 
-Dynamic control flow is very common in deep learning. 
-For instance, when processing text, the computational graph
-depends on the length of the input. 
-In these cases, automatic differentiation 
-becomes vital for statistical modeling 
-since it is impossible to compute the gradient *a priori*. 
+동적 제어 흐름은 딥러닝에서 매우 흔합니다.
+예를 들어, 텍스트를 처리할 때, 계산 그래프는
+입력의 길이에 의존합니다.
+이러한 경우, 그래디언트를 *사전에* 계산하는 것이 불가능하기 때문에
+자동 미분은 통계적 모델링에 필수적이 됩니다.
 
-## Discussion
+## 논의
 
-You have now gotten a taste of the power of automatic differentiation. 
-The development of libraries for calculating derivatives
-both automatically and efficiently 
-has been a massive productivity booster
-for deep learning practitioners,
-liberating them so they can focus on less menial.
-Moreover, autograd lets us design massive models
-for which pen and paper gradient computations 
-would be prohibitively time consuming.
-Interestingly, while we use autograd to *optimize* models
-(in a statistical sense)
-the *optimization* of autograd libraries themselves
-(in a computational sense)
-is a rich subject
-of vital interest to framework designers.
-Here, tools from compilers and graph manipulation 
-are leveraged to compute results 
-in the most expedient and memory-efficient manner. 
+이제 여러분은 자동 미분의 위력을 맛보셨습니다.
+도함수를 자동으로 그리고 효율적으로
+계산하기 위한 라이브러리의 개발은
+딥러닝 실무자들에게 엄청난 생산성 향상을 가져다주었고,
+그들이 덜 단조로운 작업에 집중할 수 있도록 해방시켰습니다.
+나아가, autograd는 펜과 종이로 그래디언트를 계산하는 것이
+엄청나게 시간이 많이 걸릴 수 있는 거대한 모델을 설계할 수 있게 해 줍니다.
+흥미롭게도, 저희가 (통계적 의미에서)
+모델을 *최적화*하기 위해 autograd를 사용하는 한편,
+autograd 라이브러리 자체의 (계산적 의미에서) *최적화*는
+프레임워크 설계자들에게 매우 중요한
+풍부한 주제입니다.
+여기서, 컴파일러와 그래프 조작의 도구들이
+가장 신속하고 메모리 효율적인 방식으로
+결과를 계산하기 위해 활용됩니다.
 
-For now, try to remember these basics: (i) attach gradients to those variables with respect to which we desire derivatives; (ii) record the computation of the target value; (iii) execute the backpropagation function; and  (iv) access the resulting gradient.
+지금은, 이 기본 사항들을 기억하려고 노력해 보세요. (i) 도함수를 원하는 변수들에 그래디언트를 부착하고, (ii) 목표 값의 계산을 기록하고, (iii) 역전파 함수를 실행하고, (iv) 결과 그래디언트에 접근합니다.
 
 
-## Exercises
+## 연습문제
 
-1. Why is the second derivative much more expensive to compute than the first derivative?
-1. After running the function for backpropagation, immediately run it again and see what happens. Investigate.
-1. In the control flow example where we calculate the derivative of `d` with respect to `a`, what would happen if we changed the variable `a` to a random vector or a matrix? At this point, the result of the calculation `f(a)` is no longer a scalar. What happens to the result? How do we analyze this?
-1. Let $f(x) = \sin(x)$. Plot the graph of $f$ and of its derivative $f'$. Do not exploit the fact that $f'(x) = \cos(x)$ but rather use automatic differentiation to get the result. 
-1. Let $f(x) = ((\log x^2) \cdot \sin x) + x^{-1}$. Write out a dependency graph tracing results from $x$ to $f(x)$. 
-1. Use the chain rule to compute the derivative $\frac{df}{dx}$ of the aforementioned function, placing each term on the dependency graph that you constructed previously. 
-1. Given the graph and the intermediate derivative results, you have a number of options when computing the gradient. Evaluate the result once starting from $x$ to $f$ and once from $f$ tracing back to $x$. The path from $x$ to $f$ is commonly known as *forward differentiation*, whereas the path from $f$ to $x$ is known as backward differentiation. 
-1. When might you want to use forward, and when backward, differentiation? Hint: consider the amount of intermediate data needed, the ability to parallelize steps, and the size of matrices and vectors involved. 
+1. 이계도함수는 왜 일계도함수보다 계산 비용이 훨씬 더 비쌉니까?
+1. 역전파를 위한 함수를 실행한 후, 즉시 다시 실행해 보고 무슨 일이 일어나는지 보세요. 조사해 보세요.
+1. `a`에 대한 `d`의 도함수를 계산하는 제어 흐름 예제에서, 변수 `a`를 무작위 벡터나 행렬로 바꾸면 어떤 일이 일어날까요? 이 시점에서, 계산 `f(a)`의 결과는 더 이상 스칼라가 아닙니다. 결과에 어떤 일이 일어날까요? 이를 어떻게 분석합니까?
+1. $f(x) = \sin(x)$라고 합시다. $f$와 그 도함수 $f'$의 그래프를 그리세요. $f'(x) = \cos(x)$라는 사실을 이용하지 말고, 자동 미분을 사용하여 결과를 얻으세요.
+1. $f(x) = ((\log x^2) \cdot \sin x) + x^{-1}$라고 합시다. $x$에서 $f(x)$까지의 결과를 추적하는 의존성 그래프를 적어 보세요.
+1. 연쇄 법칙을 사용하여 앞서 언급한 함수의 도함수 $\frac{df}{dx}$를 계산하고, 각 항을 앞서 구성한 의존성 그래프에 배치하세요.
+1. 그래프와 중간 도함수 결과가 주어지면, 그래디언트를 계산할 때 여러 가지 선택지가 있습니다. $x$에서 $f$까지 한 번, $f$에서 $x$로 다시 추적하여 한 번, 결과를 평가해 보세요. $x$에서 $f$까지의 경로는 일반적으로 *순방향 미분*으로 알려져 있는 반면, $f$에서 $x$까지의 경로는 역방향 미분으로 알려져 있습니다.
+1. 언제 순방향 미분을 사용하고, 언제 역방향 미분을 사용하고자 할 수 있을까요? 힌트: 필요한 중간 데이터의 양, 단계들을 병렬화하는 능력, 관련된 행렬과 벡터의 크기를 고려해 보세요.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/34)
+[토론](https://discuss.d2l.ai/t/34)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/35)
+[토론](https://discuss.d2l.ai/t/35)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/200)
+[토론](https://discuss.d2l.ai/t/200)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17970)
+[토론](https://discuss.d2l.ai/t/17970)
 :end_tab:

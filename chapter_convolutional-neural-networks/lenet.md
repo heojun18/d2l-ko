@@ -3,41 +3,38 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Convolutional Neural Networks (LeNet)
+# 합성곱 신경망 (LeNet)
 :label:`sec_lenet`
 
-We now have all the ingredients required to assemble
-a fully-functional CNN.
-In our earlier encounter with image data, we applied
-a linear model with softmax regression (:numref:`sec_softmax_scratch`)
-and an MLP (:numref:`sec_mlp-implementation`)
-to pictures of clothing in the Fashion-MNIST dataset.
-To make such data amenable we first flattened each image from a $28\times28$ matrix
-into a fixed-length $784$-dimensional vector,
-and thereafter processed them in fully connected layers.
-Now that we have a handle on convolutional layers,
-we can retain the spatial structure in our images.
-As an additional benefit of replacing fully connected layers with convolutional layers,
-we will enjoy more parsimonious models that require far fewer parameters.
+이제 저희는 완전히 기능하는 CNN을 조립하는 데 필요한
+모든 재료를 가지고 있습니다.
+이미지 데이터와의 이전 만남에서, 저희는 Fashion-MNIST 데이터셋의
+의류 사진에 소프트맥스 회귀(:numref:`sec_softmax_scratch`)를 가진
+선형 모델과 MLP(:numref:`sec_mlp-implementation`)를 적용했습니다.
+이러한 데이터를 다루기 쉽게 만들기 위해, 저희는 먼저 각 이미지를 $28\times28$ 행렬에서
+고정 길이 $784$차원 벡터로 평탄화한 다음,
+완전 연결 계층에서 처리했습니다.
+이제 저희는 합성곱 계층을 다룰 수 있게 되었으니,
+이미지의 공간 구조를 보존할 수 있습니다.
+완전 연결 계층을 합성곱 계층으로 대체하는 것의 추가적인 이점으로,
+저희는 훨씬 적은 매개변수를 필요로 하는 더 경제적인 모델을 누릴 것입니다.
 
-In this section, we will introduce *LeNet*,
-among the first published CNNs
-to capture wide attention for its performance on computer vision tasks.
-The model was introduced by (and named for) Yann LeCun,
-then a researcher at AT&T Bell Labs,
-for the purpose of recognizing handwritten digits in images :cite:`LeCun.Bottou.Bengio.ea.1998`.
-This work represented the culmination
-of a decade of research developing the technology;
-LeCun's team published the first study to successfully
-train CNNs via backpropagation :cite:`LeCun.Boser.Denker.ea.1989`.
+이 절에서, 저희는 컴퓨터 비전 과제에서의 성능으로
+폭넓은 주목을 받은 최초의 출판된 CNN 중 하나인
+*LeNet*을 소개합니다.
+이 모델은 당시 AT&T Bell Labs의 연구원이었던 Yann LeCun이
+이미지에서 손글씨 숫자를 인식할 목적으로 도입(그리고 그의 이름을 따서 명명)했습니다 :cite:`LeCun.Bottou.Bengio.ea.1998`.
+이 작업은 그 기술을 개발하는 10년간의 연구의 정점을 나타냈습니다.
+LeCun의 팀은 역전파를 통해 CNN을 성공적으로 훈련시킨
+최초의 연구를 출판했습니다 :cite:`LeCun.Boser.Denker.ea.1989`.
 
-At the time LeNet achieved outstanding results
-matching the performance of support vector machines,
-then a dominant approach in supervised learning, achieving an error rate of less than 1% per digit.
-LeNet was eventually adapted to recognize digits
-for processing deposits in ATM machines.
-To this day, some ATMs still run the code
-that Yann LeCun and his colleague Leon Bottou wrote in the 1990s!
+당시 LeNet은 지도 학습에서 지배적인 접근법이었던
+서포트 벡터 머신의 성능과 일치하는 뛰어난 결과를 달성했으며,
+자릿수당 1% 미만의 오류율을 달성했습니다.
+LeNet은 결국 ATM 기계에서 예금을 처리하기 위해 숫자를 인식하는 데
+적응되었습니다.
+오늘날까지도, 일부 ATM은 1990년대에 Yann LeCun과 그의 동료 Leon Bottou가
+작성한 코드를 여전히 실행하고 있습니다!
 
 ```{.python .input}
 %%tab mxnet
@@ -71,53 +68,51 @@ from types import FunctionType
 
 ## LeNet
 
-At a high level, (**LeNet (LeNet-5) consists of two parts:
-(i) a convolutional encoder consisting of two convolutional layers; and
-(ii) a dense block consisting of three fully connected layers**).
-The architecture is summarized in :numref:`img_lenet`.
+높은 수준에서, (**LeNet (LeNet-5)은 두 부분으로 구성됩니다:
+(i) 두 개의 합성곱 계층으로 구성된 합성곱 인코더와
+(ii) 세 개의 완전 연결 계층으로 구성된 밀집(dense) 블록**).
+아키텍처는 :numref:`img_lenet`에 요약되어 있습니다.
 
-![Data flow in LeNet. The input is a handwritten digit, the output is a probability over 10 possible outcomes.](../img/lenet.svg)
+![LeNet의 데이터 흐름. 입력은 손글씨 숫자이고, 출력은 10개의 가능한 결과에 대한 확률입니다.](../img/lenet.svg)
 :label:`img_lenet`
 
-The basic units in each convolutional block
-are a convolutional layer, a sigmoid activation function,
-and a subsequent average pooling operation.
-Note that while ReLUs and max-pooling work better,
-they had not yet been discovered.
-Each convolutional layer uses a $5\times 5$ kernel
-and a sigmoid activation function.
-These layers map spatially arranged inputs
-to a number of two-dimensional feature maps, typically
-increasing the number of channels.
-The first convolutional layer has 6 output channels,
-while the second has 16.
-Each $2\times2$ pooling operation (stride 2)
-reduces dimensionality by a factor of $4$ via spatial downsampling.
-The convolutional block emits an output with shape given by
-(batch size, number of channel, height, width).
+각 합성곱 블록의 기본 단위는
+합성곱 계층, 시그모이드 활성화 함수,
+그리고 후속 평균 풀링 연산입니다.
+ReLU와 맥스 풀링이 더 잘 작동하지만,
+당시에는 아직 발견되지 않았다는 점에 주목하세요.
+각 합성곱 계층은 $5\times 5$ 커널과
+시그모이드 활성화 함수를 사용합니다.
+이 계층들은 공간적으로 배열된 입력을
+다수의 2차원 특성 맵에 매핑하며, 일반적으로
+채널 수를 늘립니다.
+첫 번째 합성곱 계층은 6개의 출력 채널을 가지고,
+두 번째는 16개를 가집니다.
+각 $2\times2$ 풀링 연산(스트라이드 2)은
+공간적 다운샘플링을 통해 차원성을 $4$의 인수만큼 줄입니다.
+합성곱 블록은
+(배치 크기, 채널 수, 높이, 너비)로 주어진 모양의 출력을 방출합니다.
 
-In order to pass output from the convolutional block
-to the dense block,
-we must flatten each example in the minibatch.
-In other words, we take this four-dimensional input and transform it
-into the two-dimensional input expected by fully connected layers:
-as a reminder, the two-dimensional representation that we desire uses the first dimension to index examples in the minibatch
-and the second to give the flat vector representation of each example.
-LeNet's dense block has three fully connected layers,
-with 120, 84, and 10 outputs, respectively.
-Because we are still performing classification,
-the 10-dimensional output layer corresponds
-to the number of possible output classes.
+합성곱 블록에서 밀집 블록으로 출력을 전달하기 위해,
+저희는 미니배치의 각 예제를 평탄화해야 합니다.
+다시 말해, 저희는 이 4차원 입력을 받아
+완전 연결 계층이 기대하는 2차원 입력으로 변환합니다.
+상기하자면, 저희가 원하는 2차원 표현은 첫 번째 차원을 미니배치의 예제를 인덱싱하는 데 사용하고
+두 번째 차원은 각 예제의 평탄 벡터 표현을 제공하는 데 사용합니다.
+LeNet의 밀집 블록은 세 개의 완전 연결 계층을 가지며,
+각각 120, 84, 10개의 출력을 가집니다.
+저희가 여전히 분류를 수행하고 있기 때문에,
+10차원 출력 계층은
+가능한 출력 클래스 수에 대응합니다.
 
-While getting to the point where you truly understand
-what is going on inside LeNet may have taken a bit of work,
-we hope that the following code snippet will convince you
-that implementing such models with modern deep learning frameworks
-is remarkably simple.
-We need only to instantiate a `Sequential` block
-and chain together the appropriate layers,
-using Xavier initialization as
-introduced in :numref:`subsec_xavier`.
+LeNet 내부에서 일어나고 있는 일을 진정으로 이해하는 지점에
+도달하는 데에는 약간의 작업이 필요했을 수 있지만,
+다음 코드 스니펫이 모던 딥러닝 프레임워크로
+그러한 모델을 구현하는 것이 놀라울 정도로 단순함을
+여러분에게 납득시키기를 바랍니다.
+저희는 단지 `Sequential` 블록을 인스턴스화하고
+:numref:`subsec_xavier`에서 도입된 Xavier 초기화를 사용하여
+적절한 계층들을 함께 연결하기만 하면 됩니다.
 
 ```{.python .input}
 %%tab pytorch
@@ -197,39 +192,32 @@ class LeNet(d2l.Classifier):  #@save
         ])
 ```
 
-We have taken some liberty in the reproduction of LeNet insofar as we have replaced the Gaussian activation layer by
-a softmax layer. This greatly simplifies the implementation, not least due to the
-fact that the Gaussian decoder is rarely used nowadays. Other than that, this network matches
-the original LeNet-5 architecture.
+저희는 가우시안 활성화 계층을 소프트맥스 계층으로 대체했다는 점에서 LeNet의 재현에 약간의 자유를 취했습니다. 이는 가우시안 디코더가 요즘 거의 사용되지 않는다는 점도 한몫하여 구현을 크게 단순화합니다. 그 외에는, 이 네트워크는 원래의 LeNet-5 아키텍처와 일치합니다.
 
 :begin_tab:`pytorch, mxnet, tensorflow`
-Let's see what happens inside the network. By passing a
-single-channel (black and white)
-$28 \times 28$ image through the network
-and printing the output shape at each layer,
-we can [**inspect the model**] to ensure
-that its operations line up with
-what we expect from :numref:`img_lenet_vert`.
+네트워크 내부에서 무슨 일이 일어나는지 봅시다. 단일 채널(흑백)
+$28 \times 28$ 이미지를 네트워크에 통과시키고
+각 계층에서 출력 모양을 출력함으로써,
+저희는 그것의 연산이 :numref:`img_lenet_vert`에서 기대하는 것과 일치하는지
+확인하기 위해 [**모델을 점검**]할 수 있습니다.
 :end_tab:
 
 :begin_tab:`jax`
-Let's see what happens inside the network. By passing a
-single-channel (black and white)
-$28 \times 28$ image through the network
-and printing the output shape at each layer,
-we can [**inspect the model**] to ensure
-that its operations line up with
-what we expect from :numref:`img_lenet_vert`.
-Flax provides `nn.tabulate`, a nifty method to summarise the layers and
-parameters in our network. Here we use the `bind` method to create a bounded model.
-The variables are now bound to the `d2l.Module` class, i.e., this bounded model
-becomes a stateful object which can then be used to access the `Sequential`
-object attribute `net` and the `layers` within. Note that the `bind` method should
-only be used for interactive experimentation, and is not a direct
-replacement for the `apply` method.
+네트워크 내부에서 무슨 일이 일어나는지 봅시다. 단일 채널(흑백)
+$28 \times 28$ 이미지를 네트워크에 통과시키고
+각 계층에서 출력 모양을 출력함으로써,
+저희는 그것의 연산이 :numref:`img_lenet_vert`에서 기대하는 것과 일치하는지
+확인하기 위해 [**모델을 점검**]할 수 있습니다.
+Flax는 네트워크의 계층과 매개변수를 요약하는 멋진 메서드인
+`nn.tabulate`를 제공합니다. 여기서 저희는 바운드된 모델을 생성하기 위해 `bind` 메서드를
+사용합니다. 변수는 이제 `d2l.Module` 클래스에 바인딩되며, 즉 이 바운드된 모델은
+`Sequential` 객체 속성 `net`과 그 안의 `layers`에 접근하는 데 사용될 수 있는
+상태가 있는 객체가 됩니다. `bind` 메서드는 대화형 실험을 위해서만
+사용되어야 하며, `apply` 메서드의 직접적인 대체물이 아니라는 점에
+주목하세요.
 :end_tab:
 
-![Compressed notation for LeNet-5.](../img/lenet-vert.svg)
+![LeNet-5에 대한 압축된 표기법.](../img/lenet-vert.svg)
 :label:`img_lenet_vert`
 
 ```{.python .input}
@@ -274,47 +262,44 @@ model = LeNet()
 model.layer_summary((1, 28, 28, 1))
 ```
 
-Note that the height and width of the representation
-at each layer throughout the convolutional block
-is reduced (compared with the previous layer).
-The first convolutional layer uses two pixels of padding
-to compensate for the reduction in height and width
-that would otherwise result from using a $5 \times 5$ kernel.
-As an aside, the image size of $28 \times 28$ pixels in the original
-MNIST OCR dataset is a result of *trimming* two pixel rows (and columns) from the
-original scans that measured $32 \times 32$ pixels. This was done primarily to
-save space (a 30% reduction) at a time when megabytes mattered.
+합성곱 블록 전반에 걸쳐 각 계층에서의 표현의 높이와 너비가
+(이전 계층에 비해) 감소된다는 점에 주목하세요.
+첫 번째 합성곱 계층은 $5 \times 5$ 커널을 사용함으로써 발생할
+높이와 너비의 감소를 보상하기 위해
+2픽셀의 패딩을 사용합니다.
+참고로, 원래 MNIST OCR 데이터셋의 $28 \times 28$ 픽셀이라는 이미지 크기는
+$32 \times 32$ 픽셀이던 원본 스캔에서 두 픽셀 행(및 열)을
+*잘라낸* 결과입니다. 이는 메가바이트가 중요하던 시절에
+공간을 절약하기 위해(30% 감소) 주로 행해진 일입니다.
 
-In contrast, the second convolutional layer forgoes padding,
-and thus the height and width are both reduced by four pixels.
-As we go up the stack of layers,
-the number of channels increases layer-over-layer
-from 1 in the input to 6 after the first convolutional layer
-and 16 after the second convolutional layer.
-However, each pooling layer halves the height and width.
-Finally, each fully connected layer reduces dimensionality,
-finally emitting an output whose dimension
-matches the number of classes.
+이와 대조적으로, 두 번째 합성곱 계층은 패딩을 포기하여,
+높이와 너비가 모두 네 픽셀씩 감소합니다.
+저희가 계층 스택을 올라감에 따라,
+채널 수는 계층마다 입력의 1에서
+첫 번째 합성곱 계층 후 6,
+두 번째 합성곱 계층 후 16으로 증가합니다.
+하지만, 각 풀링 계층은 높이와 너비를 절반으로 만듭니다.
+마지막으로, 각 완전 연결 계층은 차원성을 줄여서,
+최종적으로 그 차원이 클래스 수와 일치하는
+출력을 방출합니다.
 
 
-## Training
+## 훈련
 
-Now that we have implemented the model,
-let's [**run an experiment to see how the LeNet-5 model fares on Fashion-MNIST**].
+이제 저희가 모델을 구현했으므로,
+[**LeNet-5 모델이 Fashion-MNIST에서 어떻게 작동하는지 살펴보기 위한 실험을 실행**]해 봅시다.
 
-While CNNs have fewer parameters,
-they can still be more expensive to compute
-than similarly deep MLPs
-because each parameter participates in many more
-multiplications.
-If you have access to a GPU, this might be a good time
-to put it into action to speed up training.
-Note that
-the `d2l.Trainer` class takes care of all details.
-By default, it initializes the model parameters on the
-available devices.
-Just as with MLPs, our loss function is cross-entropy,
-and we minimize it via minibatch stochastic gradient descent.
+CNN은 매개변수가 더 적지만,
+각 매개변수가 훨씬 더 많은 곱셈에 참여하기 때문에
+유사하게 깊은 MLP보다 계산이 여전히 더 비쌀 수 있습니다.
+GPU에 접근할 수 있다면, 이 시점이
+훈련 속도를 높이기 위해 그것을 활용하기에 좋은 때일 수 있습니다.
+`d2l.Trainer` 클래스가 모든 세부 사항을 처리한다는 점에
+주목하세요.
+기본적으로, 그것은 사용 가능한 장치에서
+모델 매개변수를 초기화합니다.
+MLP와 마찬가지로, 저희의 손실 함수는 교차 엔트로피이며,
+저희는 미니배치 확률적 경사 하강법을 통해 그것을 최소화합니다.
 
 ```{.python .input}
 %%tab pytorch, mxnet, jax
@@ -335,39 +320,39 @@ with d2l.try_gpu():
     trainer.fit(model, data)
 ```
 
-## Summary
+## 요약
 
-We have made significant progress in this chapter. We moved from the MLPs of the 1980s to the CNNs of the 1990s and early 2000s. The architectures proposed, e.g., in the form of LeNet-5 remain meaningful, even to this day. It is worth comparing the error rates on Fashion-MNIST achievable with LeNet-5 both to the very best possible with MLPs (:numref:`sec_mlp-implementation`) and those with significantly more advanced architectures such as ResNet (:numref:`sec_resnet`). LeNet is much more similar to the latter than to the former. One of the primary differences, as we shall see, is that greater amounts of computation enabled significantly more complex architectures.
+저희는 이 장에서 상당한 진전을 이루었습니다. 저희는 1980년대의 MLP에서 1990년대와 2000년대 초의 CNN으로 이동했습니다. 예를 들어 LeNet-5의 형태로 제안된 아키텍처는 오늘날까지도 의미가 있습니다. LeNet-5로 달성 가능한 Fashion-MNIST에서의 오류율을 MLP로 가능한 최선의 결과(:numref:`sec_mlp-implementation`) 및 ResNet(:numref:`sec_resnet`)과 같이 훨씬 더 진보된 아키텍처의 결과 모두와 비교해 보는 것은 가치가 있습니다. LeNet은 전자보다 후자에 훨씬 더 유사합니다. 저희가 보게 되겠지만, 주요 차이점 중 하나는 더 많은 양의 계산이 훨씬 더 복잡한 아키텍처를 가능하게 했다는 것입니다.
 
-A second difference is the relative ease with which we were able to implement LeNet. What used to be an engineering challenge worth months of C++ and assembly code, engineering to improve SN, an early Lisp-based deep learning tool :cite:`Bottou.Le-Cun.1988`, and finally experimentation with models can now be accomplished in minutes. It is this incredible productivity boost that has democratized deep learning model development tremendously. In the next chapter, we will journey down this rabbit hole to see where it takes us.
+두 번째 차이점은 저희가 LeNet을 구현할 수 있었던 상대적인 용이성입니다. 한때 SN이라는 초기 Lisp 기반 딥러닝 도구 :cite:`Bottou.Le-Cun.1988`를 개선하기 위한 C++ 및 어셈블리 코드 작성과 엔지니어링에 수개월의 가치가 있던 엔지니어링 도전이었고, 마지막으로 모델 실험이었던 것이 이제는 몇 분 안에 달성될 수 있습니다. 딥러닝 모델 개발을 엄청나게 민주화한 것은 바로 이 놀라운 생산성 향상입니다. 다음 장에서, 저희는 이 토끼굴 아래로 내려가 그것이 저희를 어디로 데려가는지 볼 것입니다.
 
-## Exercises
+## 연습문제
 
-1. Let's modernize LeNet. Implement and test the following changes:
-    1. Replace average pooling with max-pooling.
-    1. Replace the softmax layer with ReLU.
-1. Try to change the size of the LeNet style network to improve its accuracy in addition to max-pooling and ReLU.
-    1. Adjust the convolution window size.
-    1. Adjust the number of output channels.
-    1. Adjust the number of convolution layers.
-    1. Adjust the number of fully connected layers.
-    1. Adjust the learning rates and other training details (e.g., initialization and number of epochs).
-1. Try out the improved network on the original MNIST dataset.
-1. Display the activations of the first and second layer of LeNet for different inputs (e.g., sweaters and coats).
-1. What happens to the activations when you feed significantly different images into the network (e.g., cats, cars, or even random noise)?
+1. LeNet을 현대화해 봅시다. 다음 변경 사항을 구현하고 테스트하세요.
+    1. 평균 풀링을 맥스 풀링으로 대체하세요.
+    1. 소프트맥스 계층을 ReLU로 대체하세요.
+1. 맥스 풀링과 ReLU 외에도 그 정확도를 향상시키기 위해 LeNet 스타일 네트워크의 크기를 변경해 보세요.
+    1. 합성곱 윈도우 크기를 조정하세요.
+    1. 출력 채널 수를 조정하세요.
+    1. 합성곱 계층 수를 조정하세요.
+    1. 완전 연결 계층 수를 조정하세요.
+    1. 학습률과 기타 훈련 세부 사항(예: 초기화 및 에폭 수)을 조정하세요.
+1. 원래 MNIST 데이터셋에서 향상된 네트워크를 시도해 보세요.
+1. 다양한 입력(예: 스웨터와 코트)에 대해 LeNet의 첫 번째와 두 번째 계층의 활성값을 표시하세요.
+1. 상당히 다른 이미지(예: 고양이, 자동차, 또는 심지어 무작위 잡음)를 네트워크에 공급할 때 활성값에 어떤 일이 발생합니까?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/73)
+[토론](https://discuss.d2l.ai/t/73)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/74)
+[토론](https://discuss.d2l.ai/t/74)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/275)
+[토론](https://discuss.d2l.ai/t/275)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18000)
+[토론](https://discuss.d2l.ai/t/18000)
 :end_tab:

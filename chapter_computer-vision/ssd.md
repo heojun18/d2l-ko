@@ -1,132 +1,54 @@
-# Single Shot Multibox Detection
+# SSD(Single Shot Multibox Detection)
 :label:`sec_ssd`
 
-In :numref:`sec_bbox`--:numref:`sec_object-detection-dataset`,
-we introduced bounding boxes, anchor boxes,
-multiscale object detection, and the dataset for object detection.
-Now we are ready to use such background
-knowledge to design an object detection model:
-single shot multibox detection
-(SSD) :cite:`Liu.Anguelov.Erhan.ea.2016`.
-This model is simple, fast, and widely used.
-Although this is just one of vast amounts of
-object detection models,
-some of the design principles
-and implementation details in this section
-are also applicable to other models.
+:numref:`sec_bbox`(:numref:`sec_object-detection-dataset`)에서 저희는 바운딩 박스, 앵커 박스, 멀티스케일 객체 검출, 객체 검출용 데이터셋을 소개했습니다.
+이제 그러한 배경 지식을 사용해 객체 검출 모델인 SSD(single shot multibox detection) :cite:`Liu.Anguelov.Erhan.ea.2016`를 설계할 준비가 되었습니다.
+이 모델은 간단하고 빠르며 폭넓게 사용됩니다.
+이는 방대한 양의 객체 검출 모델 중 하나일 뿐이지만, 이 절의 일부 설계 원칙과 구현 세부사항은 다른 모델에도 적용될 수 있습니다.
 
 
-## Model
+## 모델
 
-:numref:`fig_ssd` provides an overview of
-the design of single-shot multibox detection.
-This model mainly consists of
-a base network
-followed by
-several multiscale feature map blocks.
-The base network
-is for extracting features from the input image,
-so it can use a deep CNN.
-For example,
-the original single-shot multibox detection paper
-adopts a VGG network truncated before the
-classification layer :cite:`Liu.Anguelov.Erhan.ea.2016`,
-while ResNet has also been commonly used.
-Through our design
-we can make the base network output
-larger feature maps
-so as to generate more anchor boxes
-for detecting smaller objects.
-Subsequently,
-each multiscale feature map block
-reduces (e.g., by half)
-the height and width of the feature maps
-from the previous block,
-and enables each unit
-of the feature maps
-to increase its receptive field on the input image.
+:numref:`fig_ssd`는 SSD의 설계에 대한 개요를 제공합니다.
+이 모델은 주로 기본 신경망과 그 뒤에 오는 여러 멀티스케일 특징 맵 블록으로 구성됩니다.
+기본 신경망은 입력 이미지에서 특징을 추출하기 위한 것이므로, 심층 CNN을 사용할 수 있습니다.
+예를 들어, 원래의 SSD 논문은 분류 계층 이전에서 잘린 VGG 네트워크를 채택하지만 :cite:`Liu.Anguelov.Erhan.ea.2016`, ResNet도 일반적으로 사용되어 왔습니다.
+저희의 설계를 통해 기본 신경망이 더 큰 특징 맵을 출력하도록 만들 수 있는데, 그러면 더 작은 객체를 검출하기 위해 더 많은 앵커 박스를 생성할 수 있습니다.
+이후, 각 멀티스케일 특징 맵 블록은 이전 블록의 특징 맵의 높이와 너비를 (예: 절반으로) 줄이고, 특징 맵의 각 단위가 입력 이미지에 대한 수용 영역을 늘릴 수 있게 합니다.
 
 
-Recall the design
-of multiscale object detection
-through layerwise representations of images by
-deep neural networks
-in :numref:`sec_multiscale-object-detection`.
-Since
-multiscale feature maps closer to the top of :numref:`fig_ssd`
-are smaller but have larger receptive fields,
-they are suitable for detecting
-fewer but larger objects.
+:numref:`sec_multiscale-object-detection`의 심층 신경망에 의한 이미지의 계층별 표현을 통한 멀티스케일 객체 검출의 설계를 떠올려 보세요.
+:numref:`fig_ssd`의 위쪽에 더 가까운 멀티스케일 특징 맵은 더 작지만 더 큰 수용 영역을 가지므로, 더 적지만 더 큰 객체를 검출하는 데 적합합니다.
 
-In a nutshell,
-via its base network and several multiscale feature map blocks,
-single-shot multibox detection
-generates a varying number of anchor boxes with different sizes,
-and detects varying-size objects
-by predicting classes and offsets
-of these anchor boxes (thus the bounding boxes);
-thus, this is a multiscale object detection model.
+요컨대, 기본 신경망과 여러 멀티스케일 특징 맵 블록을 통해, SSD는 다양한 크기의 다양한 수의 앵커 박스를 생성하고, 이러한 앵커 박스(그리고 따라서 바운딩 박스)의 클래스와 오프셋을 예측함으로써 다양한 크기의 객체를 검출합니다. 따라서, 이는 멀티스케일 객체 검출 모델입니다.
 
 
-![As a multiscale object detection model, single-shot multibox detection mainly consists of a base network followed by several multiscale feature map blocks.](../img/ssd.svg)
+![멀티스케일 객체 검출 모델로서, SSD는 주로 기본 신경망과 그 뒤에 오는 여러 멀티스케일 특징 맵 블록으로 구성됩니다.](../img/ssd.svg)
 :label:`fig_ssd`
 
 
-In the following,
-we will describe the implementation details
-of different blocks in :numref:`fig_ssd`. To begin with, we discuss how to implement
-the class and bounding box prediction.
+다음에서, 저희는 :numref:`fig_ssd`의 다양한 블록의 구현 세부사항을 설명할 것입니다. 먼저, 클래스와 바운딩 박스 예측을 어떻게 구현하는지 논의합니다.
 
 
 
-### [**Class Prediction Layer**]
+### [**클래스 예측 계층**]
 
-Let the number of object classes be $q$.
-Then anchor boxes have $q+1$ classes,
-where class 0 is background.
-At some scale,
-suppose that the height and width of feature maps
-are $h$ and $w$, respectively.
-When $a$ anchor boxes
-are generated with
-each spatial position of these feature maps as their center,
-a total of $hwa$ anchor boxes need to be classified.
-This often makes classification with fully connected layers infeasible due to likely
-heavy parametrization costs.
-Recall how we used channels of
-convolutional layers
-to predict classes in :numref:`sec_nin`.
-Single-shot multibox detection uses the
-same technique to reduce model complexity.
+객체 클래스의 수를 $q$라고 합시다.
+그러면 앵커 박스는 $q+1$개의 클래스를 가지며, 여기서 클래스 0은 배경입니다.
+어떤 스케일에서, 특징 맵의 높이와 너비가 각각 $h$와 $w$라고 가정합니다.
+이러한 특징 맵의 각 공간적 위치를 중심으로 $a$개의 앵커 박스가 생성될 때, 총 $hwa$개의 앵커 박스가 분류되어야 합니다.
+이는 종종 완전 연결 계층을 사용한 분류가 무거운 매개변수화 비용 가능성 때문에 실현 불가능하게 만듭니다.
+:numref:`sec_nin`에서 합성곱 계층의 채널을 사용해 클래스를 예측한 방법을 떠올려 보세요.
+SSD는 모델 복잡도를 줄이기 위해 동일한 기법을 사용합니다.
 
-Specifically,
-the class prediction layer uses a convolutional layer
-without altering width or height of feature maps.
-In this way,
-there can be a one-to-one correspondence
-between outputs and inputs
-at the same spatial dimensions (width and height)
-of feature maps.
-More concretely,
-channels of the output feature maps
-at any spatial position ($x$, $y$)
-represent class predictions
-for all the anchor boxes centered on
-($x$, $y$) of the input feature maps.
-To produce valid predictions,
-there must be $a(q+1)$ output channels,
-where for the same spatial position
-the output channel with index $i(q+1) + j$
-represents the prediction of
-the class $j$ ($0 \leq j \leq q$)
-for the anchor box $i$ ($0 \leq i < a$).
+구체적으로, 클래스 예측 계층은 특징 맵의 너비나 높이를 변경하지 않는 합성곱 계층을 사용합니다.
+이렇게 하면, 특징 맵의 같은 공간 차원(너비와 높이)에서 출력과 입력 사이에 일대일 대응이 있을 수 있습니다.
+보다 구체적으로, 임의의 공간적 위치 ($x$, $y$)에서의 출력 특징 맵의 채널은 입력 특징 맵의 ($x$, $y$)를 중심으로 하는 모든 앵커 박스에 대한 클래스 예측을 나타냅니다.
+유효한 예측을 생성하려면, $a(q+1)$개의 출력 채널이 있어야 하며, 같은 공간적 위치에 대해 인덱스 $i(q+1) + j$의 출력 채널은 앵커 박스 $i$ ($0 \leq i < a$)에 대한 클래스 $j$ ($0 \leq j \leq q$)의 예측을 나타냅니다.
 
-Below we define such a class prediction layer,
-specifying $a$ and $q$ via arguments `num_anchors` and `num_classes`, respectively.
-This layer uses a $3\times3$ convolutional layer with a
-padding of 1.
-The width and height of the input and output of this
-convolutional layer remain unchanged.
+아래에서 저희는 그러한 클래스 예측 계층을 정의하는데, $a$와 $q$를 인자 `num_anchors`와 `num_classes`로 각각 지정합니다.
+이 계층은 패딩이 1인 $3\times3$ 합성곱 계층을 사용합니다.
+이 합성곱 계층의 입력과 출력의 너비와 높이는 변하지 않습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -156,11 +78,10 @@ def cls_predictor(num_inputs, num_anchors, num_classes):
                      kernel_size=3, padding=1)
 ```
 
-### (**Bounding Box Prediction Layer**)
+### (**바운딩 박스 예측 계층**)
 
-The design of the bounding box prediction layer is similar to that of the class prediction layer.
-The only difference lies in the number of outputs for each anchor box:
-here we need to predict four offsets rather than $q+1$ classes.
+바운딩 박스 예측 계층의 설계는 클래스 예측 계층의 설계와 유사합니다.
+유일한 차이는 각 앵커 박스에 대한 출력 수에 있습니다. 여기서는 $q+1$개의 클래스가 아니라 네 개의 오프셋을 예측해야 합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -174,35 +95,17 @@ def bbox_predictor(num_inputs, num_anchors):
     return nn.Conv2d(num_inputs, num_anchors * 4, kernel_size=3, padding=1)
 ```
 
-### [**Concatenating Predictions for Multiple Scales**]
+### [**여러 스케일에 대한 예측 연결**]
 
-As we mentioned, single-shot multibox detection
-uses multiscale feature maps to generate anchor boxes and predict their classes and offsets.
-At different scales,
-the shapes of feature maps
-or the numbers of anchor boxes centered on the same unit
-may vary.
-Therefore,
-shapes of the prediction outputs
-at different scales may vary.
+저희가 언급했듯이, SSD는 멀티스케일 특징 맵을 사용해 앵커 박스를 생성하고 그 클래스와 오프셋을 예측합니다.
+다양한 스케일에서, 특징 맵의 형태나 같은 단위를 중심으로 하는 앵커 박스의 수가 다를 수 있습니다.
+따라서, 다양한 스케일에서 예측 출력의 형태가 다를 수 있습니다.
 
-In the following example,
-we construct feature maps at two different scales,
-`Y1` and `Y2`,
-for the same minibatch,
-where the height and width of `Y2`
-are half of those of `Y1`.
-Let's take class prediction as an example.
-Suppose that
-5 and 3 anchor boxes
-are generated for every unit in `Y1` and `Y2`, respectively.
-Suppose further that
-the number of object classes is 10.
-For feature maps `Y1` and `Y2`
-the numbers of channels in the class prediction outputs
-are $5\times(10+1)=55$ and $3\times(10+1)=33$, respectively,
-where either output shape is
-(batch size, number of channels, height, width).
+다음 예제에서, 저희는 같은 미니배치에 대해 두 가지 다른 스케일의 특징 맵 `Y1`과 `Y2`를 구성하는데, 여기서 `Y2`의 높이와 너비는 `Y1`의 절반입니다.
+클래스 예측을 예로 들어 보겠습니다.
+`Y1`과 `Y2`의 모든 단위에 대해 각각 5개와 3개의 앵커 박스가 생성된다고 가정합니다.
+나아가 객체 클래스 수가 10이라고 가정합니다.
+특징 맵 `Y1`과 `Y2`에 대해 클래스 예측 출력의 채널 수는 각각 $5\times(10+1)=55$와 $3\times(10+1)=33$이며, 두 출력 형태 모두 (배치 크기, 채널 수, 높이, 너비)입니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -225,22 +128,13 @@ Y2 = forward(torch.zeros((2, 16, 10, 10)), cls_predictor(16, 3, 10))
 Y1.shape, Y2.shape
 ```
 
-As we can see, except for the batch size dimension,
-the other three dimensions all have different sizes.
-To concatenate these two prediction outputs for more efficient computation,
-we will transform these tensors into a more consistent format.
+보시다시피, 배치 크기 차원을 제외하고는, 다른 세 차원 모두 크기가 다릅니다.
+보다 효율적인 계산을 위해 이 두 예측 출력을 연결하기 위해, 저희는 이러한 텐서를 더 일관된 형식으로 변환할 것입니다.
 
-Note that
-the channel dimension holds the predictions for
-anchor boxes with the same center.
-We first move this dimension to the innermost.
-Since the batch size remains the same for different scales,
-we can transform the prediction output
-into a two-dimensional tensor
-with shape (batch size, height $\times$ width $\times$ number of channels).
-Then we can concatenate
-such outputs at different scales
-along dimension 1.
+채널 차원이 같은 중심을 가진 앵커 박스에 대한 예측을 가진다는 점에 유의하세요.
+저희는 먼저 이 차원을 가장 안쪽으로 옮깁니다.
+배치 크기는 다양한 스케일에서도 동일하게 유지되므로, 저희는 예측 출력을 (배치 크기, 높이 $\times$ 너비 $\times$ 채널 수) 형태의 2차원 텐서로 변환할 수 있습니다.
+그런 다음 저희는 차원 1을 따라 그러한 다양한 스케일의 출력을 연결할 수 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -260,35 +154,22 @@ def concat_preds(preds):
     return torch.cat([flatten_pred(p) for p in preds], dim=1)
 ```
 
-In this way,
-even though `Y1` and `Y2` have different sizes
-in channels, heights, and widths,
-we can still concatenate these two prediction outputs at two different scales for the same minibatch.
+이런 식으로, `Y1`과 `Y2`가 채널, 높이, 너비에서 다른 크기를 가지더라도, 저희는 여전히 같은 미니배치에 대해 두 가지 다른 스케일의 이 두 예측 출력을 연결할 수 있습니다.
 
 ```{.python .input}
 #@tab all
 concat_preds([Y1, Y2]).shape
 ```
 
-### [**Downsampling Block**]
+### [**다운샘플링 블록**]
 
-In order to detect objects at multiple scales,
-we define the following downsampling block `down_sample_blk` that
-halves the height and width of input feature maps.
-In fact,
-this block applies the design of VGG blocks
-in :numref:`subsec_vgg-blocks`.
-More concretely,
-each downsampling block consists of
-two $3\times3$ convolutional layers with padding of 1
-followed by a $2\times2$ max-pooling layer with stride of 2.
-As we know, $3\times3$ convolutional layers with padding of 1 do not change the shape of feature maps.
-However, the subsequent $2\times2$ max-pooling  reduces the height and width of input feature maps by half.
-For both input and output feature maps of this downsampling block,
-because $1\times 2+(3-1)+(3-1)=6$,
-each unit in the output
-has a $6\times6$ receptive field on the input.
-Therefore, the downsampling block enlarges the receptive field of each unit in its output feature maps.
+여러 스케일에서 객체를 검출하기 위해, 저희는 입력 특징 맵의 높이와 너비를 절반으로 줄이는 다음 다운샘플링 블록 `down_sample_blk`를 정의합니다.
+사실, 이 블록은 :numref:`subsec_vgg-blocks`의 VGG 블록의 설계를 적용합니다.
+보다 구체적으로, 각 다운샘플링 블록은 패딩이 1인 두 개의 $3\times3$ 합성곱 계층과 그 뒤에 오는 스트라이드가 2인 $2\times2$ 최대 풀링 계층으로 구성됩니다.
+저희가 알다시피, 패딩이 1인 $3\times3$ 합성곱 계층은 특징 맵의 형태를 변경하지 않습니다.
+하지만, 후속하는 $2\times2$ 최대 풀링은 입력 특징 맵의 높이와 너비를 절반으로 줄입니다.
+이 다운샘플링 블록의 입력과 출력 특징 맵 모두에 대해, $1\times 2+(3-1)+(3-1)=6$이므로, 출력의 각 단위는 입력에서 $6\times6$ 수용 영역을 가집니다.
+따라서, 다운샘플링 블록은 출력 특징 맵의 각 단위의 수용 영역을 확대합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -316,7 +197,7 @@ def down_sample_blk(in_channels, out_channels):
     return nn.Sequential(*blk)
 ```
 
-In the following example, our constructed downsampling block changes the number of input channels and halves the height and width of the input feature maps.
+다음 예제에서, 저희가 구성한 다운샘플링 블록은 입력 채널 수를 변경하고 입력 특징 맵의 높이와 너비를 절반으로 줄입니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -328,15 +209,11 @@ forward(np.zeros((2, 3, 20, 20)), down_sample_blk(10)).shape
 forward(torch.zeros((2, 3, 20, 20)), down_sample_blk(3, 10)).shape
 ```
 
-### [**Base Network Block**]
+### [**기본 신경망 블록**]
 
-The base network block is used to extract features from input images.
-For simplicity,
-we construct a small base network
-consisting of three downsampling blocks
-that double the number of channels at each block.
-Given a $256\times256$ input image,
-this base network block outputs $32 \times 32$ feature maps ($256/2^3=32$).
+기본 신경망 블록은 입력 이미지에서 특징을 추출하는 데 사용됩니다.
+단순화를 위해, 저희는 각 블록에서 채널 수를 두 배로 늘리는 세 개의 다운샘플링 블록으로 구성된 작은 기본 신경망을 구성합니다.
+$256\times256$ 입력 이미지가 주어지면, 이 기본 신경망 블록은 $32 \times 32$ 특징 맵($256/2^3=32$)을 출력합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -361,30 +238,13 @@ def base_net():
 forward(torch.zeros((2, 3, 256, 256)), base_net()).shape
 ```
 
-### The Complete Model
+### 완전한 모델
 
 
-[**The complete
-single shot multibox detection model
-consists of five blocks.**]
-The feature maps produced by each block
-are used for both
-(i) generating anchor boxes
-and (ii) predicting classes and offsets of these anchor boxes.
-Among these five blocks,
-the first one
-is the base network block,
-the second to the fourth are
-downsampling blocks,
-and the last block
-uses global max-pooling
-to reduce both the height and width to 1.
-Technically,
-the second to the fifth blocks
-are all
-those
-multiscale feature map blocks
-in :numref:`fig_ssd`.
+[**완전한 SSD 모델은 다섯 개의 블록으로 구성됩니다.**]
+각 블록에 의해 생성된 특징 맵은 (i) 앵커 박스를 생성하는 것과 (ii) 이러한 앵커 박스의 클래스와 오프셋을 예측하는 데 모두 사용됩니다.
+이 다섯 블록 중, 첫 번째는 기본 신경망 블록이고, 두 번째에서 네 번째는 다운샘플링 블록이며, 마지막 블록은 전역 최대 풀링을 사용해 높이와 너비를 모두 1로 줄입니다.
+기술적으로, 두 번째부터 다섯 번째 블록은 모두 :numref:`fig_ssd`의 그 멀티스케일 특징 맵 블록입니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -412,15 +272,8 @@ def get_blk(i):
     return blk
 ```
 
-Now we [**define the forward propagation**]
-for each block.
-Different from
-in image classification tasks,
-outputs here include
-(i) CNN feature maps `Y`,
-(ii) anchor boxes generated using `Y` at the current scale,
-and (iii) classes and offsets predicted (based on `Y`)
-for these anchor boxes.
+이제 저희는 각 블록에 대한 [**순전파를 정의**]합니다.
+이미지 분류 작업과는 달리, 여기서의 출력은 (i) CNN 특징 맵 `Y`, (ii) 현재 스케일에서 `Y`를 사용해 생성된 앵커 박스, (iii) 이러한 앵커 박스에 대해 (`Y`를 기반으로) 예측된 클래스와 오프셋을 포함합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -442,27 +295,12 @@ def blk_forward(X, blk, size, ratio, cls_predictor, bbox_predictor):
     return (Y, anchors, cls_preds, bbox_preds)
 ```
 
-Recall that
-in :numref:`fig_ssd`
-a multiscale feature map block
-that is closer to the top
-is for detecting larger objects;
-thus, it needs to generate larger anchor boxes.
-In the above forward propagation,
-at each multiscale feature map block
-we pass in a list of two scale values
-via the `sizes` argument
-of the invoked `multibox_prior` function (described in :numref:`sec_anchor`).
-In the following,
-the interval between 0.2 and 1.05
-is split evenly
-into five sections to determine the
-smaller scale values at the five blocks: 0.2, 0.37, 0.54, 0.71, and 0.88.
-Then their larger scale values
-are given by
-$\sqrt{0.2 \times 0.37} = 0.272$, $\sqrt{0.37 \times 0.54} = 0.447$, and so on.
+:numref:`fig_ssd`에서 위쪽에 더 가까운 멀티스케일 특징 맵 블록이 더 큰 객체를 검출하기 위한 것임을 기억하세요. 따라서, 더 큰 앵커 박스를 생성해야 합니다.
+위의 순전파에서, 각 멀티스케일 특징 맵 블록에서 저희는 호출된 `multibox_prior` 함수(:numref:`sec_anchor`에서 설명)의 `sizes` 인자를 통해 두 스케일 값의 목록을 전달합니다.
+다음에서, 0.2와 1.05 사이의 구간은 다섯 블록에서 더 작은 스케일 값을 결정하기 위해 다섯 부분으로 균등하게 분할됩니다. 0.2, 0.37, 0.54, 0.71, 0.88입니다.
+그런 다음 더 큰 스케일 값은 $\sqrt{0.2 \times 0.37} = 0.272$, $\sqrt{0.37 \times 0.54} = 0.447$ 등으로 주어집니다.
 
-[~~Hyperparameters for each block~~]
+[~~각 블록에 대한 하이퍼파라미터~~]
 
 ```{.python .input}
 #@tab all
@@ -472,7 +310,7 @@ ratios = [[1, 2, 0.5]] * 5
 num_anchors = len(sizes[0]) + len(ratios[0]) - 1
 ```
 
-Now we can [**define the complete model**] `TinySSD` as follows.
+이제 저희는 다음과 같이 [**완전한 모델**] `TinySSD`를 정의할 수 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -531,21 +369,11 @@ class TinySSD(nn.Module):
         return anchors, cls_preds, bbox_preds
 ```
 
-We [**create a model instance
-and use it to perform forward propagation**]
-on a minibatch of $256 \times 256$ images `X`.
+저희는 [**모델 인스턴스를 생성하고 이를 사용해**] $256 \times 256$ 이미지 `X`의 미니배치에 대해 [**순전파를 수행**]합니다.
 
-As shown earlier in this section,
-the first block outputs $32 \times 32$ feature maps.
-Recall that
-the second to fourth downsampling blocks
-halve the height and width
-and the fifth block uses global pooling.
-Since 4 anchor boxes
-are generated for each unit along spatial dimensions
-of feature maps,
-at all the five scales
-a total of $(32^2 + 16^2 + 8^2 + 4^2 + 1)\times 4 = 5444$ anchor boxes are generated for each image.
+이 절의 앞부분에 표시된 것처럼, 첫 번째 블록은 $32 \times 32$ 특징 맵을 출력합니다.
+두 번째에서 네 번째 다운샘플링 블록은 높이와 너비를 절반으로 줄이고 다섯 번째 블록은 전역 풀링을 사용한다는 것을 기억하세요.
+특징 맵의 공간 차원을 따라 각 단위에 대해 4개의 앵커 박스가 생성되므로, 다섯 스케일 모두에서 각 이미지에 대해 총 $(32^2 + 16^2 + 8^2 + 4^2 + 1)\times 4 = 5444$개의 앵커 박스가 생성됩니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -570,19 +398,14 @@ print('output class preds:', cls_preds.shape)
 print('output bbox preds:', bbox_preds.shape)
 ```
 
-## Training
+## 훈련
 
-Now we will explain
-how to train the single shot multibox detection model
-for object detection.
+이제 저희는 객체 검출을 위한 SSD 모델을 훈련하는 방법을 설명할 것입니다.
 
 
-### Reading the Dataset and Initializing the Model
+### 데이터셋 읽기 및 모델 초기화
 
-To begin with,
-let's [**read
-the banana detection dataset**]
-described in :numref:`sec_object-detection-dataset`.
+먼저, :numref:`sec_object-detection-dataset`에서 설명된 [**바나나 검출 데이터셋을 읽어**] 봅시다.
 
 ```{.python .input}
 #@tab all
@@ -590,9 +413,7 @@ batch_size = 32
 train_iter, _ = d2l.load_data_bananas(batch_size)
 ```
 
-There is only one class in the banana detection dataset. After defining the model,
-we need to (**initialize its parameters and define
-the optimization algorithm**).
+바나나 검출 데이터셋에는 클래스가 하나만 있습니다. 모델을 정의한 후, 저희는 (**그 매개변수를 초기화하고 최적화 알고리즘을 정의**)해야 합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -608,32 +429,15 @@ device, net = d2l.try_gpu(), TinySSD(num_classes=1)
 trainer = torch.optim.SGD(net.parameters(), lr=0.2, weight_decay=5e-4)
 ```
 
-### [**Defining Loss and Evaluation Functions**]
+### [**손실 및 평가 함수 정의**]
 
-Object detection has two types of losses.
-The first loss concerns classes of anchor boxes:
-its computation
-can simply reuse
-the cross-entropy loss function
-that we used for image classification.
-The second loss
-concerns offsets of positive (non-background) anchor boxes:
-this is a regression problem.
-For this regression problem,
-however,
-here we do not use the squared loss
-described in :numref:`subsec_normal_distribution_and_squared_loss`.
-Instead,
-we use the $\ell_1$ norm loss,
-the absolute value of the difference between
-the prediction and the ground-truth.
-The mask variable `bbox_masks` filters out
-negative anchor boxes and illegal (padded)
-anchor boxes in the loss calculation.
-In the end, we sum up
-the anchor box class loss
-and the anchor box offset loss
-to obtain the loss function for the model.
+객체 검출에는 두 가지 유형의 손실이 있습니다.
+첫 번째 손실은 앵커 박스의 클래스와 관련됩니다. 이 계산은 단순히 이미지 분류에서 저희가 사용한 교차 엔트로피 손실 함수를 재사용할 수 있습니다.
+두 번째 손실은 양성(비배경) 앵커 박스의 오프셋과 관련됩니다. 이는 회귀 문제입니다.
+하지만 이 회귀 문제의 경우, 여기서 저희는 :numref:`subsec_normal_distribution_and_squared_loss`에서 설명된 제곱 손실을 사용하지 않습니다.
+대신, 저희는 $\ell_1$ 노름 손실, 즉 예측과 실측값 사이의 차이의 절댓값을 사용합니다.
+마스크 변수 `bbox_masks`는 손실 계산에서 음성 앵커 박스와 유효하지 않은(패딩된) 앵커 박스를 필터링합니다.
+마지막으로, 저희는 앵커 박스 클래스 손실과 앵커 박스 오프셋 손실을 합산해 모델에 대한 손실 함수를 얻습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -660,13 +464,9 @@ def calc_loss(cls_preds, cls_labels, bbox_preds, bbox_labels, bbox_masks):
     return cls + bbox
 ```
 
-We can use accuracy to evaluate the classification results.
-Due to the used $\ell_1$ norm loss for the offsets,
-we use the *mean absolute error* to evaluate the
-predicted bounding boxes.
-These prediction results are obtained
-from the generated anchor boxes and the
-predicted offsets for them.
+저희는 분류 결과를 평가하는 데 정확도를 사용할 수 있습니다.
+오프셋에 사용된 $\ell_1$ 노름 손실 때문에, 저희는 예측된 바운딩 박스를 평가하는 데 *평균 절대 오차*를 사용합니다.
+이러한 예측 결과는 생성된 앵커 박스와 그에 대한 예측된 오프셋으로부터 얻어집니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -692,18 +492,12 @@ def bbox_eval(bbox_preds, bbox_labels, bbox_masks):
     return float((torch.abs((bbox_labels - bbox_preds) * bbox_masks)).sum())
 ```
 
-### [**Training the Model**]
+### [**모델 훈련**]
 
-When training the model,
-we need to generate multiscale anchor boxes (`anchors`)
-and predict their classes (`cls_preds`) and offsets (`bbox_preds`) in the forward propagation.
-Then we label the classes (`cls_labels`) and offsets (`bbox_labels`) of such generated anchor boxes
-based on the label information `Y`.
-Finally, we calculate the loss function
-using the predicted and labeled values
-of the classes and offsets.
-For concise implementations,
-evaluation of the test dataset is omitted here.
+모델을 훈련할 때, 저희는 순전파에서 멀티스케일 앵커 박스(`anchors`)를 생성하고 그 클래스(`cls_preds`)와 오프셋(`bbox_preds`)을 예측해야 합니다.
+그런 다음 저희는 라벨 정보 `Y`를 기반으로 그러한 생성된 앵커 박스의 클래스(`cls_labels`)와 오프셋(`bbox_labels`)을 라벨링합니다.
+마지막으로, 저희는 클래스와 오프셋의 예측 값과 라벨 값을 사용해 손실 함수를 계산합니다.
+간결한 구현을 위해, 여기서는 테스트 데이터셋의 평가는 생략됩니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -777,16 +571,10 @@ print(f'{len(train_iter.dataset) / timer.stop():.1f} examples/sec on '
       f'{str(device)}')
 ```
 
-## [**Prediction**]
+## [**예측**]
 
-During prediction,
-the goal is to detect all the objects of interest
-on the image.
-Below
-we read and resize a test image,
-converting it to
-a four-dimensional tensor that is
-required by convolutional layers.
+예측 중에, 목표는 이미지에서 모든 관심 객체를 검출하는 것입니다.
+아래에서 저희는 테스트 이미지를 읽고 크기를 조정해 합성곱 계층에서 필요로 하는 4차원 텐서로 변환합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -801,12 +589,8 @@ X = torchvision.io.read_image('../img/banana.jpg').unsqueeze(0).float()
 img = X.squeeze(0).permute(1, 2, 0).long()
 ```
 
-Using the `multibox_detection` function below,
-the predicted bounding boxes
-are obtained
-from the anchor boxes and their predicted offsets.
-Then non-maximum suppression is used
-to remove similar predicted bounding boxes.
+아래의 `multibox_detection` 함수를 사용해, 예측된 바운딩 박스는 앵커 박스와 그 예측된 오프셋으로부터 얻어집니다.
+그런 다음 비최대 억제가 비슷한 예측된 바운딩 박스를 제거하는 데 사용됩니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -833,10 +617,7 @@ def predict(X):
 output = predict(X)
 ```
 
-Finally, we [**display
-all the predicted bounding boxes with
-confidence 0.9 or above**]
-as output.
+마지막으로, 저희는 [**신뢰도가 0.9 이상인 모든 예측된 바운딩 박스를 표시**]하여 출력합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -870,16 +651,16 @@ def display(img, output, threshold):
 display(img, output.cpu(), threshold=0.9)
 ```
 
-## Summary
+## 요약
 
-* Single shot multibox detection is a multiscale object detection model. Via its base network and several multiscale feature map blocks, single-shot multibox detection generates a varying number of anchor boxes with different sizes, and detects varying-size objects by predicting classes and offsets of these anchor boxes (thus the bounding boxes).
-* When training the single-shot multibox detection model, the loss function is calculated based on the predicted and labeled values of the anchor box classes and offsets.
+* SSD는 멀티스케일 객체 검출 모델입니다. 기본 신경망과 여러 멀티스케일 특징 맵 블록을 통해, SSD는 다양한 크기의 다양한 수의 앵커 박스를 생성하고, 이러한 앵커 박스(그리고 따라서 바운딩 박스)의 클래스와 오프셋을 예측함으로써 다양한 크기의 객체를 검출합니다.
+* SSD 모델을 훈련할 때, 손실 함수는 앵커 박스 클래스와 오프셋의 예측 값과 라벨 값을 기반으로 계산됩니다.
 
 
 
-## Exercises
+## 연습문제
 
-1. Can you improve the single-shot multibox detection by improving the loss function? For example, replace $\ell_1$ norm loss with smooth $\ell_1$ norm loss for the predicted offsets. This loss function uses a square function around zero for smoothness, which is controlled by the hyperparameter $\sigma$:
+1. 손실 함수를 개선해 SSD를 개선할 수 있나요? 예를 들어, 예측된 오프셋에 대해 $\ell_1$ 노름 손실을 smooth $\ell_1$ 노름 손실로 대체해 보세요. 이 손실 함수는 부드러움을 위해 0 주변에서 제곱 함수를 사용하며, 이는 하이퍼파라미터 $\sigma$에 의해 제어됩니다.
 
 $$
 f(x) =
@@ -889,7 +670,7 @@ f(x) =
     \end{cases}
 $$
 
-When $\sigma$ is very large, this loss is similar to the $\ell_1$ norm loss. When its value is smaller, the loss function is smoother.
+$\sigma$가 매우 클 때, 이 손실은 $\ell_1$ 노름 손실과 유사합니다. 그 값이 더 작을 때, 손실 함수는 더 부드럽습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -926,18 +707,11 @@ for l, s in zip(lines, sigmas):
 d2l.plt.legend();
 ```
 
-Besides, in the experiment we used cross-entropy loss for class prediction:
-denoting by $p_j$ the predicted probability for the ground-truth class $j$, the cross-entropy loss is $-\log p_j$. We can also use the focal loss
-:cite:`Lin.Goyal.Girshick.ea.2017`: given hyperparameters $\gamma > 0$
-and $\alpha > 0$, this loss is defined as:
+게다가, 실험에서 저희는 클래스 예측에 교차 엔트로피 손실을 사용했습니다. 실측 클래스 $j$에 대한 예측 확률을 $p_j$로 표기할 때, 교차 엔트로피 손실은 $-\log p_j$입니다. 저희는 또한 focal loss :cite:`Lin.Goyal.Girshick.ea.2017`를 사용할 수 있습니다. 하이퍼파라미터 $\gamma > 0$과 $\alpha > 0$이 주어졌을 때, 이 손실은 다음과 같이 정의됩니다.
 
 $$ - \alpha (1-p_j)^{\gamma} \log p_j.$$
 
-As we can see, increasing $\gamma$
-can effectively reduce the relative loss
-for well-classified examples (e.g., $p_j > 0.5$)
-so the training
-can focus more on those difficult examples that are misclassified.
+보시다시피, $\gamma$를 증가시키는 것은 잘 분류된 예제(예: $p_j > 0.5$)에 대한 상대적인 손실을 효과적으로 줄일 수 있어, 훈련이 잘못 분류된 어려운 예제에 더 집중할 수 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -962,11 +736,11 @@ for l, gamma in zip(lines, [0, 1, 5]):
 d2l.plt.legend();
 ```
 
-2. Due to space limitations, we have omitted some implementation details of the single shot multibox detection model in this section. Can you further improve the model in the following aspects:
-    1. When an object is much smaller compared with the image, the model could resize the input image bigger.
-    1. There are typically a vast number of negative anchor boxes. To make the class distribution more balanced, we could downsample negative anchor boxes.
-    1. In the loss function, assign different weight hyperparameters to the class loss and the offset loss.
-    1. Use other methods to evaluate the object detection model, such as those in the single shot multibox detection paper :cite:`Liu.Anguelov.Erhan.ea.2016`.
+2. 공간 제약 때문에, 저희는 이 절에서 SSD 모델의 일부 구현 세부사항을 생략했습니다. 다음 측면에서 모델을 추가로 개선할 수 있나요:
+    1. 객체가 이미지에 비해 훨씬 작을 때, 모델이 입력 이미지의 크기를 더 크게 조정할 수 있습니다.
+    1. 일반적으로 음성 앵커 박스가 방대한 수로 있습니다. 클래스 분포를 더 균형 있게 만들기 위해, 저희는 음성 앵커 박스를 다운샘플링할 수 있습니다.
+    1. 손실 함수에서, 클래스 손실과 오프셋 손실에 다른 가중치 하이퍼파라미터를 할당해 보세요.
+    1. SSD 논문 :cite:`Liu.Anguelov.Erhan.ea.2016`의 방법과 같은 다른 방법을 사용해 객체 검출 모델을 평가해 보세요.
 
 
 

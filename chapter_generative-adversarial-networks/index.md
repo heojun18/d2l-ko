@@ -1,4 +1,4 @@
-# Generative Adversarial Networks
+# 생성적 적대 신경망
 :label:`chap_gans`
 
 ```toc

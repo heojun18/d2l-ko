@@ -3,21 +3,19 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# File I/O
+# 파일 입출력
 
-So far we have discussed how to process data and how
-to build, train, and test deep learning models.
-However, at some point we will hopefully be happy enough
-with the learned models that we will want
-to save the results for later use in various contexts
-(perhaps even to make predictions in deployment).
-Additionally, when running a long training process,
-the best practice is to periodically save intermediate results (checkpointing)
-to ensure that we do not lose several days' worth of computation
-if we trip over the power cord of our server.
-Thus it is time to learn how to load and store
-both individual weight vectors and entire models.
-This section addresses both issues.
+지금까지 저희는 데이터를 처리하는 방법과
+딥러닝 모델을 만들고, 학습시키고, 시험하는 방법을 논의해 왔습니다.
+그러나 언젠가는 학습된 모델에 대해 만족스러워져
+다양한 맥락에서(어쩌면 배포 환경에서 예측을 수행하기 위해서라도)
+나중에 사용할 수 있도록 결과를 저장하고 싶어지기를 바랍니다.
+또한 긴 학습 프로세스를 실행할 때에는,
+서버의 전원 코드에 발이 걸려 며칠치의 계산을 잃어버리지 않도록
+중간 결과를 주기적으로 저장(체크포인팅)하는 것이 모범 사례입니다.
+따라서 이제는 개별 가중치 벡터와 모델 전체 양쪽 모두를
+적재하고 저장하는 방법을 배울 때입니다.
+이 절에서는 두 가지 문제를 모두 다룹니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -49,13 +47,12 @@ import jax
 from jax import numpy as jnp
 ```
 
-## (**Loading and Saving Tensors**)
+## (**텐서 적재 및 저장**)
 
-For individual tensors, we can directly
-invoke the `load` and `save` functions
-to read and write them respectively.
-Both functions require that we supply a name,
-and `save` requires as input the variable to be saved.
+개별 텐서에 대해서는, `load`와 `save` 함수를
+직접 호출하여 각각 읽고 쓸 수 있습니다.
+두 함수 모두 이름을 제공하도록 요구하며,
+`save`는 저장할 변수도 입력으로 요구합니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -81,7 +78,7 @@ x = jnp.arange(4)
 jnp.save('x-file.npy', x)
 ```
 
-We can now read the data from the stored file back into memory.
+이제 저장된 파일에서 데이터를 다시 메모리로 읽어들일 수 있습니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -107,7 +104,7 @@ x2 = jnp.load('x-file.npy', allow_pickle=True)
 x2
 ```
 
-We can [**store a list of tensors and read them back into memory.**]
+[**텐서들의 리스트를 저장하고 다시 메모리로 읽어들일 수 있습니다.**]
 
 ```{.python .input}
 %%tab mxnet
@@ -141,10 +138,8 @@ x2, y2 = jnp.load('xy-files.npy', allow_pickle=True)
 (x2, y2)
 ```
 
-We can even [**write and read a dictionary that maps
-from strings to tensors.**]
-This is convenient when we want
-to read or write all the weights in a model.
+심지어 [**문자열을 텐서로 매핑하는 사전을 쓰고 읽을 수도 있습니다.**]
+이는 모델 내의 모든 가중치를 읽거나 쓰고 싶을 때 편리합니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -178,25 +173,23 @@ mydict2 = jnp.load('mydict.npy', allow_pickle=True)
 mydict2
 ```
 
-## [**Loading and Saving Model Parameters**]
+## [**모델 파라미터 적재 및 저장**]
 
-Saving individual weight vectors (or other tensors) is useful,
-but it gets very tedious if we want to save
-(and later load) an entire model.
-After all, we might have hundreds of
-parameter groups sprinkled throughout.
-For this reason the deep learning framework provides built-in functionalities
-to load and save entire networks.
-An important detail to note is that this
-saves model *parameters* and not the entire model.
-For example, if we have a 3-layer MLP,
-we need to specify the architecture separately.
-The reason for this is that the models themselves can contain arbitrary code,
-hence they cannot be serialized as naturally.
-Thus, in order to reinstate a model, we need
-to generate the architecture in code
-and then load the parameters from disk.
-(**Let's start with our familiar MLP.**)
+개별 가중치 벡터(혹은 다른 텐서)를 저장하는 것은 유용하지만,
+모델 전체를 저장(이후 적재)하고 싶다면 매우 지루해집니다.
+결국 신경망 곳곳에 수백 개의 파라미터 그룹이
+흩뿌려져 있을 수 있기 때문입니다.
+이러한 이유로 딥러닝 프레임워크는 신경망 전체를 적재하고
+저장하기 위한 내장 기능을 제공합니다.
+주의할 중요한 세부 사항은 이것이 모델 전체가 아니라
+모델 *파라미터*를 저장한다는 점입니다.
+예를 들어, 3층 MLP를 가지고 있다면,
+아키텍처는 따로 명시해 주어야 합니다.
+이러한 이유는 모델 자체가 임의의 코드를 담을 수 있어서,
+자연스럽게 직렬화될 수 없기 때문입니다.
+따라서 모델을 복원하려면 코드에서 아키텍처를 생성한 다음
+디스크에서 파라미터를 적재해야 합니다.
+(**먼저 익숙한 MLP부터 시작해 보겠습니다.**)
 
 ```{.python .input}
 %%tab mxnet
@@ -265,7 +258,7 @@ X = jax.random.normal(jax.random.PRNGKey(d2l.get_seed()), (2, 20))
 Y, params = net.init_with_output(jax.random.PRNGKey(d2l.get_seed()), X)
 ```
 
-Next, we [**store the parameters of the model as a file**] with the name "mlp.params".
+다음으로, [**모델의 파라미터를 "mlp.params"라는 이름의 파일로 저장**]합니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -287,10 +280,9 @@ net.save_weights('mlp.params')
 checkpoints.save_checkpoint('ckpt_dir', params, step=1, overwrite=True)
 ```
 
-To recover the model, we instantiate a clone
-of the original MLP model.
-Instead of randomly initializing the model parameters,
-we [**read the parameters stored in the file directly**].
+모델을 복원하기 위해, 원본 MLP 모델의 복제본을 인스턴스화합니다.
+모델 파라미터를 무작위로 초기화하는 대신,
+[**파일에 저장된 파라미터를 직접 읽어들입니다**].
 
 ```{.python .input}
 %%tab mxnet
@@ -318,9 +310,9 @@ cloned_params = flax.core.freeze(checkpoints.restore_checkpoint('ckpt_dir',
                                                                 target=None))
 ```
 
-Since both instances have the same model parameters,
-the computational result of the same input `X` should be the same.
-Let's verify this.
+두 인스턴스가 동일한 모델 파라미터를 가지므로,
+동일한 입력 `X`에 대한 계산 결과가 동일해야 합니다.
+이를 확인해 보겠습니다.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -334,17 +326,17 @@ Y_clone = clone.apply(cloned_params, X)
 Y_clone == Y
 ```
 
-## Summary
+## 요약
 
-The `save` and `load` functions can be used to perform file I/O for tensor objects.
-We can save and load the entire sets of parameters for a network via a parameter dictionary.
-Saving the architecture has to be done in code rather than in parameters.
+`save`와 `load` 함수는 텐서 객체에 대해 파일 입출력을 수행하는 데 사용할 수 있습니다.
+파라미터 사전을 통해 신경망의 전체 파라미터 집합을 저장하고 적재할 수 있습니다.
+아키텍처의 저장은 파라미터가 아니라 코드를 통해 이루어져야 합니다.
 
-## Exercises
+## 연습문제
 
-1. Even if there is no need to deploy trained models to a different device, what are the practical benefits of storing model parameters?
-1. Assume that we want to reuse only parts of a network to be incorporated into a network having a different architecture. How would you go about using, say the first two layers from a previous network in a new network?
-1. How would you go about saving the network architecture and parameters? What restrictions would you impose on the architecture?
+1. 학습된 모델을 다른 장치에 배포할 필요가 없더라도, 모델 파라미터를 저장하는 것의 실용적 이점은 무엇인가요?
+1. 신경망의 일부만 재사용하여 다른 아키텍처를 갖는 신경망에 통합하고 싶다고 가정해 보세요. 예를 들어, 이전 신경망의 처음 두 층을 새 신경망에서 사용하려면 어떻게 해야 할까요?
+1. 신경망 아키텍처와 파라미터를 함께 저장하려면 어떻게 해야 할까요? 아키텍처에는 어떤 제약을 두시겠습니까?
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/60)

@@ -1,135 +1,45 @@
-# Attention Mechanisms and Transformers
+# 어텐션 메커니즘과 트랜스포머
 :label:`chap_attention-and-transformers`
 
 
-The earliest years of the deep learning boom were driven primarily
-by results produced using the multilayer perceptron,
-convolutional network, and recurrent network architectures.
-Remarkably, the model architectures that underpinned
-many of deep learning's breakthroughs in the 2010s
-had changed remarkably little relative to their
-antecedents despite the lapse of nearly 30 years.
-While plenty of new methodological innovations
-made their way into most practitioner's toolkits---ReLU
-activations, residual layers, batch normalization, dropout,
-and adaptive learning rate schedules come to mind---the core
-underlying architectures were clearly recognizable as
-scaled-up implementations of classic ideas.
-Despite thousands of papers proposing alternative ideas,
-models resembling classical convolutional neural networks (:numref:`chap_cnn`)
-retained *state-of-the-art* status in computer vision
-and models resembling Sepp Hochreiter's original design
-for the LSTM recurrent neural network (:numref:`sec_lstm`),
-dominated most applications in natural language processing.
-Arguably, to that point, the rapid emergence of deep learning
-appeared to be primarily attributable to shifts
-in the available computational resources
-(thanks to innovations in parallel computing with GPUs)
-and the availability of massive data resources
-(thanks to cheap storage and Internet services).
-While these factors may indeed remain the primary drivers
-behind this technology's increasing power
-we are also witnessing, at long last,
-a sea change in the landscape of dominant architectures.
+딥러닝 붐의 초창기는 주로 다층 퍼셉트론, 합성곱 신경망, 순환 신경망 아키텍처에서 나온 결과들이 견인했습니다.
+놀랍게도, 2010년대 딥러닝의 수많은 돌파구를 뒷받침한 모델 아키텍처들은 거의 30년이 지났음에도 그 선조들과 비교해 거의 변하지 않았습니다.
+ReLU 활성화 함수, 잔차층, 배치 정규화, 드롭아웃, 적응형 학습률 스케줄 같은 많은 새로운 방법론적 혁신이 대부분의 실무자 도구상자에 들어오긴 했지만(이러한 것들이 떠오릅니다), 핵심을 이루는 기본 아키텍처들은 명백하게 고전적 아이디어의 확장된 구현으로 알아볼 수 있는 것들이었습니다.
+대안 아이디어들을 제안한 수천 편의 논문에도 불구하고, 고전적인 합성곱 신경망(:numref:`chap_cnn`)을 닮은 모델들은 컴퓨터 비전에서 *최첨단(state-of-the-art)* 지위를 유지했고, Sepp Hochreiter의 LSTM 순환 신경망(:numref:`sec_lstm`) 원본 설계를 닮은 모델들은 자연어 처리의 대부분 응용 분야를 지배했습니다.
+어떤 의미에서 그 시점까지 딥러닝의 빠른 부상은 주로 (GPU를 활용한 병렬 컴퓨팅 혁신 덕분에) 사용 가능한 컴퓨팅 자원의 변화와 (저렴한 저장소와 인터넷 서비스 덕분에) 거대한 데이터 자원의 가용성 덕택이었던 것으로 보입니다.
+이러한 요인들이 실제로 이 기술이 점점 더 강력해지는 데 있어 주요 동력으로 남아 있을지 모르지만, 저희는 마침내 지배적인 아키텍처 지형의 큰 변화 또한 목격하고 있습니다.
 
-At the present moment, the dominant models
-for nearly all natural language processing tasks
-are based on the Transformer architecture.
-Given any new task in natural language processing, the default first-pass approach
-is to grab a large Transformer-based pretrained model,
-(e.g., BERT :cite:`Devlin.Chang.Lee.ea.2018`, ELECTRA :cite:`clark2019electra`, RoBERTa :cite:`Liu.Ott.Goyal.ea.2019`, or Longformer :cite:`beltagy2020longformer`)
-adapting the output layers as necessary,
-and fine-tuning the model on the available
-data for the downstream task.
-If you have been paying attention to the last few years
-of breathless news coverage centered on OpenAI's
-large language models, then you have been tracking a conversation
-centered on the GPT-2 and GPT-3 Transformer-based models :cite:`Radford.Wu.Child.ea.2019,brown2020language`.
-Meanwhile, the vision Transformer has emerged
-as a default model for diverse vision tasks,
-including image recognition, object detection,
-semantic segmentation, and superresolution :cite:`Dosovitskiy.Beyer.Kolesnikov.ea.2021,liu2021swin`.
-Transformers also showed up as competitive methods
-for speech recognition :cite:`gulati2020conformer`,
-reinforcement learning :cite:`chen2021decision`,
-and graph neural networks :cite:`dwivedi2020generalization`.
+현시점에서 거의 모든 자연어 처리 작업에 있어 지배적인 모델은 트랜스포머 아키텍처에 기반합니다.
+자연어 처리에서 어떤 새로운 작업이 주어지든, 기본 첫 단계 접근은 대규모 트랜스포머 기반 사전학습 모델(예: BERT :cite:`Devlin.Chang.Lee.ea.2018`, ELECTRA :cite:`clark2019electra`, RoBERTa :cite:`Liu.Ott.Goyal.ea.2019`, 또는 Longformer :cite:`beltagy2020longformer`)을 가져와 필요에 따라 출력층을 조정하고, 다운스트림 작업에서 사용 가능한 데이터로 모델을 파인튜닝하는 것입니다.
+지난 몇 년간 OpenAI의 대형 언어 모델을 중심으로 한 숨가쁜 뉴스 보도에 주의를 기울여 왔다면, GPT-2와 GPT-3 트랜스포머 기반 모델 :cite:`Radford.Wu.Child.ea.2019,brown2020language` 을 중심으로 한 대화를 따라가고 있었던 것입니다.
+한편, 비전 트랜스포머는 이미지 인식, 객체 탐지, 의미 분할, 초해상도를 포함한 다양한 비전 작업의 기본 모델로 부상했습니다 :cite:`Dosovitskiy.Beyer.Kolesnikov.ea.2021,liu2021swin`.
+트랜스포머는 또한 음성 인식 :cite:`gulati2020conformer`, 강화학습 :cite:`chen2021decision`, 그래프 신경망 :cite:`dwivedi2020generalization` 의 경쟁력 있는 방법으로 등장했습니다.
 
-The core idea behind the Transformer model is the *attention mechanism*,
-an innovation that was originally envisioned as an enhancement
-for encoder--decoder RNNs applied to sequence-to-sequence applications,
-such as machine translations :cite:`Bahdanau.Cho.Bengio.2014`.
-You might recall that in the first sequence-to-sequence models
-for machine translation :cite:`Sutskever.Vinyals.Le.2014`,
-the entire input was compressed by the encoder
-into a single fixed-length vector to be fed into the decoder.
-The intuition behind attention is that rather than compressing the input,
-it might be better for the decoder to revisit the input sequence at every step.
-Moreover, rather than always seeing the same representation of the input,
-one might imagine that the decoder should selectively focus
-on particular parts of the input sequence at particular decoding steps.
-Bahdanau's attention mechanism provided a simple means
-by which the decoder could dynamically *attend* to different
-parts of the input at each decoding step.
-The high-level idea is that the encoder could produce a representation
-of length equal to the original input sequence.
-Then, at decoding time, the decoder can (via some control mechanism)
-receive as input a context vector consisting of a weighted sum
-of the representations on the input at each time step.
-Intuitively, the weights determine the extent
-to which each step's context "focuses" on each input token,
-and the key is to make this process
-for assigning the weights differentiable
-so that it can be learned along with
-all of the other neural network parameters.
+트랜스포머 모델의 핵심 아이디어는 *어텐션 메커니즘*으로, 이는 본래 기계 번역과 같은 시퀀스 투 시퀀스 응용에 적용되는 인코더-디코더 RNN의 개선 방안으로 구상된 혁신이었습니다 :cite:`Bahdanau.Cho.Bengio.2014`.
+기계 번역을 위한 최초의 시퀀스 투 시퀀스 모델 :cite:`Sutskever.Vinyals.Le.2014` 에서, 전체 입력이 인코더에 의해 단일 고정 길이 벡터로 압축되어 디코더에 공급되었음을 기억할 것입니다.
+어텐션의 직관은 입력을 압축하기보다는 디코더가 매 단계마다 입력 시퀀스를 다시 살펴보는 것이 더 나을 수 있다는 것입니다.
+더 나아가, 항상 같은 입력 표현을 보는 대신, 디코더가 특정 디코딩 단계에서 입력 시퀀스의 특정 부분에 선택적으로 집중해야 한다고 상상할 수 있습니다.
+Bahdanau의 어텐션 메커니즘은 디코더가 각 디코딩 단계에서 입력의 서로 다른 부분에 동적으로 *주의를 기울일(attend)* 수 있는 간단한 수단을 제공했습니다.
+상위 수준의 아이디어는 인코더가 원래 입력 시퀀스와 같은 길이의 표현을 생성할 수 있다는 것입니다.
+그런 다음 디코딩 시점에 디코더는 (어떤 제어 메커니즘을 통해) 각 시간 단계에서의 입력 표현의 가중합으로 구성된 컨텍스트 벡터를 입력으로 받을 수 있습니다.
+직관적으로, 가중치는 각 단계의 컨텍스트가 각 입력 토큰에 얼마나 "집중"하는지를 결정하며, 핵심은 이 가중치 할당 과정을 미분 가능하게 만들어 다른 모든 신경망 매개변수와 함께 학습할 수 있도록 하는 것입니다.
 
-Initially, the idea was a remarkably successful
-enhancement to the recurrent neural networks
-that already dominated machine translation applications.
-The models performed better than the original
-encoder--decoder sequence-to-sequence architectures.
-Furthermore, researchers noted that some nice qualitative insights
-sometimes emerged from inspecting the pattern of attention weights.
-In translation tasks, attention models
-often assigned high attention weights to cross-lingual synonyms
-when generating the corresponding words in the target language.
-For example, when translating the sentence "my feet hurt"
-to "j'ai mal au pieds", the neural network might assign
-high attention weights to the representation of "feet"
-when generating the corresponding French word "pieds".
-These insights spurred claims that attention models confer "interpretability"
-although what precisely the attention weights mean---i.e.,
-how, if at all, they should be *interpreted* remains a hazy research topic.
+처음에 이 아이디어는 이미 기계 번역 응용을 지배하고 있던 순환 신경망에 대한 놀라울 정도로 성공적인 개선책이었습니다.
+이 모델들은 원래의 인코더-디코더 시퀀스 투 시퀀스 아키텍처보다 더 나은 성능을 보였습니다.
+더 나아가, 연구자들은 어텐션 가중치의 패턴을 살펴봄으로써 때때로 유익한 정성적 통찰이 도출됨을 발견했습니다.
+번역 작업에서 어텐션 모델은 종종 대상 언어의 해당 단어를 생성할 때 언어 간 동의어에 높은 어텐션 가중치를 할당했습니다.
+예를 들어 "my feet hurt"라는 문장을 "j'ai mal au pieds"로 번역할 때, 신경망은 해당 프랑스어 단어 "pieds"를 생성할 때 "feet"의 표현에 높은 어텐션 가중치를 할당할 수 있습니다.
+이러한 통찰은 어텐션 모델이 "해석 가능성"을 제공한다는 주장을 촉발했지만, 어텐션 가중치가 정확히 무엇을 의미하는지(즉, 만약 *해석*된다면 어떻게 해석되어야 하는지)는 여전히 모호한 연구 주제로 남아 있습니다.
 
-However, attention mechanisms soon emerged as more significant concerns,
-beyond their usefulness as an enhancement for encoder--decoder recurrent neural networks
-and their putative usefulness for picking out salient inputs.
-:citet:`Vaswani.Shazeer.Parmar.ea.2017` proposed
-the Transformer architecture for machine translation,
-dispensing with recurrent connections altogether,
-and instead relying on cleverly arranged attention mechanisms
-to capture all relationships among input and output tokens.
-The architecture performed remarkably well,
-and by 2018 the Transformer began showing up
-in the majority of state-of-the-art natural language processing systems.
-Moreover, at the same time, the dominant practice in natural language processing
-became to pretrain large-scale models
-on enormous generic background corpora
-to optimize some self-supervised pretraining objective,
-and then to fine-tune these models
-using the available downstream data.
-The gap between Transformers and traditional architectures
-grew especially wide when applied in this pretraining paradigm,
-and thus the ascendance of Transformers coincided
-with the ascendence of such large-scale pretrained models,
-now sometimes called *foundation models* :cite:`bommasani2021opportunities`.
+그러나 어텐션 메커니즘은 곧 인코더-디코더 순환 신경망의 개선책으로서의 유용성과 두드러진 입력을 골라내는 데 있어 추정되는 유용성을 넘어, 보다 중요한 관심사로 부상했습니다.
+:citet:`Vaswani.Shazeer.Parmar.ea.2017` 은 기계 번역을 위한 트랜스포머 아키텍처를 제안했는데, 이는 순환 연결을 완전히 없애고 대신 입력과 출력 토큰 간의 모든 관계를 포착하기 위해 영리하게 배열된 어텐션 메커니즘에 의존했습니다.
+이 아키텍처는 놀랍도록 잘 작동했고, 2018년 무렵부터 트랜스포머는 대부분의 최첨단 자연어 처리 시스템에 등장하기 시작했습니다.
+또한 동시에, 자연어 처리에서의 지배적인 관행은 거대한 일반 배경 코퍼스에서 대규모 모델을 사전학습하여 어떤 자기 지도 사전학습 목표를 최적화한 다음, 사용 가능한 다운스트림 데이터를 사용해 이러한 모델들을 파인튜닝하는 것이 되었습니다.
+트랜스포머와 전통적 아키텍처 사이의 격차는 이 사전학습 패러다임에 적용될 때 특히 크게 벌어졌고, 따라서 트랜스포머의 부상은 이러한 대규모 사전학습 모델(이제는 때때로 *파운데이션 모델(foundation models)* 이라고 불리는 :cite:`bommasani2021opportunities`)의 부상과 일치했습니다.
 
 
-In this chapter, we introduce attention models,
-starting with the most basic intuitions
-and the simplest instantiations of the idea.
-We then work our way up to the Transformer architecture,
-the vision Transformer, and the landscape
-of modern Transformer-based pretrained models.
+이 장에서는 가장 기본적인 직관과 그 아이디어의 가장 간단한 구현체부터 시작하여 어텐션 모델을 소개합니다.
+그런 다음 트랜스포머 아키텍처, 비전 트랜스포머, 그리고 현대 트랜스포머 기반 사전학습 모델의 지형까지 올라갑니다.
 
 ```toc
 :maxdepth: 2

@@ -1,70 +1,70 @@
-# Selecting Servers and GPUs
+# 서버와 GPU 선택하기
 :label:`sec_buy_gpu`
 
-Deep learning training generally requires large amounts of computation. At present GPUs are the most cost-effective hardware accelerators for deep learning. In particular, compared with CPUs, GPUs are cheaper and offer higher performance, often by over an order of magnitude. Furthermore, a single server can support multiple GPUs, up to 8 for high end servers. More typical numbers are up to 4 GPUs for an engineering workstation, since heat, cooling, and power requirements escalate quickly beyond what an office building can support. For larger deployments, cloud computing (e.g., Amazon's [P3](https://aws.amazon.com/ec2/instance-types/p3/) and [G4](https://aws.amazon.com/blogs/aws/in-the-works-ec2-instances-g4-with-nvidia-t4-gpus/) instances) is a much more practical solution.
+딥러닝 훈련은 일반적으로 대량의 계산을 필요로 합니다. 현재 GPU는 딥러닝을 위한 가장 비용 효율적인 하드웨어 가속기입니다. 특히, CPU와 비교했을 때 GPU는 더 저렴하면서도 종종 한 자릿수 이상의 성능을 제공합니다. 또한, 단일 서버는 여러 GPU를 지원할 수 있으며, 고급 서버에서는 최대 8개까지 지원합니다. 엔지니어링 워크스테이션의 경우 더 일반적인 수치는 최대 4개의 GPU인데, 이는 열, 냉각, 전력 요구 사항이 사무실 건물이 지원할 수 있는 것을 빠르게 초과하기 때문입니다. 더 큰 규모의 배포에서는, 클라우드 컴퓨팅(예: Amazon의 [P3](https://aws.amazon.com/ec2/instance-types/p3/) 및 [G4](https://aws.amazon.com/blogs/aws/in-the-works-ec2-instances-g4-with-nvidia-t4-gpus/) 인스턴스)이 훨씬 더 실용적인 해결책입니다.
 
 
-## Selecting Servers
+## 서버 선택
 
-There is typically no need to purchase high-end CPUs with many threads since much of the computation occurs on the GPUs. That said, due to the global interpreter lock (GIL) in Python single-thread performance of a CPU can matter in situations where we have 4--8 GPUs. All things equal this suggests that CPUs with a smaller number of cores but a higher clock frequency might be a more economical choice. For example, when choosing between a 6-core 4 GHz and an 8-core 3.5 GHz CPU, the former is much preferable, even though its aggregate speed is less.
-An important consideration is that GPUs use lots of power and thus dissipate lots of heat. This requires very good cooling and a large enough chassis to use the GPUs. Follow the guidelines below if possible:
+대부분의 계산이 GPU에서 일어나므로 많은 스레드를 가진 고급 CPU를 구매할 필요는 일반적으로 없습니다. 그렇긴 하지만, Python의 전역 인터프리터 잠금(GIL) 때문에 4--8개의 GPU가 있는 상황에서는 CPU의 단일 스레드 성능이 중요할 수 있습니다. 다른 모든 조건이 동일하다면, 이는 코어 수는 적지만 클럭 주파수가 높은 CPU가 더 경제적인 선택일 수 있음을 시사합니다. 예를 들어 6코어 4 GHz와 8코어 3.5 GHz CPU 중에서 선택할 때, 후자의 총 속도가 더 낮음에도 불구하고 전자가 훨씬 선호됩니다.
+중요한 고려 사항은 GPU가 많은 전력을 사용하고 따라서 많은 열을 방출한다는 것입니다. 이는 매우 좋은 냉각과 GPU를 사용할 수 있을 만큼 충분히 큰 섀시를 필요로 합니다. 가능하면 아래 지침을 따르세요.
 
-1. **Power Supply**. GPUs use significant amounts of power. Budget with up to 350W per device (check for the *peak demand* of the graphics card rather than typical demand, since efficient code can use lots of energy). If your power supply is not up to the demand you will find that your system becomes unstable.
-1. **Chassis Size**. GPUs are large and the auxiliary power connectors often need extra space. Also, large chassis are easier to cool.
-1. **GPU Cooling**. If you have a large number of GPUs you might want to invest in water cooling. Also, aim for *reference designs* even if they have fewer fans, since they are thin enough to allow for air intake between the devices. If you buy a multi-fan GPU it might be too thick to get enough air when installing multiple GPUs and you will run into thermal throttling.
-1. **PCIe Slots**. Moving data to and from the GPU (and exchanging it between GPUs) requires lots of bandwidth. We recommend PCIe 3.0 slots with 16 lanes. If you mount multiple GPUs, be sure to carefully read the motherboard description to ensure that 16$\times$ bandwidth is still available when multiple GPUs are used at the same time and that you are getting PCIe 3.0 as opposed to PCIe 2.0 for the additional slots. Some motherboards downgrade to 8$\times$ or even 4$\times$ bandwidth with multiple GPUs installed. This is partly due to the number of PCIe lanes that the CPU offers.
+1. **전원 공급 장치**. GPU는 상당한 양의 전력을 사용합니다. 장치당 최대 350W로 예산을 책정하세요(효율적인 코드는 많은 에너지를 사용할 수 있으므로 일반적인 수요가 아닌 그래픽 카드의 *최대 수요*를 확인하세요). 전원 공급 장치가 수요에 맞지 않으면 시스템이 불안정해지는 것을 발견하게 될 것입니다.
+1. **섀시 크기**. GPU는 크고 보조 전원 커넥터는 종종 추가 공간이 필요합니다. 또한, 큰 섀시가 냉각하기 더 쉽습니다.
+1. **GPU 냉각**. GPU가 많다면 수냉식 냉각에 투자하고 싶을 수 있습니다. 또한, 팬이 적더라도 *레퍼런스 디자인*을 목표로 하세요. 그것들은 장치 사이에 공기가 들어갈 수 있도록 충분히 얇기 때문입니다. 멀티 팬 GPU를 구매하면 여러 GPU를 설치할 때 충분한 공기를 얻기에 너무 두꺼울 수 있어 발열로 인한 성능 저하(thermal throttling)에 직면할 수 있습니다.
+1. **PCIe 슬롯**. GPU로의 데이터 이동(그리고 GPU 간 교환)은 많은 대역폭을 필요로 합니다. 16 레인이 있는 PCIe 3.0 슬롯을 권장합니다. 여러 GPU를 장착한다면, 여러 GPU를 동시에 사용할 때도 16$\times$ 대역폭을 사용할 수 있는지, 그리고 추가 슬롯에 대해 PCIe 2.0이 아닌 PCIe 3.0을 받는지 확인하기 위해 메인보드 설명을 주의 깊게 읽으세요. 일부 메인보드는 여러 GPU가 설치되면 8$\times$ 또는 4$\times$ 대역폭으로 다운그레이드합니다. 이는 부분적으로 CPU가 제공하는 PCIe 레인 수 때문입니다.
 
-In short, here are some recommendations for building a deep learning server:
+요약하면, 딥러닝 서버 구축을 위한 몇 가지 권장 사항은 다음과 같습니다.
 
-* **Beginner**. Buy a low end GPU with low power consumption (cheap gaming GPUs suitable for deep learning use 150--200W). If you are lucky your current computer supports it.
-* **1 GPU**. A low-end CPU with 4 cores will be sufficient and most motherboards suffice. Aim for at least 32 GB DRAM and invest into an SSD for local data access. A power supply with 600W should be sufficient. Buy a GPU with lots of fans.
-* **2 GPUs**. A low-end CPU with 4-6 cores will suffice. Aim for 64 GB DRAM and invest into an SSD. You will need in the order of 1000W for two high-end GPUs. In terms of mainboards, make sure that they have *two* PCIe 3.0 x16 slots. If you can, get a mainboard that has two free spaces (60mm spacing) between the PCIe 3.0 x16 slots for extra air. In this case, buy two GPUs with lots of fans.
-* **4 GPUs**. Make sure that you buy a CPU with relatively fast single-thread speed (i.e., high clock frequency). You will probably need a CPU with a larger number of PCIe lanes, such as an AMD Threadripper. You will likely need relatively expensive mainboards to get 4 PCIe 3.0 x16 slots since they probably need a PLX to multiplex the PCIe lanes. Buy GPUs with reference design that are narrow and let air in between the GPUs. You need a 1600--2000W power supply and the outlet in your office might not support that. This server will probably run *loud and hot*. You do not want it under your desk. 128 GB of DRAM is recommended. Get an SSD (1--2 TB NVMe) for local storage and a bunch of hard disks in RAID configuration to store your data.
-* **8 GPUs**. You need to buy a dedicated multi-GPU server chassis with multiple redundant power supplies (e.g., 2+1 for 1600W per power supply). This will require dual socket server CPUs, 256 GB ECC DRAM, a fast network card (10 GBE recommended), and you will need to check whether the servers support the *physical form factor* of the GPUs. Airflow and wiring placement differ significantly between consumer and server GPUs (e.g., RTX 2080 vs. Tesla V100). This means that you might not be able to install the consumer GPU in a server due to insufficient clearance for the power cable or lack of a suitable wiring harness (as one of the coauthors painfully discovered).
+* **초보자**. 전력 소비가 낮은 저가형 GPU를 구매하세요(딥러닝에 적합한 저렴한 게이밍 GPU는 150--200W를 사용합니다). 운이 좋다면 현재 컴퓨터가 이를 지원할 것입니다.
+* **GPU 1개**. 4코어 저가형 CPU로 충분하며 대부분의 메인보드면 충분합니다. 최소 32 GB DRAM을 목표로 하고 로컬 데이터 접근을 위해 SSD에 투자하세요. 600W 전원 공급 장치면 충분할 것입니다. 팬이 많은 GPU를 구매하세요.
+* **GPU 2개**. 4-6코어 저가형 CPU로 충분합니다. 64 GB DRAM을 목표로 하고 SSD에 투자하세요. 두 개의 고급 GPU에는 약 1000W가 필요합니다. 메인보드 측면에서는, *두 개의* PCIe 3.0 x16 슬롯이 있는지 확인하세요. 가능하다면, 추가 공기를 위해 PCIe 3.0 x16 슬롯 사이에 두 개의 여유 공간(60mm 간격)이 있는 메인보드를 구하세요. 이 경우 팬이 많은 두 개의 GPU를 구매하세요.
+* **GPU 4개**. 단일 스레드 속도가 비교적 빠른 CPU(즉, 높은 클럭 주파수)를 구매하세요. AMD Threadripper와 같이 PCIe 레인 수가 더 많은 CPU가 필요할 것입니다. 4개의 PCIe 3.0 x16 슬롯을 얻으려면 PCIe 레인을 다중화하기 위한 PLX가 필요할 가능성이 높으므로 비교적 비싼 메인보드가 필요할 것입니다. 좁고 GPU 사이로 공기가 들어갈 수 있는 레퍼런스 디자인의 GPU를 구매하세요. 1600--2000W 전원 공급 장치가 필요하며 사무실 콘센트가 이를 지원하지 못할 수도 있습니다. 이 서버는 아마 *시끄럽고 뜨겁게* 작동할 것입니다. 책상 아래에 두고 싶지 않을 것입니다. 128 GB DRAM을 권장합니다. 로컬 저장을 위한 SSD(1--2 TB NVMe)와 데이터 저장을 위한 RAID 구성의 하드 디스크 묶음을 구하세요.
+* **GPU 8개**. 여러 개의 중복 전원 공급 장치(예: 1600W 전원 공급 장치당 2+1)가 있는 전용 멀티 GPU 서버 섀시를 구매해야 합니다. 이는 듀얼 소켓 서버 CPU, 256 GB ECC DRAM, 빠른 네트워크 카드(10 GBE 권장)를 필요로 하며, 서버가 GPU의 *물리적 폼 팩터*를 지원하는지 확인해야 합니다. 공기 흐름과 배선 배치는 소비자용과 서버용 GPU 사이에 상당한 차이가 있습니다(예: RTX 2080 대 Tesla V100). 이는 전원 케이블을 위한 클리어런스 부족이나 적합한 와이어링 하니스의 부재로 인해 소비자용 GPU를 서버에 설치하지 못할 수 있음을 의미합니다(공동 저자 중 한 명이 고통스럽게 발견했듯이).
 
 
-## Selecting GPUs
+## GPU 선택
 
-At present, AMD and NVIDIA are the two main manufacturers of dedicated GPUs. NVIDIA was the first to enter the deep learning field and provides better support for deep learning frameworks via CUDA. Therefore, most buyers choose NVIDIA GPUs.
+현재 AMD와 NVIDIA는 전용 GPU의 두 주요 제조업체입니다. NVIDIA는 딥러닝 분야에 가장 먼저 진입했으며 CUDA를 통해 딥러닝 프레임워크에 대한 더 나은 지원을 제공합니다. 따라서 대부분의 구매자들은 NVIDIA GPU를 선택합니다.
 
-NVIDIA provides two types of GPUs, targeting individual users (e.g., via the GTX and RTX series) and enterprise users (via its Tesla series). The two types of GPUs provide comparable compute power. However, the enterprise user GPUs generally use (passive) forced cooling, more memory, and ECC (error correcting) memory. These GPUs are more suitable for data centers and usually cost ten times more than consumer GPUs.
+NVIDIA는 개인 사용자(예: GTX 및 RTX 시리즈)와 기업 사용자(Tesla 시리즈)를 대상으로 하는 두 가지 유형의 GPU를 제공합니다. 두 유형의 GPU는 비슷한 연산 성능을 제공합니다. 그러나 기업 사용자용 GPU는 일반적으로 (수동) 강제 냉각, 더 많은 메모리, ECC(오류 정정) 메모리를 사용합니다. 이 GPU들은 데이터 센터에 더 적합하며 일반적으로 소비자용 GPU보다 10배 더 비쌉니다.
 
-If you are a large company with 100+ servers you should consider the NVIDIA Tesla series or alternatively use GPU servers in the cloud. For a lab or a small to medium company with 10+ servers the NVIDIA RTX series is likely most cost effective. You can buy preconfigured servers with Supermicro or Asus chassis that hold 4--8 GPUs efficiently.
+100개 이상의 서버를 가진 큰 회사라면 NVIDIA Tesla 시리즈를 고려하거나 클라우드의 GPU 서버를 사용해야 합니다. 10개 이상의 서버를 가진 연구실이나 중소 규모 회사의 경우 NVIDIA RTX 시리즈가 가장 비용 효율적일 가능성이 높습니다. 4--8개의 GPU를 효율적으로 보관하는 Supermicro 또는 Asus 섀시의 사전 구성된 서버를 구매할 수 있습니다.
 
-GPU vendors typically release a new generation every one to two years, such as the GTX 1000 (Pascal) series released in 2017 and the RTX 2000 (Turing) series released in 2019. Each series offers several different models that provide different performance levels. GPU performance is primarily a combination of the following three parameters:
+GPU 공급업체들은 일반적으로 2017년에 출시된 GTX 1000(Pascal) 시리즈와 2019년에 출시된 RTX 2000(Turing) 시리즈와 같이 1~2년마다 새로운 세대를 출시합니다. 각 시리즈는 다양한 성능 수준을 제공하는 여러 다른 모델을 제공합니다. GPU 성능은 주로 다음 세 가지 매개 변수의 조합입니다.
 
-1. **Compute Power**. Generally we look for 32-bit floating-point compute power. 16-bit floating point training (FP16) is also entering the mainstream. If you are only interested in prediction, you can also use 8-bit integer. The latest generation of Turing GPUs offers 4-bit acceleration. Unfortunately at the time of writing the algorithms for training low-precision networks are not yet widespread.
-1. **Memory Size**. As your models become larger or the batches used during training grow bigger, you will need more GPU memory. Check for HBM2 (High Bandwidth Memory) vs. GDDR6 (Graphics DDR) memory. HBM2 is faster but much more expensive.
-1. **Memory Bandwidth**. You can only get the most out of your compute power when you have sufficient memory bandwidth. Look for wide memory buses if using GDDR6.
+1. **연산 성능**. 일반적으로 저희는 32비트 부동소수점 연산 성능을 봅니다. 16비트 부동소수점 훈련(FP16) 역시 주류로 진입하고 있습니다. 예측에만 관심이 있다면 8비트 정수도 사용할 수 있습니다. 최신 세대의 Turing GPU는 4비트 가속을 제공합니다. 안타깝게도 글을 쓰는 시점에서 저정밀도 네트워크 훈련을 위한 알고리즘은 아직 널리 사용되지 않습니다.
+1. **메모리 크기**. 모델이 더 커지거나 훈련 중 사용되는 배치가 더 커질수록 더 많은 GPU 메모리가 필요해질 것입니다. HBM2(고대역폭 메모리)와 GDDR6(그래픽 DDR) 메모리를 확인하세요. HBM2는 더 빠르지만 훨씬 더 비쌉니다.
+1. **메모리 대역폭**. 충분한 메모리 대역폭이 있을 때만 연산 성능을 최대한 활용할 수 있습니다. GDDR6를 사용하는 경우 넓은 메모리 버스를 찾으세요.
 
-For most users, it is enough to look at compute power. Note that many GPUs offer different types of acceleration. For example, NVIDIA's TensorCores accelerate a subset of operators by 5$\times$. Ensure that your libraries support this. The GPU memory should be no less than 4 GB (8 GB is much better). Try to avoid using the GPU also for displaying a GUI (use the built-in graphics instead). If you cannot avoid it, add an extra 2 GB of RAM for safety.
+대부분의 사용자에게는 연산 성능을 보는 것으로 충분합니다. 많은 GPU가 다양한 유형의 가속을 제공한다는 점에 유의하세요. 예를 들어, NVIDIA의 TensorCore는 연산자 일부를 5$\times$ 가속화합니다. 라이브러리가 이를 지원하는지 확인하세요. GPU 메모리는 4 GB 이상이어야 합니다(8 GB가 훨씬 더 좋습니다). GPU를 GUI 표시에도 사용하는 것을 피하세요(대신 내장 그래픽을 사용하세요). 피할 수 없다면 안전을 위해 추가 2 GB의 RAM을 추가하세요.
 
-:numref:`fig_flopsvsprice` compares the 32-bit floating-point compute power and price of the various GTX 900, GTX 1000 and RTX 2000 series models. The prices suggested are those found on Wikipedia at the time of writing.
+:numref:`fig_flopsvsprice`는 다양한 GTX 900, GTX 1000, RTX 2000 시리즈 모델의 32비트 부동소수점 연산 성능과 가격을 비교합니다. 제시된 가격은 글을 쓰는 시점에 Wikipedia에서 찾은 것입니다.
 
-![Floating-point compute power and price comparison. ](../img/flopsvsprice.svg)
+![부동소수점 연산 성능과 가격 비교. ](../img/flopsvsprice.svg)
 :label:`fig_flopsvsprice`
 
 
-We can see a number of things:
+여기서 몇 가지를 확인할 수 있습니다.
 
-1. Within each series, price and performance are roughly proportional. Titan models command a significant premium for the benefit of larger amounts of GPU memory. However, the newer models offer better cost effectiveness, as can be seen by comparing the 980 Ti and 1080 Ti. The price does not appear to improve much for the RTX 2000 series. However, this is due to the fact that they offer far superior low precision performance (FP16, INT8, and INT4).
-2. The performance-to-cost ratio of the GTX 1000 series is about two times greater than the 900 series.
-3. For the RTX 2000 series the performance (in GFLOPs) is an *affine* function of the price.
+1. 각 시리즈 내에서 가격과 성능은 대체로 비례합니다. Titan 모델은 더 많은 양의 GPU 메모리의 이점을 위해 상당한 프리미엄을 요구합니다. 그러나 980 Ti와 1080 Ti를 비교해 보면 알 수 있듯이 더 새로운 모델은 더 나은 비용 효율성을 제공합니다. RTX 2000 시리즈의 가격은 크게 개선된 것 같지 않습니다. 그러나 이는 그것들이 훨씬 우수한 저정밀도 성능(FP16, INT8, INT4)을 제공한다는 사실 때문입니다.
+2. GTX 1000 시리즈의 성능 대 비용 비율은 900 시리즈의 약 두 배입니다.
+3. RTX 2000 시리즈의 경우 성능(GFLOPs)은 가격의 *아핀(affine)* 함수입니다.
 
-![Floating-point compute power and energy consumption. ](../img/wattvsprice.svg)
+![부동소수점 연산 성능과 에너지 소비. ](../img/wattvsprice.svg)
 :label:`fig_wattvsprice`
 
 
-:numref:`fig_wattvsprice` shows how energy consumption scales mostly linearly with the amount of computation. Second, later generations are more efficient. This seems to be contradicted by the graph corresponding to the RTX 2000 series. However, this is a consequence of the TensorCores that draw disproportionately much energy.
+:numref:`fig_wattvsprice`는 에너지 소비가 대체로 연산량과 선형적으로 비례한다는 것을 보여 줍니다. 둘째, 후대 세대가 더 효율적입니다. 이는 RTX 2000 시리즈에 해당하는 그래프와 모순되는 것처럼 보입니다. 그러나 이는 TensorCore가 불균형적으로 많은 에너지를 끌어들이기 때문입니다.
 
 
-## Summary
+## 요약
 
-* Watch out for power, PCIe bus lanes, CPU single thread speed, and cooling when building a server.
-* You should purchase the latest GPU generation if possible.
-* Use the cloud for large deployments.
-* High density servers may not be compatible with all GPUs. Check the mechanical and cooling specifications before you buy.
-* Use FP16 or lower precision for high efficiency.
+* 서버를 구축할 때 전력, PCIe 버스 레인, CPU 단일 스레드 속도, 냉각에 주의하세요.
+* 가능하다면 최신 세대 GPU를 구매해야 합니다.
+* 대규모 배포에는 클라우드를 사용하세요.
+* 고밀도 서버는 모든 GPU와 호환되지 않을 수 있습니다. 구매하기 전에 기계적 및 냉각 사양을 확인하세요.
+* 높은 효율을 위해 FP16 또는 더 낮은 정밀도를 사용하세요.
 
 
-[Discussions](https://discuss.d2l.ai/t/425)
+[토론](https://discuss.d2l.ai/t/425)

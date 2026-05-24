@@ -3,74 +3,20 @@
 tab.interact_select('mxnet', 'pytorch', 'tensorflow', 'jax')
 ```
 
-#  Sequence-to-Sequence Learning for Machine Translation
+# 기계 번역을 위한 시퀀스 대 시퀀스 학습 (Sequence-to-Sequence Learning for Machine Translation)
 :label:`sec_seq2seq`
 
-In so-called sequence-to-sequence problems such as machine translation
-(as discussed in :numref:`sec_machine_translation`),
-where inputs and outputs each consist 
-of variable-length unaligned sequences,
-we generally rely on encoder--decoder architectures
-(:numref:`sec_encoder-decoder`).
-In this section,
-we will demonstrate the application 
-of an encoder--decoder architecture,
-where both the encoder and decoder 
-are implemented as RNNs,
-to the task of machine translation
-:cite:`Sutskever.Vinyals.Le.2014,Cho.Van-Merrienboer.Gulcehre.ea.2014`.
+기계 번역(:numref:`sec_machine_translation`에서 논의됨)과 같이 입력과 출력이 각각 정렬되지 않은 가변 길이 시퀀스로 구성된 소위 시퀀스 대 시퀀스 문제에서, 저희는 일반적으로 인코더-디코더 아키텍처(:numref:`sec_encoder-decoder`)에 의존합니다. 이 절에서는 인코더와 디코더 양쪽 모두가 RNN으로 구현된 인코더-디코더 아키텍처를 기계 번역 과제에 적용하는 것을 시연할 것입니다 :cite:`Sutskever.Vinyals.Le.2014,Cho.Van-Merrienboer.Gulcehre.ea.2014`.
 
-Here, the encoder RNN will take a variable-length sequence as input 
-and transform it into a fixed-shape hidden state.
-Later, in :numref:`chap_attention-and-transformers`,
-we will introduce attention mechanisms, 
-which allow us to access encoded inputs
-without having to compress the entire input
-into a single fixed-length representation.
+여기서, 인코더 RNN은 가변 길이 시퀀스를 입력으로 받아 고정된 형태의 은닉 상태로 변환할 것입니다. 이후, :numref:`chap_attention-and-transformers`에서, 저희는 어텐션 메커니즘을 소개할 것이며, 이는 전체 입력을 단일 고정 길이 표현으로 압축할 필요 없이 인코딩된 입력에 접근할 수 있게 해줍니다.
 
-Then to generate the output sequence, 
-one token at a time,
-the decoder model, 
-consisting of a separate RNN,
-will predict each successive target token
-given both the input sequence
-and the preceding tokens in the output.
-During training, the decoder will typically
-be conditioned upon the preceding tokens
-in the official "ground truth" label. 
-However, at test time, we will want to condition
-each output of the decoder on the tokens already predicted. 
-Note that if we ignore the encoder,
-the decoder in a sequence-to-sequence architecture 
-behaves just like a normal language model.
-:numref:`fig_seq2seq` illustrates
-how to use two RNNs
-for sequence-to-sequence learning
-in machine translation.
+그런 다음 출력 시퀀스를 한 번에 한 토큰씩 생성하기 위해, 별도의 RNN으로 구성된 디코더 모델은 입력 시퀀스와 출력의 이전 토큰들이 모두 주어진 상태에서 각각의 연속된 대상 토큰을 예측할 것입니다. 훈련 중에, 디코더는 일반적으로 공식적인 "정답(ground truth)" 라벨의 이전 토큰들에 조건을 부여받을 것입니다. 그러나, 테스트 시에는 이미 예측된 토큰들에 디코더의 각 출력을 조건으로 부여하기를 원할 것입니다. 만약 인코더를 무시하면, 시퀀스 대 시퀀스 아키텍처에서의 디코더는 그저 정상적인 언어 모델처럼 동작한다는 점에 유의하십시오. :numref:`fig_seq2seq`는 기계 번역에서 시퀀스 대 시퀀스 학습을 위해 두 개의 RNN을 어떻게 사용하는지를 보여줍니다.
 
 
-![Sequence-to-sequence learning with an RNN encoder and an RNN decoder.](../img/seq2seq.svg)
+![RNN 인코더와 RNN 디코더를 사용한 시퀀스 대 시퀀스 학습.](../img/seq2seq.svg)
 :label:`fig_seq2seq`
 
-In :numref:`fig_seq2seq`,
-the special "&lt;eos&gt;" token
-marks the end of the sequence.
-Our model can stop making predictions
-once this token is generated.
-At the initial time step of the RNN decoder,
-there are two special design decisions to be aware of:
-First, we begin every input with a special 
-beginning-of-sequence "&lt;bos&gt;" token.
-Second, we may feed
-the final hidden state of the encoder
-into the decoder
-at every single decoding time step :cite:`Cho.Van-Merrienboer.Gulcehre.ea.2014`.
-In some other designs,
-such as that of :citet:`Sutskever.Vinyals.Le.2014`,
-the final hidden state of the RNN encoder
-is used
-to initiate the hidden state of the decoder
-only at the first decoding step.
+:numref:`fig_seq2seq`에서, 특수한 "&lt;eos&gt;" 토큰은 시퀀스의 끝을 표시합니다. 저희의 모델은 이 토큰이 생성되면 예측을 멈출 수 있습니다. RNN 디코더의 초기 시간 단계에서, 알아두어야 할 두 가지 특별한 설계 결정이 있습니다. 첫째, 저희는 모든 입력을 특수한 시퀀스 시작 "&lt;bos&gt;" 토큰으로 시작합니다. 둘째, 인코더의 최종 은닉 상태를 매 디코딩 시간 단계마다 디코더로 공급할 수 있습니다 :cite:`Cho.Van-Merrienboer.Gulcehre.ea.2014`. :citet:`Sutskever.Vinyals.Le.2014`의 것과 같은 일부 다른 설계에서는, RNN 인코더의 최종 은닉 상태가 첫 번째 디코딩 단계에서만 디코더의 은닉 상태를 초기화하는 데 사용됩니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -112,98 +58,34 @@ import math
 import optax
 ```
 
-## Teacher Forcing
+## 교사 강요 (Teacher Forcing)
 
-While running the encoder on the input sequence
-is relatively straightforward,
-handling the input and output 
-of the decoder requires more care. 
-The most common approach is sometimes called *teacher forcing*.
-Here, the original target sequence (token labels)
-is fed into the decoder as input.
-More concretely,
-the special beginning-of-sequence token
-and the original target sequence,
-excluding the final token,
-are concatenated as input to the decoder,
-while the decoder output (labels for training) is
-the original target sequence,
-shifted by one token:
-"&lt;bos&gt;", "Ils", "regardent", "." $\rightarrow$
-"Ils", "regardent", ".", "&lt;eos&gt;" (:numref:`fig_seq2seq`).
+입력 시퀀스에 대해 인코더를 실행하는 것은 비교적 간단하지만, 디코더의 입력과 출력을 다루는 것은 더 많은 주의를 요합니다. 가장 흔한 접근 방식은 때때로 *교사 강요(teacher forcing)*라고 불립니다. 여기서, 원본 대상 시퀀스(토큰 라벨)가 입력으로 디코더에 공급됩니다. 더 구체적으로, 특수한 시퀀스 시작 토큰과 마지막 토큰을 제외한 원본 대상 시퀀스가 연결되어 디코더의 입력이 되며, 한편 디코더의 출력(훈련을 위한 라벨)은 한 토큰만큼 시프트된 원본 대상 시퀀스입니다. "&lt;bos&gt;", "Ils", "regardent", "." $\rightarrow$ "Ils", "regardent", ".", "&lt;eos&gt;" (:numref:`fig_seq2seq`).
 
-Our implementation in
-:numref:`subsec_loading-seq-fixed-len`
-prepared training data for teacher forcing,
-where shifting tokens for self-supervised learning
-is similar to the training of language models in
-:numref:`sec_language-model`.
-An alternative approach is
-to feed the *predicted* token
-from the previous time step
-as the current input to the decoder.
+:numref:`subsec_loading-seq-fixed-len`에서의 저희의 구현은 교사 강요를 위한 훈련 데이터를 준비했으며, 여기서 자기 지도 학습을 위해 토큰을 시프트하는 것은 :numref:`sec_language-model`에서의 언어 모델 훈련과 유사합니다. 대안적인 접근 방식은 이전 시간 단계에서의 *예측된* 토큰을 디코더에 대한 현재 입력으로 공급하는 것입니다.
 
 
-In the following, we explain the design 
-depicted in :numref:`fig_seq2seq`
-in greater detail.
-We will train this model for machine translation
-on the English--French dataset as introduced in
-:numref:`sec_machine_translation`.
+이어서, 저희는 :numref:`fig_seq2seq`에 묘사된 설계를 더 자세히 설명합니다. 저희는 :numref:`sec_machine_translation`에서 소개된 영어-프랑스어 데이터셋에서 기계 번역을 위해 이 모델을 훈련할 것입니다.
 
-## Encoder
+## 인코더
 
-Recall that the encoder transforms an input sequence of variable length
-into a fixed-shape *context variable* $\mathbf{c}$ (see :numref:`fig_seq2seq`).
+인코더가 가변 길이의 입력 시퀀스를 고정된 형태의 *문맥 변수(context variable)* $\mathbf{c}$로 변환한다는 점을 떠올려 보십시오(:numref:`fig_seq2seq` 참조).
 
 
-Consider a single sequence example (batch size 1).
-Suppose the input sequence is $x_1, \ldots, x_T$, 
-such that $x_t$ is the $t^{\textrm{th}}$ token.
-At time step $t$, the RNN transforms
-the input feature vector $\mathbf{x}_t$ for $x_t$
-and the hidden state $\mathbf{h} _{t-1}$ 
-from the previous time step 
-into the current hidden state $\mathbf{h}_t$.
-We can use a function $f$ to express 
-the transformation of the RNN's recurrent layer:
+단일 시퀀스 예제(배치 크기 1)를 고려해 봅시다. 입력 시퀀스가 $x_1, \ldots, x_T$이고, $x_t$가 $t^{\textrm{번째}}$ 토큰이라고 가정합시다. 시간 단계 $t$에서, RNN은 $x_t$에 대한 입력 특징 벡터 $\mathbf{x}_t$와 이전 시간 단계의 은닉 상태 $\mathbf{h} _{t-1}$를 현재 은닉 상태 $\mathbf{h}_t$로 변환합니다. RNN의 순환 레이어의 변환을 표현하기 위해 함수 $f$를 사용할 수 있습니다.
 
 $$\mathbf{h}_t = f(\mathbf{x}_t, \mathbf{h}_{t-1}). $$
 
-In general, the encoder transforms 
-the hidden states at all time steps
-into a context variable through a customized function $q$:
+일반적으로, 인코더는 모든 시간 단계에서의 은닉 상태들을 사용자 정의 함수 $q$를 통해 문맥 변수로 변환합니다.
 
 $$\mathbf{c} =  q(\mathbf{h}_1, \ldots, \mathbf{h}_T).$$
 
-For example, in :numref:`fig_seq2seq`,
-the context variable is just the hidden state $\mathbf{h}_T$
-corresponding to the encoder RNN's representation
-after processing the final token of the input sequence.
+예를 들어, :numref:`fig_seq2seq`에서, 문맥 변수는 입력 시퀀스의 마지막 토큰을 처리한 후의 인코더 RNN의 표현에 대응하는 은닉 상태 $\mathbf{h}_T$입니다.
 
-In this example, we have used a unidirectional RNN
-to design the encoder,
-where the hidden state only depends on the input subsequence 
-at and before the time step of the hidden state.
-We can also construct encoders using bidirectional RNNs.
-In this case, a hidden state depends on the subsequence before and after the time step 
-(including the input at the current time step), 
-which encodes the information of the entire sequence.
+이 예시에서, 저희는 인코더를 설계하기 위해 단방향 RNN을 사용했으며, 여기서 은닉 상태는 그 은닉 상태의 시간 단계와 이전의 입력 부분 시퀀스에만 의존합니다. 양방향 RNN을 사용하여 인코더를 구성할 수도 있습니다. 이 경우, 은닉 상태는 시간 단계 이전과 이후의 부분 시퀀스(현재 시간 단계의 입력 포함)에 의존하며, 이는 전체 시퀀스의 정보를 인코딩합니다.
 
 
-Now let's [**implement the RNN encoder**].
-Note that we use an *embedding layer*
-to obtain the feature vector for each token in the input sequence.
-The weight of an embedding layer is a matrix,
-where the number of rows corresponds to 
-the size of the input vocabulary (`vocab_size`)
-and number of columns corresponds to 
-the feature vector's dimension (`embed_size`).
-For any input token index $i$,
-the embedding layer fetches the $i^{\textrm{th}}$ row 
-(starting from 0) of the weight matrix
-to return its feature vector.
-Here we implement the encoder with a multilayer GRU.
+이제 [**RNN 인코더를 구현**]해 봅시다. 저희는 입력 시퀀스의 각 토큰에 대한 특징 벡터를 얻기 위해 *임베딩 레이어(embedding layer)*를 사용한다는 점에 유의하십시오. 임베딩 레이어의 가중치는 행렬이며, 행의 수는 입력 어휘의 크기(`vocab_size`)에 해당하고 열의 수는 특징 벡터의 차원(`embed_size`)에 해당합니다. 어떤 입력 토큰 인덱스 $i$에 대해서든, 임베딩 레이어는 가중치 행렬의 $i^{\textrm{번째}}$ 행(0부터 시작)을 가져와 그 특징 벡터를 반환합니다. 여기서 저희는 다층 GRU로 인코더를 구현합니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -303,17 +185,7 @@ class Seq2SeqEncoder(d2l.Encoder):  #@save
         return outputs, state
 ```
 
-Let's use a concrete example
-to [**illustrate the above encoder implementation.**]
-Below, we instantiate a two-layer GRU encoder
-whose number of hidden units is 16.
-Given a minibatch of sequence inputs `X`
-(batch size $=4$; number of time steps $=9$),
-the hidden states of the final layer
-at all the time steps
-(`enc_outputs` returned by the encoder's recurrent layers)
-are a tensor of shape
-(number of time steps, batch size, number of hidden units).
+구체적인 예시를 사용하여 [**위의 인코더 구현을 보여보겠습니다.**] 아래에서, 저희는 은닉 유닛의 수가 16인 2층 GRU 인코더를 인스턴스화합니다. 시퀀스 입력의 미니배치 `X` (배치 크기 $=4$; 시간 단계의 수 $=9$)가 주어졌을 때, 모든 시간 단계에서의 최종 레이어의 은닉 상태(인코더의 순환 레이어에 의해 반환되는 `enc_outputs`)는 (시간 단계의 수, 배치 크기, 은닉 유닛의 수) 형태의 텐서입니다.
 
 ```{.python .input}
 %%tab all
@@ -329,10 +201,7 @@ if tab.selected('jax'):
 d2l.check_shape(enc_outputs, (num_steps, batch_size, num_hiddens))
 ```
 
-Since we are using a GRU here,
-the shape of the multilayer hidden states
-at the final time step is
-(number of hidden layers, batch size, number of hidden units).
+여기서 GRU를 사용하고 있기 때문에, 최종 시간 단계에서의 다층 은닉 상태의 형태는 (은닉층의 수, 배치 크기, 은닉 유닛의 수)입니다.
 
 ```{.python .input}
 %%tab all
@@ -343,51 +212,19 @@ if tab.selected('tensorflow'):
     d2l.check_shape(enc_state[0], (batch_size, num_hiddens))
 ```
 
-## [**Decoder**]
+## [**디코더**]
 :label:`sec_seq2seq_decoder`
 
-Given a target output sequence $y_1, y_2, \ldots, y_{T'}$
-for each time step $t'$
-(we use $t^\prime$ to differentiate from the input sequence time steps),
-the decoder assigns a predicted probability
-to each possible token occurring at step $y_{t'+1}$
-conditioned upon the previous tokens in the target
-$y_1, \ldots, y_{t'}$ 
-and the context variable 
-$\mathbf{c}$, i.e., $P(y_{t'+1} \mid y_1, \ldots, y_{t'}, \mathbf{c})$.
+각 시간 단계 $t'$ (입력 시퀀스 시간 단계와 구별하기 위해 $t^\prime$을 사용)에 대한 대상 출력 시퀀스 $y_1, y_2, \ldots, y_{T'}$가 주어졌을 때, 디코더는 대상의 이전 토큰들 $y_1, \ldots, y_{t'}$와 문맥 변수 $\mathbf{c}$에 조건이 부여된 상태에서, 단계 $y_{t'+1}$에서 나타날 수 있는 각 가능한 토큰에 예측된 확률을 할당합니다. 즉, $P(y_{t'+1} \mid y_1, \ldots, y_{t'}, \mathbf{c})$입니다.
 
-To predict the subsequent token $t^\prime+1$ in the target sequence,
-the RNN decoder takes the previous step's target token $y_{t^\prime}$,
-the hidden RNN state from the previous time step $\mathbf{s}_{t^\prime-1}$,
-and the context variable $\mathbf{c}$ as its input,
-and transforms them into the hidden state 
-$\mathbf{s}_{t^\prime}$ at the current time step.
-We can use a function $g$ to express 
-the transformation of the decoder's hidden layer:
+대상 시퀀스에서 다음 토큰 $t^\prime+1$을 예측하기 위해, RNN 디코더는 이전 단계의 대상 토큰 $y_{t^\prime}$, 이전 시간 단계로부터의 은닉 RNN 상태 $\mathbf{s}_{t^\prime-1}$, 그리고 문맥 변수 $\mathbf{c}$를 입력으로 받아, 이들을 현재 시간 단계의 은닉 상태 $\mathbf{s}_{t^\prime}$로 변환합니다. 디코더의 은닉층의 변환을 표현하기 위해 함수 $g$를 사용할 수 있습니다.
 
 $$\mathbf{s}_{t^\prime} = g(y_{t^\prime-1}, \mathbf{c}, \mathbf{s}_{t^\prime-1}).$$
 :eqlabel:`eq_seq2seq_s_t`
 
-After obtaining the hidden state of the decoder,
-we can use an output layer and the softmax operation 
-to compute the predictive distribution
-$p(y_{t^{\prime}+1} \mid y_1, \ldots, y_{t^\prime}, \mathbf{c})$ 
-over the subsequent output token ${t^\prime+1}$.
+디코더의 은닉 상태를 얻은 후, 출력 레이어와 소프트맥스 연산을 사용하여 다음 출력 토큰 ${t^\prime+1}$에 대한 예측 분포 $p(y_{t^{\prime}+1} \mid y_1, \ldots, y_{t^\prime}, \mathbf{c})$를 계산할 수 있습니다.
 
-Following :numref:`fig_seq2seq`,
-when implementing the decoder as follows,
-we directly use the hidden state at the final time step
-of the encoder
-to initialize the hidden state of the decoder.
-This requires that the RNN encoder and the RNN decoder 
-have the same number of layers and hidden units.
-To further incorporate the encoded input sequence information,
-the context variable is concatenated
-with the decoder input at all the time steps.
-To predict the probability distribution of the output token,
-we use a fully connected layer
-to transform the hidden state 
-at the final layer of the RNN decoder.
+:numref:`fig_seq2seq`를 따라, 다음과 같이 디코더를 구현할 때, 저희는 인코더의 최종 시간 단계의 은닉 상태를 디코더의 은닉 상태를 초기화하는 데 직접 사용합니다. 이는 RNN 인코더와 RNN 디코더가 같은 수의 레이어와 은닉 유닛을 가질 것을 요구합니다. 인코딩된 입력 시퀀스 정보를 추가로 통합하기 위해, 문맥 변수는 모든 시간 단계에서 디코더 입력과 연결됩니다. 출력 토큰의 확률 분포를 예측하기 위해, 저희는 RNN 디코더의 최종 레이어에서 은닉 상태를 변환하기 위해 완전 연결 레이어를 사용합니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -525,10 +362,7 @@ class Seq2SeqDecoder(d2l.Decoder):
         return outputs, [enc_output, hidden_state]
 ```
 
-To [**illustrate the implemented decoder**],
-below we instantiate it with the same hyperparameters from the aforementioned encoder.
-As we can see, the output shape of the decoder becomes (batch size, number of time steps, vocabulary size),
-where the final dimension of the tensor stores the predicted token distribution.
+[**구현된 디코더를 보여주기 위해**], 아래에서 저희는 앞서 언급한 인코더와 동일한 하이퍼파라미터로 그것을 인스턴스화합니다. 보시다시피, 디코더의 출력 형태는 (배치 크기, 시간 단계의 수, 어휘 크기)가 되며, 텐서의 최종 차원은 예측된 토큰 분포를 저장합니다.
 
 ```{.python .input}
 %%tab all
@@ -550,18 +384,17 @@ if tab.selected('tensorflow'):
     d2l.check_shape(state[1][0], (batch_size, num_hiddens))
 ```
 
-The layers in the above RNN encoder--decoder model 
-are summarized in :numref:`fig_seq2seq_details`.
+위 RNN 인코더-디코더 모델의 레이어들은 :numref:`fig_seq2seq_details`에 요약되어 있습니다.
 
-![Layers in an RNN encoder--decoder model.](../img/seq2seq-details.svg)
+![RNN 인코더-디코더 모델의 레이어들.](../img/seq2seq-details.svg)
 :label:`fig_seq2seq_details`
 
 
 
-## Encoder--Decoder for Sequence-to-Sequence Learning
+## 시퀀스 대 시퀀스 학습을 위한 인코더-디코더 (Encoder-Decoder for Sequence-to-Sequence Learning)
 
 
-Putting it all together in code yields the following:
+모두 코드로 합치면 다음과 같이 됩니다.
 
 ```{.python .input}
 %%tab pytorch, tensorflow, mxnet
@@ -604,27 +437,9 @@ class Seq2Seq(d2l.EncoderDecoder):  #@save
         return optax.adam(learning_rate=self.lr)
 ```
 
-## Loss Function with Masking
+## 마스킹이 있는 손실 함수 (Loss Function with Masking)
 
-At each time step, the decoder predicts 
-a probability distribution for the output tokens.
-As with language modeling, 
-we can apply softmax 
-to obtain the distribution
-and calculate the cross-entropy loss for optimization.
-Recall from :numref:`sec_machine_translation`
-that the special padding tokens
-are appended to the end of sequences
-and so sequences of varying lengths
-can be efficiently loaded
-in minibatches of the same shape.
-However, prediction of padding tokens
-should be excluded from loss calculations.
-To this end, we can 
-[**mask irrelevant entries with zero values**]
-so that multiplication 
-of any irrelevant prediction
-with zero equates to zero.
+각 시간 단계에서, 디코더는 출력 토큰에 대한 확률 분포를 예측합니다. 언어 모델링에서처럼, 분포를 얻고 최적화를 위해 교차 엔트로피 손실을 계산하기 위해 소프트맥스를 적용할 수 있습니다. :numref:`sec_machine_translation`에서 특수한 패딩 토큰이 시퀀스의 끝에 추가되어 가변 길이의 시퀀스가 같은 형태의 미니배치에 효율적으로 로드될 수 있다는 점을 떠올려 보십시오. 그러나, 패딩 토큰의 예측은 손실 계산에서 제외되어야 합니다. 이를 위해, 저희는 [**무관한 항목들을 0 값으로 마스킹**]할 수 있어, 어떤 무관한 예측이라도 0과 곱하면 0이 되도록 할 수 있습니다.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -650,11 +465,10 @@ def loss(self, params, X, Y, state, averaged=False):
     return d2l.reduce_sum(l * mask) / d2l.reduce_sum(mask), {}
 ```
 
-## [**Training**]
+## [**훈련**]
 :label:`sec_seq2seq_training`
 
-Now we can [**create and train an RNN encoder--decoder model**]
-for sequence-to-sequence learning on the machine translation dataset.
+이제 저희는 기계 번역 데이터셋에서 시퀀스 대 시퀀스 학습을 위한 [**RNN 인코더-디코더 모델을 생성하고 훈련**]할 수 있습니다.
 
 ```{.python .input}
 %%tab all
@@ -685,30 +499,15 @@ if tab.selected('tensorflow'):
 trainer.fit(model, data)
 ```
 
-## [**Prediction**]
+## [**예측**]
 
-To predict the output sequence
-at each step, 
-the predicted token from the previous
-time step is fed into the decoder as an input.
-One simple strategy is to sample whichever token
-that has been assigned by the decoder the highest probability
-when predicting at each step.
-As in training, at the initial time step
-the beginning-of-sequence ("&lt;bos&gt;") token
-is fed into the decoder.
-This prediction process
-is illustrated in :numref:`fig_seq2seq_predict`.
-When the end-of-sequence ("&lt;eos&gt;") token is predicted,
-the prediction of the output sequence is complete.
+각 단계에서 출력 시퀀스를 예측하기 위해, 이전 시간 단계에서의 예측된 토큰이 입력으로 디코더에 공급됩니다. 한 가지 간단한 전략은 각 단계에서 예측할 때 디코더에 의해 가장 높은 확률이 할당된 토큰이 무엇이든 그것을 샘플링하는 것입니다. 훈련에서처럼, 초기 시간 단계에서 시퀀스 시작("&lt;bos&gt;") 토큰이 디코더에 공급됩니다. 이 예측 과정은 :numref:`fig_seq2seq_predict`에 보여집니다. 시퀀스 끝("&lt;eos&gt;") 토큰이 예측되면, 출력 시퀀스의 예측은 완료됩니다.
 
 
-![Predicting the output sequence token by token using an RNN encoder--decoder.](../img/seq2seq-predict.svg)
+![RNN 인코더-디코더를 사용하여 토큰별로 출력 시퀀스 예측하기.](../img/seq2seq-predict.svg)
 :label:`fig_seq2seq_predict`
 
-In the next section, we will introduce 
-more sophisticated strategies 
-based on beam search (:numref:`sec_beam-search`).
+다음 절에서, 저희는 빔 서치(:numref:`sec_beam-search`)에 기반한 더 정교한 전략들을 소개할 것입니다.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -770,61 +569,23 @@ def predict_step(self, params, batch, num_steps,
                                         enc_attention_weights)
 ```
 
-## Evaluation of Predicted Sequences
+## 예측된 시퀀스의 평가 (Evaluation of Predicted Sequences)
 
-We can evaluate a predicted sequence
-by comparing it with the
-target sequence (the ground truth).
-But what precisely is the appropriate measure 
-for comparing similarity between two sequences?
+저희는 예측된 시퀀스를 대상 시퀀스(정답)와 비교함으로써 평가할 수 있습니다. 그러나 두 시퀀스 간의 유사성을 비교하기 위한 적절한 척도는 정확히 무엇입니까?
 
 
-Bilingual Evaluation Understudy (BLEU),
-though originally proposed for evaluating
-machine translation results :cite:`Papineni.Roukos.Ward.ea.2002`,
-has been extensively used in measuring
-the quality of output sequences for different applications.
-In principle, for any $n$-gram (:numref:`subsec_markov-models-and-n-grams`) in the predicted sequence,
-BLEU evaluates whether this $n$-gram appears
-in the target sequence.
+Bilingual Evaluation Understudy (BLEU)는 원래 기계 번역 결과를 평가하기 위해 제안되었지만 :cite:`Papineni.Roukos.Ward.ea.2002`, 다양한 응용 분야에 대한 출력 시퀀스의 품질을 측정하는 데 광범위하게 사용되어 왔습니다. 원칙적으로, 예측된 시퀀스 내의 어떤 $n$-그램(:numref:`subsec_markov-models-and-n-grams`)에 대해서든, BLEU는 이 $n$-그램이 대상 시퀀스에 나타나는지를 평가합니다.
 
-Denote by $p_n$ the precision of an $n$-gram,
-defined as the ratio 
-of the number of matched $n$-grams in
-the predicted and target sequences
-to the number of $n$-grams in the predicted sequence.
-To explain, given a target sequence $A$, $B$, $C$, $D$, $E$, $F$,
-and a predicted sequence $A$, $B$, $B$, $C$, $D$,
-we have $p_1 = 4/5$,  $p_2 = 3/4$, $p_3 = 1/3$, and $p_4 = 0$.
-Now let $\textrm{len}_{\textrm{label}}$ and $\textrm{len}_{\textrm{pred}}$
-be the numbers of tokens in the target sequence 
-and the predicted sequence, respectively.
-Then, BLEU is defined as
+$p_n$을 $n$-그램의 정밀도라 하며, 이는 예측된 시퀀스 내의 $n$-그램의 수에 대한, 예측된 시퀀스와 대상 시퀀스에서 일치하는 $n$-그램의 수의 비율로 정의됩니다. 설명하자면, 대상 시퀀스 $A$, $B$, $C$, $D$, $E$, $F$와 예측된 시퀀스 $A$, $B$, $B$, $C$, $D$가 주어졌을 때, 저희는 $p_1 = 4/5$, $p_2 = 3/4$, $p_3 = 1/3$, $p_4 = 0$을 얻습니다. 이제 $\textrm{len}_{\textrm{label}}$과 $\textrm{len}_{\textrm{pred}}$를 각각 대상 시퀀스와 예측된 시퀀스의 토큰 수라고 합시다. 그러면, BLEU는 다음과 같이 정의됩니다.
 
 $$ \exp\left(\min\left(0, 1 - \frac{\textrm{len}_{\textrm{label}}}{\textrm{len}_{\textrm{pred}}}\right)\right) \prod_{n=1}^k p_n^{1/2^n},$$
 :eqlabel:`eq_bleu`
 
-where $k$ is the longest $n$-gram for matching.
+여기서 $k$는 매칭을 위한 가장 긴 $n$-그램입니다.
 
-Based on the definition of BLEU in :eqref:`eq_bleu`,
-whenever the predicted sequence is the same as the target sequence, BLEU is 1.
-Moreover,
-since matching longer $n$-grams is more difficult,
-BLEU assigns a greater weight
-when a longer $n$-gram has high precision.
-Specifically, when $p_n$ is fixed,
-$p_n^{1/2^n}$ increases as $n$ grows (the original paper uses $p_n^{1/n}$).
-Furthermore,
-since
-predicting shorter sequences
-tends to yield a higher $p_n$ value,
-the coefficient before the multiplication term in :eqref:`eq_bleu`
-penalizes shorter predicted sequences.
-For example, when $k=2$,
-given the target sequence $A$, $B$, $C$, $D$, $E$, $F$ and the predicted sequence $A$, $B$,
-although $p_1 = p_2 = 1$, the penalty factor $\exp(1-6/2) \approx 0.14$ lowers the BLEU.
+:eqref:`eq_bleu`의 BLEU 정의에 따르면, 예측된 시퀀스가 대상 시퀀스와 같을 때마다, BLEU는 1입니다. 또한, 더 긴 $n$-그램을 매칭하는 것이 더 어렵기 때문에, BLEU는 더 긴 $n$-그램이 높은 정밀도를 가질 때 더 큰 가중치를 할당합니다. 구체적으로, $p_n$이 고정되었을 때, $p_n^{1/2^n}$은 $n$이 커짐에 따라 증가합니다(원본 논문에서는 $p_n^{1/n}$을 사용함). 더 나아가, 더 짧은 시퀀스를 예측하는 것이 더 높은 $p_n$ 값을 산출하는 경향이 있기 때문에, :eqref:`eq_bleu`의 곱셈 항 앞의 계수는 더 짧은 예측된 시퀀스에 패널티를 부과합니다. 예를 들어, $k=2$일 때, 대상 시퀀스 $A$, $B$, $C$, $D$, $E$, $F$와 예측된 시퀀스 $A$, $B$가 주어졌을 때, $p_1 = p_2 = 1$임에도 불구하고, 패널티 인자 $\exp(1-6/2) \approx 0.14$가 BLEU를 낮춥니다.
 
-We [**implement the BLEU measure**] as follows.
+저희는 다음과 같이 [**BLEU 척도를 구현**]합니다.
 
 ```{.python .input}
 %%tab all
@@ -845,10 +606,7 @@ def bleu(pred_seq, label_seq, k):  #@save
     return score
 ```
 
-In the end,
-we use the trained RNN encoder--decoder
-to [**translate a few English sentences into French**]
-and compute the BLEU of the results.
+마지막으로, 저희는 훈련된 RNN 인코더-디코더를 사용하여 [**몇 가지 영어 문장을 프랑스어로 번역**]하고 결과의 BLEU를 계산합니다.
 
 ```{.python .input}
 %%tab all
@@ -870,38 +628,33 @@ for en, fr, p in zip(engs, fras, preds):
           f'{bleu(" ".join(translation), fr, k=2):.3f}')
 ```
 
-## Summary
+## 요약
 
-Following the design of the encoder--decoder architecture, we can use two RNNs to design a model for sequence-to-sequence learning.
-In encoder--decoder training, the teacher forcing approach feeds original output sequences (in contrast to predictions) into the decoder.
-When implementing the encoder and the decoder, we can use multilayer RNNs.
-We can use masks to filter out irrelevant computations, such as when calculating the loss.
-For evaluating output sequences,
-BLEU is a popular measure that matches $n$-grams between the predicted sequence and the target sequence.
+인코더-디코더 아키텍처의 설계를 따라, 저희는 시퀀스 대 시퀀스 학습을 위한 모델을 설계하기 위해 두 개의 RNN을 사용할 수 있습니다. 인코더-디코더 훈련에서, 교사 강요 접근 방식은 (예측과 대조적으로) 원본 출력 시퀀스를 디코더에 공급합니다. 인코더와 디코더를 구현할 때, 저희는 다층 RNN을 사용할 수 있습니다. 손실을 계산할 때와 같이, 무관한 계산을 걸러내기 위해 마스크를 사용할 수 있습니다. 출력 시퀀스를 평가하기 위해, BLEU는 예측된 시퀀스와 대상 시퀀스 사이에서 $n$-그램을 매칭하는 인기 있는 척도입니다.
 
 
-## Exercises
+## 연습문제
 
-1. Can you adjust the hyperparameters to improve the translation results?
-1. Rerun the experiment without using masks in the loss calculation. What results do you observe? Why?
-1. If the encoder and the decoder differ in the number of layers or the number of hidden units, how can we initialize the hidden state of the decoder?
-1. In training, replace teacher forcing with feeding the prediction at the previous time step into the decoder. How does this influence the performance?
-1. Rerun the experiment by replacing GRU with LSTM.
-1. Are there any other ways to design the output layer of the decoder?
+1. 번역 결과를 개선하기 위해 하이퍼파라미터를 조정할 수 있습니까?
+1. 손실 계산에서 마스크를 사용하지 않고 실험을 다시 실행해 보십시오. 어떤 결과를 관찰합니까? 왜 그렇습니까?
+1. 인코더와 디코더가 레이어 수 또는 은닉 유닛의 수에서 다르다면, 디코더의 은닉 상태를 어떻게 초기화할 수 있습니까?
+1. 훈련에서, 교사 강요를 이전 시간 단계에서의 예측을 디코더에 공급하는 것으로 교체해 보십시오. 이것이 성능에 어떻게 영향을 미칩니까?
+1. GRU를 LSTM으로 교체하여 실험을 다시 실행해 보십시오.
+1. 디코더의 출력 레이어를 설계할 수 있는 다른 방법이 있습니까?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/345)
+[토론](https://discuss.d2l.ai/t/345)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1062)
+[토론](https://discuss.d2l.ai/t/1062)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/3865)
+[토론](https://discuss.d2l.ai/t/3865)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18022)
+[토론](https://discuss.d2l.ai/t/18022)
 :end_tab:
 

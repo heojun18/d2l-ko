@@ -1,9 +1,9 @@
-# Deep Convolutional Generative Adversarial Networks
+# 심층 합성곱 생성적 적대 신경망
 :label:`sec_dcgan`
 
-In :numref:`sec_basic_gan`, we introduced the basic ideas behind how GANs work. We showed that they can draw samples from some simple, easy-to-sample distribution, like a uniform or normal distribution, and transform them into samples that appear to match the distribution of some dataset. And while our example of matching a 2D Gaussian distribution got the point across, it is not especially exciting.
+:numref:`sec_basic_gan`에서 저희는 GAN이 어떻게 작동하는지에 대한 기본 아이디어를 소개했습니다. 저희는 GAN이 균등 분포나 정규 분포와 같이 단순하고 샘플링하기 쉬운 분포에서 샘플을 추출하여, 어떤 데이터셋의 분포와 일치하는 것처럼 보이는 샘플로 변환할 수 있음을 보였습니다. 그리고 2D 가우시안 분포를 일치시키는 저희의 예제가 요점을 전달했지만, 이는 특별히 흥미롭지는 않습니다.
 
-In this section, we will demonstrate how you can use GANs to generate photorealistic images. We will be basing our models on the deep convolutional GANs (DCGAN) introduced in :citet:`Radford.Metz.Chintala.2015`. We will borrow the convolutional architecture that have proven so successful for discriminative computer vision problems and show how via GANs, they can be leveraged to generate photorealistic images.
+이 절에서는 GAN을 사용하여 사실적인 이미지를 생성하는 방법을 시연합니다. 저희는 :citet:`Radford.Metz.Chintala.2015`에서 소개된 심층 합성곱 GAN(DCGAN)을 기반으로 모델을 구축할 것입니다. 저희는 판별 컴퓨터 비전 문제에 대해 그렇게 성공적임이 입증된 합성곱 아키텍처를 빌려와서, GAN을 통해 어떻게 이를 활용하여 사실적인 이미지를 생성할 수 있는지 보여드리겠습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -29,9 +29,9 @@ from d2l import tensorflow as d2l
 import tensorflow as tf
 ```
 
-## The Pokemon Dataset
+## 포켓몬 데이터셋
 
-The dataset we will use is a collection of Pokemon sprites obtained from [pokemondb](https://pokemondb.net/sprites). First download, extract and load this dataset.
+저희가 사용할 데이터셋은 [pokemondb](https://pokemondb.net/sprites)에서 가져온 포켓몬 스프라이트 모음입니다. 먼저 이 데이터셋을 다운로드하고, 추출하고, 불러옵니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -65,7 +65,7 @@ pokemon = tf.keras.preprocessing.image_dataset_from_directory(
     data_dir, batch_size=batch_size, image_size=(64, 64))
 ```
 
-We resize each image into $64\times 64$. The `ToTensor` transformation will project the pixel value into $[0, 1]$, while our generator will use the tanh function to obtain outputs in $[-1, 1]$. Therefore we normalize the data with $0.5$ mean and $0.5$ standard deviation to match the value range.
+저희는 각 이미지를 $64\times 64$로 크기 조정합니다. `ToTensor` 변환은 픽셀 값을 $[0, 1]$로 투영하는 반면, 저희의 생성기는 $[-1, 1]$ 범위의 출력을 얻기 위해 tanh 함수를 사용할 것입니다. 따라서 값 범위를 일치시키기 위해 평균 $0.5$와 표준편차 $0.5$로 데이터를 정규화합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -108,7 +108,7 @@ data_iter = data_iter.cache().shuffle(buffer_size=1000).prefetch(
     buffer_size=tf.data.experimental.AUTOTUNE)
 ```
 
-Let's visualize the first 20 images.
+처음 20개의 이미지를 시각화해 봅시다.
 
 ```{.python .input}
 #@tab mxnet
@@ -137,9 +137,9 @@ for X, y in data_iter.take(1):
     d2l.show_images(imgs, num_rows=4, num_cols=5)
 ```
 
-## The Generator
+## 생성기
 
-The generator needs to map the noise variable $\mathbf z\in\mathbb R^d$, a length-$d$ vector, to a RGB image with width and height to be $64\times 64$ . In :numref:`sec_fcn` we introduced the fully convolutional network that uses transposed convolution layer (refer to :numref:`sec_transposed_conv`) to enlarge input size. The basic block of the generator contains a transposed convolution layer followed by the batch normalization and ReLU activation.
+생성기는 잡음 변수 $\mathbf z\in\mathbb R^d$(길이가 $d$인 벡터)를 너비와 높이가 $64\times 64$인 RGB 이미지로 매핑해야 합니다. :numref:`sec_fcn`에서 저희는 입력 크기를 확대하기 위해 전치 합성곱 층(:numref:`sec_transposed_conv` 참조)을 사용하는 완전 합성곱 신경망을 소개했습니다. 생성기의 기본 블록은 배치 정규화와 ReLU 활성화가 뒤따르는 전치 합성곱 층을 포함합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -186,7 +186,7 @@ class G_block(tf.keras.layers.Layer):
         return self.activation(self.batch_norm(self.conv2d_trans(X)))
 ```
 
-In default, the transposed convolution layer uses a $k_h = k_w = 4$ kernel, a $s_h = s_w = 2$ strides, and a $p_h = p_w = 1$ padding. With a input shape of $n_h^{'} \times n_w^{'} = 16 \times 16$, the generator block will double input's width and height.
+기본적으로, 전치 합성곱 층은 $k_h = k_w = 4$ 커널, $s_h = s_w = 2$ 스트라이드, 그리고 $p_h = p_w = 1$ 패딩을 사용합니다. $n_h^{'} \times n_w^{'} = 16 \times 16$의 입력 형상으로, 생성기 블록은 입력의 너비와 높이를 두 배로 늘릴 것입니다.
 
 $$
 \begin{aligned}
@@ -219,7 +219,7 @@ g_blk = G_block(20)
 g_blk(x).shape
 ```
 
-If changing the transposed convolution layer to a $4\times 4$ kernel, $1\times 1$ strides and zero padding. With a input size of $1 \times 1$, the output will have its width and height increased by 3 respectively.
+전치 합성곱 층을 $4\times 4$ 커널, $1\times 1$ 스트라이드, 그리고 제로 패딩으로 변경하면, $1 \times 1$의 입력 크기로 출력의 너비와 높이가 각각 3씩 증가할 것입니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -244,7 +244,7 @@ g_blk = G_block(20, strides=1, padding="valid")
 g_blk(x).shape
 ```
 
-The generator consists of four basic blocks that increase input's both width and height from 1 to 32. At the same time, it first projects the latent variable into $64\times 8$ channels, and then halve the channels each time. At last, a transposed convolution layer is used to generate the output. It further doubles the width and height to match the desired $64\times 64$ shape, and reduces the channel size to $3$. The tanh activation function is applied to project output values into the $(-1, 1)$ range.
+생성기는 입력의 너비와 높이를 모두 1에서 32로 늘리는 4개의 기본 블록으로 구성됩니다. 동시에, 먼저 잠재 변수를 $64\times 8$ 채널로 투영한 다음, 매번 채널을 절반으로 줄입니다. 마지막으로, 전치 합성곱 층이 출력을 생성하는 데 사용됩니다. 이는 원하는 $64\times 64$ 형상과 일치하도록 너비와 높이를 더 두 배로 늘리고, 채널 크기를 $3$으로 줄입니다. tanh 활성화 함수는 출력 값을 $(-1, 1)$ 범위로 투영하기 위해 적용됩니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -289,7 +289,7 @@ net_G = tf.keras.Sequential([
 ])
 ```
 
-Generate a 100 dimensional latent variable to verify the generator's output shape.
+생성기의 출력 형상을 확인하기 위해 100차원 잠재 변수를 생성합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -310,13 +310,13 @@ x = tf.zeros((1, 1, 1, 100))
 net_G(x).shape
 ```
 
-## Discriminator
+## 판별기
 
-The discriminator is a normal convolutional network network except that it uses a leaky ReLU as its activation function. Given $\alpha \in[0, 1]$, its definition is
+판별기는 활성화 함수로 leaky ReLU를 사용한다는 점을 제외하면 일반적인 합성곱 신경망입니다. $\alpha \in[0, 1]$이 주어지면, 그 정의는 다음과 같습니다.
 
 $$\textrm{leaky ReLU}(x) = \begin{cases}x & \textrm{if}\ x > 0\\ \alpha x &\textrm{otherwise}\end{cases}.$$
 
-As it can be seen, it is normal ReLU if $\alpha=0$, and an identity function if $\alpha=1$. For $\alpha \in (0, 1)$, leaky ReLU is a nonlinear function that give a non-zero output for a negative input. It aims to fix the "dying ReLU" problem that a neuron might always output a negative value and therefore cannot make any progress since the gradient of ReLU is 0.
+보시다시피, $\alpha=0$이면 일반적인 ReLU이고, $\alpha=1$이면 항등 함수입니다. $\alpha \in (0, 1)$의 경우, leaky ReLU는 음의 입력에 대해 0이 아닌 출력을 주는 비선형 함수입니다. 이는 뉴런이 항상 음수 값을 출력할 수 있고 따라서 ReLU의 기울기가 0이기 때문에 어떠한 진전도 이룰 수 없는 "죽어가는 ReLU(dying ReLU)" 문제를 해결하는 것을 목표로 합니다.
 
 ```{.python .input}
 #@tab mxnet,pytorch
@@ -334,7 +334,7 @@ Y = [tf.keras.layers.LeakyReLU(alpha)(x).numpy() for alpha in alphas]
 d2l.plot(x.numpy(), Y, 'x', 'y', alphas)
 ```
 
-The basic block of the discriminator is a convolution layer followed by a batch normalization layer and a leaky ReLU activation. The hyperparameters of the convolution layer are similar to the transpose convolution layer in the generator block.
+판별기의 기본 블록은 배치 정규화 층과 leaky ReLU 활성화가 뒤따르는 합성곱 층입니다. 합성곱 층의 하이퍼파라미터는 생성기 블록의 전치 합성곱 층과 비슷합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -381,7 +381,7 @@ class D_block(tf.keras.layers.Layer):
         return self.activation(self.batch_norm(self.conv2d(X)))
 ```
 
-A basic block with default settings will halve the width and height of the inputs, as we demonstrated in :numref:`sec_padding`. For example, given a input shape $n_h = n_w = 16$, with a kernel shape $k_h = k_w = 4$, a stride shape $s_h = s_w = 2$, and a padding shape $p_h = p_w = 1$, the output shape will be:
+:numref:`sec_padding`에서 보여드린 것처럼, 기본 설정의 기본 블록은 입력의 너비와 높이를 절반으로 줄일 것입니다. 예를 들어, 입력 형상 $n_h = n_w = 16$, 커널 형상 $k_h = k_w = 4$, 스트라이드 형상 $s_h = s_w = 2$, 그리고 패딩 형상 $p_h = p_w = 1$이 주어지면, 출력 형상은 다음과 같습니다.
 
 $$
 \begin{aligned}
@@ -413,7 +413,7 @@ d_blk = D_block(20)
 d_blk(x).shape
 ```
 
-The discriminator is a mirror of the generator.
+판별기는 생성기의 거울상입니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -451,7 +451,7 @@ net_D = tf.keras.Sequential([
 ])
 ```
 
-It uses a convolution layer with output channel $1$ as the last layer to obtain a single prediction value.
+단일 예측 값을 얻기 위해 출력 채널 $1$인 합성곱 층을 마지막 층으로 사용합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -472,9 +472,9 @@ x = tf.zeros((1, 64, 64, 3))
 net_D(x).shape
 ```
 
-## Training
+## 훈련
 
-Compared to the basic GAN in :numref:`sec_basic_gan`, we use the same learning rate for both generator and discriminator since they are similar to each other. In addition, we change $\beta_1$ in Adam (:numref:`sec_adam`) from $0.9$ to $0.5$. It decreases the smoothness of the momentum, the exponentially weighted moving average of past gradients, to take care of the rapid changing gradients because the generator and the discriminator fight with each other. Besides, the random generated noise `Z`, is a 4-D tensor and we are using GPU to accelerate the computation.
+:numref:`sec_basic_gan`의 기본 GAN과 비교하여, 저희는 생성기와 판별기가 서로 비슷하기 때문에 둘 다에 대해 동일한 학습률을 사용합니다. 또한, 저희는 Adam(:numref:`sec_adam`)에서 $\beta_1$을 $0.9$에서 $0.5$로 변경합니다. 이는 모멘텀(과거 기울기의 지수가중이동평균)의 부드러움을 감소시켜, 생성기와 판별기가 서로 싸우기 때문에 빠르게 변하는 기울기를 처리합니다. 또한, 무작위로 생성된 잡음 `Z`는 4-D 텐서이고 저희는 계산을 가속하기 위해 GPU를 사용하고 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -611,9 +611,8 @@ def train(net_D, net_G, data_iter, num_epochs, lr, latent_dim,
           f'{metric[2] / timer.stop():.1f} examples/sec on {str(device._device_name)}')
 ```
 
-We train the model with a small number of epochs just for demonstration.
-For better performance,
-the variable `num_epochs` can be set to a larger number.
+저희는 단지 시연 목적으로 적은 수의 에포크로 모델을 훈련합니다.
+더 나은 성능을 위해, `num_epochs` 변수를 더 큰 수로 설정할 수 있습니다.
 
 ```{.python .input}
 #@tab mxnet, pytorch
@@ -627,22 +626,22 @@ latent_dim, lr, num_epochs = 100, 0.0005, 40
 train(net_D, net_G, data_iter, num_epochs, lr, latent_dim)
 ```
 
-## Summary
+## 요약
 
-* DCGAN architecture has four convolutional layers for the Discriminator and four "fractionally-strided" convolutional layers for the Generator.
-* The Discriminator is a 4-layer strided convolutions with batch normalization (except its input layer) and leaky ReLU activations.
-* Leaky ReLU is a nonlinear function that give a non-zero output for a negative input. It aims to fix the “dying ReLU” problem and helps the gradients flow easier through the architecture.
+* DCGAN 아키텍처는 판별기에 대해 4개의 합성곱 층을 가지며, 생성기에 대해 4개의 "fractionally-strided" 합성곱 층을 가집니다.
+* 판별기는 배치 정규화(입력 층 제외)와 leaky ReLU 활성화를 가진 4층 strided 합성곱입니다.
+* Leaky ReLU는 음의 입력에 대해 0이 아닌 출력을 주는 비선형 함수입니다. 이는 "죽어가는 ReLU(dying ReLU)" 문제를 해결하는 것을 목표로 하며 기울기가 아키텍처를 통해 더 쉽게 흐르도록 돕습니다.
 
 
-## Exercises
+## 연습문제
 
-1. What will happen if we use standard ReLU activation rather than leaky ReLU?
-1. Apply DCGAN on Fashion-MNIST and see which category works well and which does not.
+1. leaky ReLU 대신 표준 ReLU 활성화를 사용하면 어떻게 될까요?
+1. Fashion-MNIST에 DCGAN을 적용하여 어떤 카테고리가 잘 작동하고 어떤 것이 그렇지 않은지 확인해 봅시다.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/409)
+[토론](https://discuss.d2l.ai/t/409)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1083)
+[토론](https://discuss.d2l.ai/t/1083)
 :end_tab:

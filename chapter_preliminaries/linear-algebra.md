@@ -3,18 +3,18 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Linear Algebra
+# 선형대수
 :label:`sec_linear-algebra`
 
-By now, we can load datasets into tensors
-and manipulate these tensors
-with basic mathematical operations.
-To start building sophisticated models,
-we will also need a few tools from linear algebra.
-This section offers a gentle introduction
-to the most essential concepts,
-starting from scalar arithmetic
-and ramping up to matrix multiplication.
+이제 저희는 데이터셋을 텐서로 로드하고
+기본적인 수학 연산으로 이러한 텐서를
+조작할 수 있습니다.
+정교한 모델을 구축하기 시작하기 위해서,
+선형대수의 몇 가지 도구도 필요할 것입니다.
+이 절은 스칼라 산술부터 시작해서
+행렬 곱셈까지 단계적으로 올라가며,
+가장 핵심적인 개념들에 대한
+온화한 소개를 제공합니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -37,43 +37,41 @@ import tensorflow as tf
 from jax import numpy as jnp
 ```
 
-## Scalars
+## 스칼라
 
 
-Most everyday mathematics
-consists of manipulating
-numbers one at a time.
-Formally, we call these values *scalars*.
-For example, the temperature in Palo Alto
-is a balmy $72$ degrees Fahrenheit.
-If you wanted to convert the temperature to Celsius
-you would evaluate the expression
-$c = \frac{5}{9}(f - 32)$, setting $f$ to $72$.
-In this equation, the values
-$5$, $9$, and $32$ are constant scalars.
-The variables $c$ and $f$
-in general represent unknown scalars.
+일상적인 수학의 대부분은
+한 번에 하나의 숫자를 조작하는 것으로
+이루어져 있습니다.
+형식적으로, 저희는 이러한 값을 *스칼라*라고 부릅니다.
+예를 들어, Palo Alto의 기온은
+화씨 $72$도로 화창합니다.
+기온을 섭씨로 변환하고 싶다면,
+$f$를 $72$로 설정하여
+$c = \frac{5}{9}(f - 32)$라는 식을 계산하면 됩니다.
+이 방정식에서, $5$, $9$, $32$의 값들은
+상수 스칼라입니다.
+변수 $c$와 $f$는
+일반적으로 미지의 스칼라를 나타냅니다.
 
-We denote scalars
-by ordinary lower-cased letters
-(e.g., $x$, $y$, and $z$)
-and the space of all (continuous)
-*real-valued* scalars by $\mathbb{R}$.
-For expedience, we will skip past
-rigorous definitions of *spaces*:
-just remember that the expression $x \in \mathbb{R}$
-is a formal way to say that $x$ is a real-valued scalar.
-The symbol $\in$ (pronounced "in")
-denotes membership in a set.
-For example, $x, y \in \{0, 1\}$
-indicates that $x$ and $y$ are variables
-that can only take values $0$ or $1$.
+저희는 스칼라를
+일반적인 소문자(예: $x$, $y$, $z$)로 표시하고
+모든 (연속) *실수값* 스칼라의 공간을
+$\mathbb{R}$로 표시합니다.
+편의를 위해, 저희는 *공간*의 엄밀한 정의는 생략합니다.
+단지 식 $x \in \mathbb{R}$이
+$x$가 실수값 스칼라임을 형식적으로 말하는 방법이라는 것만 기억하십시오.
+기호 $\in$("in"으로 발음)은
+집합에서의 멤버십을 나타냅니다.
+예를 들어, $x, y \in \{0, 1\}$은
+$x$와 $y$가 $0$ 또는 $1$의 값만 가질 수 있는
+변수임을 나타냅니다.
 
-(**Scalars are implemented as tensors
-that contain only one element.**)
-Below, we assign two scalars
-and perform the familiar addition, multiplication,
-division, and exponentiation operations.
+(**스칼라는 단 하나의 원소만 포함하는
+텐서로 구현됩니다.**)
+아래에서, 두 개의 스칼라를 할당하고
+익숙한 덧셈, 곱셈, 나눗셈,
+거듭제곱 연산을 수행합니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -107,31 +105,29 @@ y = jnp.array(2.0)
 x + y, x * y, x / y, x**y
 ```
 
-## Vectors
+## 벡터
 
-For current purposes, [**you can think of a vector as a fixed-length array of scalars.**]
-As with their code counterparts,
-we call these scalars the *elements* of the vector
-(synonyms include *entries* and *components*).
-When vectors represent examples from real-world datasets,
-their values hold some real-world significance.
-For example, if we were training a model to predict
-the risk of a loan defaulting,
-we might associate each applicant with a vector
-whose components correspond to quantities
-like their income, length of employment,
-or number of previous defaults.
-If we were studying the risk of heart attack,
-each vector might represent a patient
-and its components might correspond to
-their most recent vital signs, cholesterol levels,
-minutes of exercise per day, etc.
-We denote vectors by bold lowercase letters,
-(e.g., $\mathbf{x}$, $\mathbf{y}$, and $\mathbf{z}$).
+현재 목적상, [**벡터는 스칼라의 고정 길이 배열로 생각할 수 있습니다.**]
+코드 상의 대응체와 마찬가지로,
+저희는 이러한 스칼라들을 벡터의 *원소*라고 부릅니다
+(동의어로 *항목*과 *성분*이 있습니다).
+벡터가 실제 데이터셋의 예제를 나타낼 때,
+그 값들은 어떤 실제 의미를 가집니다.
+예를 들어, 대출의 채무 불이행 위험을 예측하는 모델을 훈련시킨다면,
+각 신청자를 그들의 소득, 고용 기간,
+이전 채무 불이행 횟수와 같은 양에 대응되는
+성분을 가진 벡터와 연관시킬 수 있습니다.
+심장 마비의 위험을 연구한다면,
+각 벡터는 환자를 나타낼 수 있고
+그 성분은 가장 최근의 활력 징후, 콜레스테롤 수치,
+하루 운동 시간 등에 대응될 수 있습니다.
+저희는 벡터를 굵은 소문자로
+(예: $\mathbf{x}$, $\mathbf{y}$, $\mathbf{z}$)
+표시합니다.
 
-Vectors are implemented as $1^{\textrm{st}}$-order tensors.
-In general, such tensors can have arbitrary lengths,
-subject to memory limitations. Caution: in Python, as in most programming languages, vector indices start at $0$, also known as *zero-based indexing*, whereas in linear algebra subscripts begin at $1$ (one-based indexing).
+벡터는 $1$차 텐서로 구현됩니다.
+일반적으로, 이러한 텐서는 메모리 제한에 따라
+임의의 길이를 가질 수 있습니다. 주의: Python에서는 대부분의 프로그래밍 언어와 마찬가지로 벡터 인덱스가 $0$에서 시작하며, 이는 *0 기반 인덱싱*이라고도 알려져 있습니다. 반면 선형대수에서 첨자는 $1$에서 시작합니다(1 기반 인덱싱).
 
 ```{.python .input}
 %%tab mxnet
@@ -157,82 +153,81 @@ x = jnp.arange(3)
 x
 ```
 
-We can refer to an element of a vector by using a subscript.
-For example, $x_2$ denotes the second element of $\mathbf{x}$.
-Since $x_2$ is a scalar, we do not bold it.
-By default, we visualize vectors
-by stacking their elements vertically:
+저희는 첨자를 사용하여 벡터의 원소를 참조할 수 있습니다.
+예를 들어, $x_2$는 $\mathbf{x}$의 두 번째 원소를 나타냅니다.
+$x_2$가 스칼라이기 때문에, 굵게 표시하지 않습니다.
+기본적으로, 저희는 벡터를
+원소들을 수직으로 쌓아 시각화합니다.
 
 $$\mathbf{x} =\begin{bmatrix}x_{1}  \\ \vdots  \\x_{n}\end{bmatrix}.$$
 :eqlabel:`eq_vec_def`
 
-Here $x_1, \ldots, x_n$ are elements of the vector.
-Later on, we will distinguish between such *column vectors*
-and *row vectors* whose elements are stacked horizontally.
-Recall that [**we access a tensor's elements via indexing.**]
+여기서 $x_1, \ldots, x_n$은 벡터의 원소입니다.
+나중에, 저희는 이러한 *열 벡터*와
+원소들이 수평으로 쌓인 *행 벡터*를 구별할 것입니다.
+[**저희는 인덱싱을 통해 텐서의 원소에 접근**]한다는 것을 떠올리십시오.
 
 ```{.python .input}
 %%tab all
 x[2]
 ```
 
-To indicate that a vector contains $n$ elements,
-we write $\mathbf{x} \in \mathbb{R}^n$.
-Formally, we call $n$ the *dimensionality* of the vector.
-[**In code, this corresponds to the tensor's length**],
-accessible via Python's built-in `len` function.
+벡터가 $n$개의 원소를 포함함을 나타내기 위해,
+저희는 $\mathbf{x} \in \mathbb{R}^n$이라고 씁니다.
+형식적으로, 저희는 $n$을 벡터의 *차원성*이라고 부릅니다.
+[**코드에서, 이는 텐서의 길이에 해당**]하며,
+Python의 내장 `len` 함수를 통해 접근할 수 있습니다.
 
 ```{.python .input}
 %%tab all
 len(x)
 ```
 
-We can also access the length via the `shape` attribute.
-The shape is a tuple that indicates a tensor's length along each axis.
-(**Tensors with just one axis have shapes with just one element.**)
+저희는 `shape` 속성을 통해서도 길이에 접근할 수 있습니다.
+모양은 각 축을 따른 텐서의 길이를 나타내는 튜플입니다.
+(**단 하나의 축을 가진 텐서는 단 하나의 원소를 가진 모양을 가집니다.**)
 
 ```{.python .input}
 %%tab all
 x.shape
 ```
 
-Oftentimes, the word "dimension" gets overloaded
-to mean both the number of axes
-and the length along a particular axis.
-To avoid this confusion,
-we use *order* to refer to the number of axes
-and *dimensionality* exclusively to refer
-to the number of components.
+종종, "차원"이라는 단어가 축의 개수와
+특정 축을 따른 길이 모두를 의미하는 것으로
+과부하됩니다.
+이러한 혼란을 피하기 위해,
+저희는 *차수*를 사용하여 축의 개수를 가리키고
+*차원성*은 오직 성분의 개수를 가리키는 데에만
+사용합니다.
 
 
-## Matrices
+## 행렬
 
-Just as scalars are $0^{\textrm{th}}$-order tensors
-and vectors are $1^{\textrm{st}}$-order tensors,
-matrices are $2^{\textrm{nd}}$-order tensors.
-We denote matrices by bold capital letters
-(e.g., $\mathbf{X}$, $\mathbf{Y}$, and $\mathbf{Z}$),
-and represent them in code by tensors with two axes.
-The expression $\mathbf{A} \in \mathbb{R}^{m \times n}$
-indicates that a matrix $\mathbf{A}$
-contains $m \times n$ real-valued scalars,
-arranged as $m$ rows and $n$ columns.
-When $m = n$, we say that a matrix is *square*.
-Visually, we can illustrate any matrix as a table.
-To refer to an individual element,
-we subscript both the row and column indices, e.g.,
-$a_{ij}$ is the value that belongs to $\mathbf{A}$'s
-$i^{\textrm{th}}$ row and $j^{\textrm{th}}$ column:
+스칼라가 $0$차 텐서이고
+벡터가 $1$차 텐서인 것처럼,
+행렬은 $2$차 텐서입니다.
+저희는 행렬을 굵은 대문자로
+(예: $\mathbf{X}$, $\mathbf{Y}$, $\mathbf{Z}$)
+표시하고, 코드에서는 두 개의 축을 가진 텐서로 표현합니다.
+식 $\mathbf{A} \in \mathbb{R}^{m \times n}$은
+행렬 $\mathbf{A}$가 $m$행과 $n$열로 배열된
+$m \times n$개의 실수값 스칼라를
+포함함을 나타냅니다.
+$m = n$일 때, 행렬이 *정사각*이라고 합니다.
+시각적으로, 저희는 어떤 행렬이든 테이블로 표현할 수 있습니다.
+개별 원소를 참조하기 위해,
+저희는 행과 열 인덱스 모두를 첨자로 표시합니다. 예를 들어,
+$a_{ij}$는 $\mathbf{A}$의 $i$번째 행과 $j$번째 열에 속하는 값입니다.
 
 $$\mathbf{A}=\begin{bmatrix} a_{11} & a_{12} & \cdots & a_{1n} \\ a_{21} & a_{22} & \cdots & a_{2n} \\ \vdots & \vdots & \ddots & \vdots \\ a_{m1} & a_{m2} & \cdots & a_{mn} \\ \end{bmatrix}.$$
 :eqlabel:`eq_matrix_def`
 
 
-In code, we represent a matrix $\mathbf{A} \in \mathbb{R}^{m \times n}$
-by a $2^{\textrm{nd}}$-order tensor with shape ($m$, $n$).
-[**We can convert any appropriately sized $m \times n$ tensor
-into an $m \times n$ matrix**]
-by passing the desired shape to `reshape`:
+코드에서, 저희는 행렬 $\mathbf{A} \in \mathbb{R}^{m \times n}$을
+모양이 ($m$, $n$)인 $2$차 텐서로 표현합니다.
+[**원하는 모양을 `reshape`에 전달하여
+적절한 크기의 모든 $m \times n$ 텐서를
+$m \times n$ 행렬로 변환할 수 있습니다**].
 
 ```{.python .input}
 %%tab mxnet
@@ -258,14 +253,14 @@ A = jnp.arange(6).reshape(3, 2)
 A
 ```
 
-Sometimes we want to flip the axes.
-When we exchange a matrix's rows and columns,
-the result is called its *transpose*.
-Formally, we signify a matrix $\mathbf{A}$'s transpose
-by $\mathbf{A}^\top$ and if $\mathbf{B} = \mathbf{A}^\top$,
-then $b_{ij} = a_{ji}$ for all $i$ and $j$.
-Thus, the transpose of an $m \times n$ matrix
-is an $n \times m$ matrix:
+때때로 저희는 축을 뒤집고 싶습니다.
+행렬의 행과 열을 교환하면,
+결과는 그것의 *전치*라고 부릅니다.
+형식적으로, 저희는 행렬 $\mathbf{A}$의 전치를
+$\mathbf{A}^\top$로 표시하고 $\mathbf{B} = \mathbf{A}^\top$이면,
+모든 $i$와 $j$에 대해 $b_{ij} = a_{ji}$입니다.
+따라서, $m \times n$ 행렬의 전치는
+$n \times m$ 행렬입니다.
 
 $$
 \mathbf{A}^\top =
@@ -277,7 +272,7 @@ $$
 \end{bmatrix}.
 $$
 
-In code, we can access any (**matrix's transpose**) as follows:
+코드에서, 다음과 같이 어떤 (**행렬의 전치**)에든 접근할 수 있습니다.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -289,10 +284,10 @@ A.T
 tf.transpose(A)
 ```
 
-[**Symmetric matrices are the subset of square matrices
-that are equal to their own transposes:
+[**대칭 행렬은 자신의 전치와 같은
+정사각 행렬의 부분 집합입니다.
 $\mathbf{A} = \mathbf{A}^\top$.**]
-The following matrix is symmetric:
+다음 행렬은 대칭입니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -318,46 +313,43 @@ A = jnp.array([[1, 2, 3], [2, 0, 4], [3, 4, 5]])
 A == A.T
 ```
 
-Matrices are useful for representing datasets.
-Typically, rows correspond to individual records
-and columns correspond to distinct attributes.
+행렬은 데이터셋을 표현하는 데 유용합니다.
+일반적으로, 행은 개별 레코드에 해당하고
+열은 서로 다른 속성에 해당합니다.
 
 
 
-## Tensors
+## 텐서
 
-While you can go far in your machine learning journey
-with only scalars, vectors, and matrices,
-eventually you may need to work with
-higher-order [**tensors**].
-Tensors (**give us a generic way of describing
-extensions to $n^{\textrm{th}}$-order arrays.**)
-We call software objects of the *tensor class* "tensors"
-precisely because they too can have arbitrary numbers of axes.
-While it may be confusing to use the word
-*tensor* for both the mathematical object
-and its realization in code,
-our meaning should usually be clear from context.
-We denote general tensors by capital letters
-with a special font face
-(e.g., $\mathsf{X}$, $\mathsf{Y}$, and $\mathsf{Z}$)
-and their indexing mechanism
-(e.g., $x_{ijk}$ and $[\mathsf{X}]_{1, 2i-1, 3}$)
-follows naturally from that of matrices.
+여러분이 머신러닝 여정에서 스칼라, 벡터, 행렬만으로도
+멀리 나아갈 수 있지만,
+결국에는 더 고차의 [**텐서**]를
+다뤄야 할 수도 있습니다.
+텐서는 (**$n$차 배열로의 확장을 설명하는
+일반적인 방법을 제공합니다.**)
+저희가 *텐서 클래스*의 소프트웨어 객체들을 "텐서"라고 부르는 것은
+정확히 그것들도 임의의 수의 축을 가질 수 있기 때문입니다.
+수학적 객체와 그것의 코드 상 구현 모두에
+*텐서*라는 단어를 사용하는 것이 혼란스러울 수 있지만,
+저희의 의미는 보통 문맥에서 명확할 것입니다.
+저희는 일반 텐서를
+특별한 글꼴의 대문자로
+(예: $\mathsf{X}$, $\mathsf{Y}$, $\mathsf{Z}$)
+표시하고 그것들의 인덱싱 메커니즘
+(예: $x_{ijk}$와 $[\mathsf{X}]_{1, 2i-1, 3}$)은
+행렬의 그것으로부터 자연스럽게 따라옵니다.
 
-Tensors will become more important
-when we start working with images.
-Each image arrives as a $3^{\textrm{rd}}$-order tensor
-with axes corresponding to the height, width, and *channel*.
-At each spatial location, the intensities
-of each color (red, green, and blue)
-are stacked along the channel.
-Furthermore, a collection of images is represented
-in code by a $4^{\textrm{th}}$-order tensor,
-where distinct images are indexed
-along the first axis.
-Higher-order tensors are constructed, as were vectors and matrices,
-by growing the number of shape components.
+텐서는 저희가 이미지를 다루기 시작할 때
+더욱 중요해질 것입니다.
+각 이미지는 높이, 너비, *채널*에 대응되는 축을 가진
+$3$차 텐서로 도착합니다.
+각 공간적 위치에서, 각 색상(빨강, 초록, 파랑)의
+강도가 채널을 따라 쌓입니다.
+나아가, 이미지의 집합은
+코드에서 $4$차 텐서로 표현되며,
+서로 다른 이미지가 첫 번째 축을 따라 인덱싱됩니다.
+더 고차의 텐서는 벡터와 행렬이 그러했던 것처럼,
+모양 성분의 수를 늘림으로써 구성됩니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -379,14 +371,14 @@ tf.reshape(tf.range(24), (2, 3, 4))
 jnp.arange(24).reshape(2, 3, 4)
 ```
 
-## Basic Properties of Tensor Arithmetic
+## 텐서 산술의 기본 속성
 
-Scalars, vectors, matrices,
-and higher-order tensors
-all have some handy properties.
-For example, elementwise operations
-produce outputs that have the
-same shape as their operands.
+스칼라, 벡터, 행렬,
+그리고 더 고차의 텐서는
+모두 몇 가지 유용한 속성을 가집니다.
+예를 들어, 원소별 연산은
+피연산자와 같은 모양을 가진
+출력을 생성합니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -416,11 +408,11 @@ B = A
 A, A + B
 ```
 
-The [**elementwise product of two matrices
-is called their *Hadamard product***] (denoted $\odot$).
-We can spell out the entries
-of the Hadamard product of two matrices
-$\mathbf{A}, \mathbf{B} \in \mathbb{R}^{m \times n}$:
+[**두 행렬의 원소별 곱은
+그들의 *아다마르 곱*이라고 부릅니다***] ($\odot$로 표시).
+두 행렬
+$\mathbf{A}, \mathbf{B} \in \mathbb{R}^{m \times n}$의 아다마르 곱의
+항목들을 구체적으로 적을 수 있습니다.
 
 
 
@@ -439,9 +431,9 @@ $$
 A * B
 ```
 
-[**Adding or multiplying a scalar and a tensor**] produces a result
-with the same shape as the original tensor.
-Here, each element of the tensor is added to (or multiplied by) the scalar.
+[**스칼라와 텐서를 더하거나 곱하면**] 원본 텐서와
+같은 모양의 결과가 생성됩니다.
+여기서, 텐서의 각 원소가 스칼라에 더해지(거나 곱해)집니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -471,12 +463,12 @@ X = jnp.arange(24).reshape(2, 3, 4)
 a + X, (a * X).shape
 ```
 
-## Reduction
+## 축소
 :label:`subsec_lin-alg-reduction`
 
-Often, we wish to calculate [**the sum of a tensor's elements.**]
-To express the sum of the elements in a vector $\mathbf{x}$ of length $n$,
-we write $\sum_{i=1}^n x_i$. There is a simple function for it:
+저희는 종종 [**텐서 원소들의 합을 계산**]하고 싶어 합니다.
+길이가 $n$인 벡터 $\mathbf{x}$의 원소들의 합을 표현하기 위해,
+저희는 $\sum_{i=1}^n x_i$라고 씁니다. 이를 위한 간단한 함수가 있습니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -502,11 +494,10 @@ x = jnp.arange(3, dtype=jnp.float32)
 x, x.sum()
 ```
 
-To express [**sums over the elements of tensors of arbitrary shape**],
-we simply sum over all its axes.
-For example, the sum of the elements
-of an $m \times n$ matrix $\mathbf{A}$
-could be written $\sum_{i=1}^{m} \sum_{j=1}^{n} a_{ij}$.
+[**임의의 모양의 텐서의 원소들에 대한 합**]을 표현하기 위해,
+저희는 단순히 모든 축에 대해 합산합니다.
+예를 들어, $m \times n$ 행렬 $\mathbf{A}$의 원소들의 합은
+$\sum_{i=1}^{m} \sum_{j=1}^{n} a_{ij}$로 쓸 수 있습니다.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -518,16 +509,16 @@ A.shape, A.sum()
 A.shape, tf.reduce_sum(A)
 ```
 
-By default, invoking the sum function
-*reduces* a tensor along all of its axes,
-eventually producing a scalar.
-Our libraries also allow us to [**specify the axes
-along which the tensor should be reduced.**]
-To sum over all elements along the rows (axis 0),
-we specify `axis=0` in `sum`.
-Since the input matrix reduces along axis 0
-to generate the output vector,
-this axis is missing from the shape of the output.
+기본적으로, 합 함수를 호출하면
+텐서를 그 모든 축을 따라 *축소*하여,
+결국 스칼라를 생성합니다.
+저희의 라이브러리들은 또한 [**텐서가 축소되어야 하는
+축을 지정**]할 수 있게 해 줍니다.
+행(축 0)을 따라 모든 원소에 대해 합산하기 위해,
+저희는 `sum`에서 `axis=0`을 지정합니다.
+입력 행렬이 축 0을 따라 축소되어
+출력 벡터를 생성하기 때문에,
+이 축은 출력의 모양에서 누락됩니다.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -539,7 +530,7 @@ A.shape, A.sum(axis=0).shape
 A.shape, tf.reduce_sum(A, axis=0).shape
 ```
 
-Specifying `axis=1` will reduce the column dimension (axis 1) by summing up elements of all the columns.
+`axis=1`을 지정하면 모든 열의 원소들을 합산하여 열 차원(축 1)을 축소합니다.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -551,8 +542,8 @@ A.shape, A.sum(axis=1).shape
 A.shape, tf.reduce_sum(A, axis=1).shape
 ```
 
-Reducing a matrix along both rows and columns via summation
-is equivalent to summing up all the elements of the matrix.
+행과 열 모두에 대해 합산을 통해 행렬을 축소하는 것은
+행렬의 모든 원소를 합산하는 것과 동등합니다.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -564,12 +555,11 @@ A.sum(axis=[0, 1]) == A.sum()  # Same as A.sum()
 tf.reduce_sum(A, axis=[0, 1]), tf.reduce_sum(A)  # Same as tf.reduce_sum(A)
 ```
 
-[**A related quantity is the *mean*, also called the *average*.**]
-We calculate the mean by dividing the sum
-by the total number of elements.
-Because computing the mean is so common,
-it gets a dedicated library function
-that works analogously to `sum`.
+[**관련된 양은 *평균*이며, *average*라고도 불립니다.**]
+저희는 합을 전체 원소 수로 나눠서 평균을 계산합니다.
+평균을 계산하는 것이 매우 일반적이기 때문에,
+이는 `sum`과 유사하게 작동하는
+전용 라이브러리 함수를 갖습니다.
 
 ```{.python .input}
 %%tab mxnet, jax
@@ -586,8 +576,8 @@ A.mean(), A.sum() / A.numel()
 tf.reduce_mean(A), tf.reduce_sum(A) / tf.size(A).numpy()
 ```
 
-Likewise, the function for calculating the mean
-can also reduce a tensor along specific axes.
+마찬가지로, 평균을 계산하는 함수도
+특정 축을 따라 텐서를 축소할 수 있습니다.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -599,12 +589,12 @@ A.mean(axis=0), A.sum(axis=0) / A.shape[0]
 tf.reduce_mean(A, axis=0), tf.reduce_sum(A, axis=0) / A.shape[0]
 ```
 
-## Non-Reduction Sum
+## 비축소 합
 :label:`subsec_lin-alg-non-reduction`
 
-Sometimes it can be useful to [**keep the number of axes unchanged**]
-when invoking the function for calculating the sum or mean.
-This matters when we want to use the broadcast mechanism.
+때때로 합이나 평균을 계산하는 함수를 호출할 때
+[**축의 수를 변경하지 않고 유지**]하는 것이 유용할 수 있습니다.
+이는 브로드캐스트 메커니즘을 사용하고자 할 때 중요합니다.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -618,18 +608,18 @@ sum_A = tf.reduce_sum(A, axis=1, keepdims=True)
 sum_A, sum_A.shape
 ```
 
-For instance, since `sum_A` keeps its two axes after summing each row,
-we can (**divide `A` by `sum_A` with broadcasting**)
-to create a matrix where each row sums up to $1$.
+예를 들어, `sum_A`가 각 행을 합산한 후에도 두 개의 축을 유지하기 때문에,
+저희는 (**브로드캐스팅으로 `A`를 `sum_A`로 나누어**)
+각 행의 합이 $1$이 되는 행렬을 생성할 수 있습니다.
 
 ```{.python .input}
 %%tab all
 A / sum_A
 ```
 
-If we want to calculate [**the cumulative sum of elements of `A` along some axis**],
-say `axis=0` (row by row), we can call the `cumsum` function.
-By design, this function does not reduce the input tensor along any axis.
+[**어떤 축을 따라 `A`의 원소들의 누적 합**]을 계산하고 싶다면,
+예를 들어 `axis=0`(행 단위로), `cumsum` 함수를 호출할 수 있습니다.
+설계상, 이 함수는 어떤 축을 따라서도 입력 텐서를 축소하지 않습니다.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -641,19 +631,19 @@ A.cumsum(axis=0)
 tf.cumsum(A, axis=0)
 ```
 
-## Dot Products
+## 내적
 
-So far, we have only performed elementwise operations, sums, and averages.
-And if this was all we could do, linear algebra
-would not deserve its own section.
-Fortunately, this is where things get more interesting.
-One of the most fundamental operations is the dot product.
-Given two vectors $\mathbf{x}, \mathbf{y} \in \mathbb{R}^d$,
-their *dot product* $\mathbf{x}^\top \mathbf{y}$ (also known as *inner product*, $\langle \mathbf{x}, \mathbf{y}  \rangle$)
-is a sum over the products of the elements at the same position:
+지금까지, 저희는 원소별 연산, 합, 평균만 수행했습니다.
+그리고 만약 이것이 저희가 할 수 있는 전부였다면, 선형대수는
+별도의 절을 가질 만한 가치가 없을 것입니다.
+다행히도, 여기서부터 더 흥미로워집니다.
+가장 기본적인 연산 중 하나는 내적입니다.
+두 벡터 $\mathbf{x}, \mathbf{y} \in \mathbb{R}^d$가 주어지면,
+그것들의 *내적* $\mathbf{x}^\top \mathbf{y}$(*inner product*, $\langle \mathbf{x}, \mathbf{y}  \rangle$로도 알려진)은
+같은 위치에 있는 원소들의 곱에 대한 합입니다.
 $\mathbf{x}^\top \mathbf{y} = \sum_{i=1}^{d} x_i y_i$.
 
-[~~The *dot product* of two vectors is a sum over the products of the elements at the same position~~]
+[~~두 벡터의 *내적*은 같은 위치에 있는 원소들의 곱에 대한 합입니다~~]
 
 ```{.python .input}
 %%tab mxnet
@@ -679,8 +669,8 @@ y = jnp.ones(3, dtype = jnp.float32)
 x, y, jnp.dot(x, y)
 ```
 
-Equivalently, (**we can calculate the dot product of two vectors
-by performing an elementwise multiplication followed by a sum:**)
+동등하게, (**원소별 곱셈을 수행한 후 합을 수행하여
+두 벡터의 내적을 계산할 수 있습니다.**)
 
 ```{.python .input}
 %%tab mxnet
@@ -702,29 +692,28 @@ tf.reduce_sum(x * y)
 jnp.sum(x * y)
 ```
 
-Dot products are useful in a wide range of contexts.
-For example, given some set of values,
-denoted by a vector $\mathbf{x}  \in \mathbb{R}^n$,
-and a set of weights, denoted by $\mathbf{w} \in \mathbb{R}^n$,
-the weighted sum of the values in $\mathbf{x}$
-according to the weights $\mathbf{w}$
-could be expressed as the dot product $\mathbf{x}^\top \mathbf{w}$.
-When the weights are nonnegative
-and sum to $1$, i.e., $\left(\sum_{i=1}^{n} {w_i} = 1\right)$,
-the dot product expresses a *weighted average*.
-After normalizing two vectors to have unit length,
-the dot products express the cosine of the angle between them.
-Later in this section, we will formally introduce this notion of *length*.
+내적은 광범위한 맥락에서 유용합니다.
+예를 들어, 벡터 $\mathbf{x}  \in \mathbb{R}^n$로 표시되는 어떤 값의 집합과,
+$\mathbf{w} \in \mathbb{R}^n$로 표시되는 가중치의 집합이 주어지면,
+가중치 $\mathbf{w}$에 따른 $\mathbf{x}$의 값들의
+가중합은 내적 $\mathbf{x}^\top \mathbf{w}$로
+표현될 수 있습니다.
+가중치가 음이 아니고
+합이 $1$이 될 때, 즉, $\left(\sum_{i=1}^{n} {w_i} = 1\right)$이면,
+내적은 *가중 평균*을 표현합니다.
+두 벡터를 단위 길이를 갖도록 정규화한 후에,
+내적은 그들 사이 각도의 코사인을 표현합니다.
+이 절의 후반부에서, 저희는 이 *길이* 개념을 형식적으로 소개할 것입니다.
 
 
-## Matrix--Vector Products
+## 행렬-벡터 곱
 
-Now that we know how to calculate dot products,
-we can begin to understand the *product*
-between an $m \times n$ matrix $\mathbf{A}$
-and an $n$-dimensional vector $\mathbf{x}$.
-To start off, we visualize our matrix
-in terms of its row vectors
+이제 내적을 계산하는 방법을 알고 있으므로,
+$m \times n$ 행렬 $\mathbf{A}$와
+$n$차원 벡터 $\mathbf{x}$ 사이의
+*곱*을 이해하기 시작할 수 있습니다.
+시작하기 위해, 저희는 행렬을
+그것의 행 벡터의 관점에서 시각화합니다.
 
 $$\mathbf{A}=
 \begin{bmatrix}
@@ -734,14 +723,14 @@ $$\mathbf{A}=
 \mathbf{a}^\top_m \\
 \end{bmatrix},$$
 
-where each $\mathbf{a}^\top_{i} \in \mathbb{R}^n$
-is a row vector representing the $i^\textrm{th}$ row
-of the matrix $\mathbf{A}$.
+여기서 각 $\mathbf{a}^\top_{i} \in \mathbb{R}^n$은
+행렬 $\mathbf{A}$의 $i$번째 행을 나타내는
+행 벡터입니다.
 
-[**The matrix--vector product $\mathbf{A}\mathbf{x}$
-is simply a column vector of length $m$,
-whose $i^\textrm{th}$ element is the dot product
-$\mathbf{a}^\top_i \mathbf{x}$:**]
+[**행렬-벡터 곱 $\mathbf{A}\mathbf{x}$는
+단순히 길이가 $m$인 열 벡터이며,
+그것의 $i$번째 원소는 내적
+$\mathbf{a}^\top_i \mathbf{x}$입니다.**]
 
 $$
 \mathbf{A}\mathbf{x}
@@ -759,47 +748,45 @@ $$
 \end{bmatrix}.
 $$
 
-We can think of multiplication with a matrix
-$\mathbf{A}\in \mathbb{R}^{m \times n}$
-as a transformation that projects vectors
-from $\mathbb{R}^{n}$ to $\mathbb{R}^{m}$.
-These transformations are remarkably useful.
-For example, we can represent rotations
-as multiplications by certain square matrices.
-Matrix--vector products also describe
-the key calculation involved in computing
-the outputs of each layer in a neural network
-given the outputs from the previous layer.
+저희는 행렬
+$\mathbf{A}\in \mathbb{R}^{m \times n}$과의 곱셈을
+$\mathbb{R}^{n}$에서 $\mathbb{R}^{m}$으로 벡터를 사영하는
+변환으로 생각할 수 있습니다.
+이러한 변환은 놀랍도록 유용합니다.
+예를 들어, 회전을
+특정 정사각 행렬과의 곱셈으로 표현할 수 있습니다.
+행렬-벡터 곱은 또한 이전 층의 출력이 주어졌을 때
+신경망의 각 층의 출력을 계산하는 데 관여하는
+핵심 계산을 설명합니다.
 
 :begin_tab:`mxnet`
-To express a matrix--vector product in code,
-we use the same `dot` function.
-The operation is inferred
-based on the type of the arguments.
-Note that the column dimension of `A`
-(its length along axis 1)
-must be the same as the dimension of `x` (its length).
+코드에서 행렬-벡터 곱을 표현하기 위해,
+저희는 동일한 `dot` 함수를 사용합니다.
+연산은 인수의 유형에 기반하여
+추론됩니다.
+`A`의 열 차원(축 1을 따른 그것의 길이)이
+`x`의 차원(그것의 길이)과 동일해야 한다는 점에
+유의하십시오.
 :end_tab:
 
 :begin_tab:`pytorch`
-To express a matrix--vector product in code,
-we use the `mv` function.
-Note that the column dimension of `A`
-(its length along axis 1)
-must be the same as the dimension of `x` (its length).
-Python has a convenience operator `@`
-that can execute both matrix--vector
-and matrix--matrix products
-(depending on its arguments).
-Thus we can write `A@x`.
+코드에서 행렬-벡터 곱을 표현하기 위해,
+저희는 `mv` 함수를 사용합니다.
+`A`의 열 차원(축 1을 따른 그것의 길이)이
+`x`의 차원(그것의 길이)과 동일해야 한다는 점에
+유의하십시오.
+Python에는 (인수에 따라)
+행렬-벡터와 행렬-행렬 곱을 모두 실행할 수 있는
+편리한 연산자 `@`가 있습니다.
+따라서 저희는 `A@x`로 쓸 수 있습니다.
 :end_tab:
 
 :begin_tab:`tensorflow`
-To express a matrix--vector product in code,
-we use the `matvec` function.
-Note that the column dimension of `A`
-(its length along axis 1)
-must be the same as the dimension of `x` (its length).
+코드에서 행렬-벡터 곱을 표현하기 위해,
+저희는 `matvec` 함수를 사용합니다.
+`A`의 열 차원(축 1을 따른 그것의 길이)이
+`x`의 차원(그것의 길이)과 동일해야 한다는 점에
+유의하십시오.
 :end_tab:
 
 ```{.python .input}
@@ -822,14 +809,14 @@ A.shape, x.shape, tf.linalg.matvec(A, x)
 A.shape, x.shape, jnp.matmul(A, x)
 ```
 
-## Matrix--Matrix Multiplication
+## 행렬-행렬 곱셈
 
-Once you have gotten the hang of dot products and matrix--vector products,
-then *matrix--matrix multiplication* should be straightforward.
+내적과 행렬-벡터 곱에 익숙해지면,
+*행렬-행렬 곱셈*은 간단할 것입니다.
 
-Say that we have two matrices
-$\mathbf{A} \in \mathbb{R}^{n \times k}$
-and $\mathbf{B} \in \mathbb{R}^{k \times m}$:
+저희가 두 개의 행렬
+$\mathbf{A} \in \mathbb{R}^{n \times k}$와
+$\mathbf{B} \in \mathbb{R}^{k \times m}$을 가지고 있다고 합시다.
 
 $$\mathbf{A}=\begin{bmatrix}
  a_{11} & a_{12} & \cdots & a_{1k} \\
@@ -845,12 +832,11 @@ $$\mathbf{A}=\begin{bmatrix}
 \end{bmatrix}.$$
 
 
-Let $\mathbf{a}^\top_{i} \in \mathbb{R}^k$ denote
-the row vector representing the $i^\textrm{th}$ row
-of the matrix $\mathbf{A}$
-and let $\mathbf{b}_{j} \in \mathbb{R}^k$ denote
-the column vector from the $j^\textrm{th}$ column
-of the matrix $\mathbf{B}$:
+$\mathbf{a}^\top_{i} \in \mathbb{R}^k$가
+행렬 $\mathbf{A}$의 $i$번째 행을 나타내는 행 벡터이고
+$\mathbf{b}_{j} \in \mathbb{R}^k$가
+행렬 $\mathbf{B}$의 $j$번째 열에서 온
+열 벡터라고 합시다.
 
 $$\mathbf{A}=
 \begin{bmatrix}
@@ -865,12 +851,11 @@ $$\mathbf{A}=
 $$
 
 
-To form the matrix product $\mathbf{C} \in \mathbb{R}^{n \times m}$,
-we simply compute each element $c_{ij}$
-as the dot product between
-the $i^{\textrm{th}}$ row of $\mathbf{A}$
-and the $j^{\textrm{th}}$ column of $\mathbf{B}$,
-i.e., $\mathbf{a}^\top_i \mathbf{b}_j$:
+행렬 곱 $\mathbf{C} \in \mathbb{R}^{n \times m}$을 형성하기 위해,
+저희는 단순히 각 원소 $c_{ij}$를
+$\mathbf{A}$의 $i$번째 행과
+$\mathbf{B}$의 $j$번째 열 사이의 내적으로
+계산합니다. 즉, $\mathbf{a}^\top_i \mathbf{b}_j$입니다.
 
 $$\mathbf{C} = \mathbf{AB} = \begin{bmatrix}
 \mathbf{a}^\top_{1} \\
@@ -889,16 +874,16 @@ $$\mathbf{C} = \mathbf{AB} = \begin{bmatrix}
 \end{bmatrix}.
 $$
 
-[**We can think of the matrix--matrix multiplication $\mathbf{AB}$
-as performing $m$ matrix--vector products
-or $m \times n$ dot products
-and stitching the results together
-to form an $n \times m$ matrix.**]
-In the following snippet,
-we perform matrix multiplication on `A` and `B`.
-Here, `A` is a matrix with two rows and three columns,
-and `B` is a matrix with three rows and four columns.
-After multiplication, we obtain a matrix with two rows and four columns.
+[**저희는 행렬-행렬 곱셈 $\mathbf{AB}$를
+$m$개의 행렬-벡터 곱이나
+$m \times n$개의 내적을 수행하고
+결과들을 함께 꿰매어 $n \times m$ 행렬을 형성하는 것으로
+생각할 수 있습니다.**]
+다음 코드 조각에서,
+저희는 `A`와 `B`에 대해 행렬 곱셈을 수행합니다.
+여기서, `A`는 두 행과 세 열을 가진 행렬이고,
+`B`는 세 행과 네 열을 가진 행렬입니다.
+곱셈 후에, 두 행과 네 열을 가진 행렬을 얻습니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -924,43 +909,43 @@ B = jnp.ones((3, 4))
 jnp.matmul(A, B)
 ```
 
-The term *matrix--matrix multiplication* is
-often simplified to *matrix multiplication*,
-and should not be confused with the Hadamard product.
+*행렬-행렬 곱셈*이라는 용어는
+종종 *행렬 곱셈*으로 단순화되며,
+아다마르 곱과 혼동되어서는 안 됩니다.
 
 
-## Norms
+## 노름
 :label:`subsec_lin-algebra-norms`
 
-Some of the most useful operators in linear algebra are *norms*.
-Informally, the norm of a vector tells us how *big* it is.
-For instance, the $\ell_2$ norm measures
-the (Euclidean) length of a vector.
-Here, we are employing a notion of *size* that concerns the magnitude of a vector's components
-(not its dimensionality).
+선형대수에서 가장 유용한 연산자 중 일부는 *노름*입니다.
+비공식적으로, 벡터의 노름은 그것이 얼마나 *큰지*를 알려줍니다.
+예를 들어, $\ell_2$ 노름은
+벡터의 (유클리드) 길이를 측정합니다.
+여기서, 저희는 벡터의 성분의 크기에 관한 *크기* 개념을 사용하고 있습니다
+(그것의 차원성이 아니라).
 
-A norm is a function $\| \cdot \|$ that maps a vector
-to a scalar and satisfies the following three properties:
+노름은 벡터를 스칼라로 매핑하고
+다음 세 가지 속성을 만족하는 함수 $\| \cdot \|$입니다.
 
-1. Given any vector $\mathbf{x}$, if we scale (all elements of) the vector
-   by a scalar $\alpha \in \mathbb{R}$, its norm scales accordingly:
+1. 임의의 벡터 $\mathbf{x}$가 주어졌을 때, 벡터(의 모든 원소)를
+   스칼라 $\alpha \in \mathbb{R}$로 스케일링하면, 그것의 노름은 그에 따라 스케일링됩니다.
    $$\|\alpha \mathbf{x}\| = |\alpha| \|\mathbf{x}\|.$$
-2. For any vectors $\mathbf{x}$ and $\mathbf{y}$:
-   norms satisfy the triangle inequality:
+2. 임의의 벡터 $\mathbf{x}$와 $\mathbf{y}$에 대해,
+   노름은 삼각 부등식을 만족합니다.
    $$\|\mathbf{x} + \mathbf{y}\| \leq \|\mathbf{x}\| + \|\mathbf{y}\|.$$
-3. The norm of a vector is nonnegative and it only vanishes if the vector is zero:
+3. 벡터의 노름은 음이 아니며 벡터가 영일 때에만 소멸합니다.
    $$\|\mathbf{x}\| > 0 \textrm{ for all } \mathbf{x} \neq 0.$$
 
-Many functions are valid norms and different norms
-encode different notions of size.
-The Euclidean norm that we all learned in elementary school geometry
-when calculating the hypotenuse of a right triangle
-is the square root of the sum of squares of a vector's elements.
-Formally, this is called [**the $\ell_2$ *norm***] and expressed as
+많은 함수들이 유효한 노름이며 서로 다른 노름들은
+서로 다른 크기 개념을 인코딩합니다.
+저희가 모두 초등학교 기하학에서
+직각삼각형의 빗변을 계산할 때 배운 유클리드 노름은
+벡터 원소들의 제곱의 합의 제곱근입니다.
+형식적으로, 이는 [**$\ell_2$ *노름***]이라고 부르며 다음과 같이 표현됩니다.
 
 (**$$\|\mathbf{x}\|_2 = \sqrt{\sum_{i=1}^n x_i^2}.$$**)
 
-The method `norm` calculates the $\ell_2$ norm.
+메서드 `norm`은 $\ell_2$ 노름을 계산합니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -986,17 +971,16 @@ u = jnp.array([3.0, -4.0])
 jnp.linalg.norm(u)
 ```
 
-[**The $\ell_1$ norm**] is also common
-and the associated measure is called the Manhattan distance.
-By definition, the $\ell_1$ norm sums
-the absolute values of a vector's elements:
+[**$\ell_1$ 노름**]도 일반적이며
+관련된 측도는 맨해튼 거리라고 부릅니다.
+정의에 의해, $\ell_1$ 노름은
+벡터 원소들의 절댓값을 합산합니다.
 
 (**$$\|\mathbf{x}\|_1 = \sum_{i=1}^n \left|x_i \right|.$$**)
 
-Compared to the $\ell_2$ norm, it is less sensitive to outliers.
-To compute the $\ell_1$ norm,
-we compose the absolute value
-with the sum operation.
+$\ell_2$ 노름과 비교하여, 이상치에 덜 민감합니다.
+$\ell_1$ 노름을 계산하기 위해,
+저희는 절댓값을 합 연산과 합성합니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -1018,29 +1002,27 @@ tf.reduce_sum(tf.abs(u))
 jnp.linalg.norm(u, ord=1) # same as jnp.abs(u).sum()
 ```
 
-Both the $\ell_2$ and $\ell_1$ norms are special cases
-of the more general $\ell_p$ *norms*:
+$\ell_2$와 $\ell_1$ 노름은 모두
+더 일반적인 $\ell_p$ *노름*의 특수한 경우입니다.
 
 $$\|\mathbf{x}\|_p = \left(\sum_{i=1}^n \left|x_i \right|^p \right)^{1/p}.$$
 
-In the case of matrices, matters are more complicated.
-After all, matrices can be viewed both as collections of individual entries
-*and* as objects that operate on vectors and transform them into other vectors.
-For instance, we can ask by how much longer
-the matrix--vector product $\mathbf{X} \mathbf{v}$
-could be relative to $\mathbf{v}$.
-This line of thought leads to what is called the *spectral* norm.
-For now, we introduce [**the *Frobenius norm*,
-which is much easier to compute**] and defined as
-the square root of the sum of the squares
-of a matrix's elements:
+행렬의 경우, 문제는 더 복잡합니다.
+결국, 행렬은 개별 항목들의 집합으로 볼 수도 있고
+*그리고* 벡터에 작용하여 그것들을 다른 벡터로 변환하는 객체로 볼 수도 있습니다.
+예를 들어, 행렬-벡터 곱 $\mathbf{X} \mathbf{v}$가
+$\mathbf{v}$에 비해 얼마나 더 길 수 있는지를
+물을 수 있습니다.
+이러한 사고의 흐름은 *스펙트럼* 노름이라고 부르는 것으로 이어집니다.
+지금은, [**계산하기 훨씬 쉬운 *프로베니우스 노름*을 소개**]하며
+이는 행렬 원소들의 제곱의 합의 제곱근으로 정의됩니다.
 
 [**$$\|\mathbf{X}\|_\textrm{F} = \sqrt{\sum_{i=1}^m \sum_{j=1}^n x_{ij}^2}.$$**]
 
-The Frobenius norm behaves as if it were
-an $\ell_2$ norm of a matrix-shaped vector.
-Invoking the following function will calculate
-the Frobenius norm of a matrix.
+프로베니우스 노름은 마치
+행렬 모양의 벡터의 $\ell_2$ 노름인 것처럼 동작합니다.
+다음 함수를 호출하면
+행렬의 프로베니우스 노름을 계산할 것입니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -1062,98 +1044,91 @@ tf.norm(tf.ones((4, 9)))
 jnp.linalg.norm(jnp.ones((4, 9)))
 ```
 
-While we do not want to get too far ahead of ourselves,
-we already can plant some intuition about why these concepts are useful.
-In deep learning, we are often trying to solve optimization problems:
-*maximize* the probability assigned to observed data;
-*maximize* the revenue associated with a recommender model;
-*minimize* the distance between predictions
-and the ground truth observations;
-*minimize* the distance between representations
-of photos of the same person
-while *maximizing* the distance between representations
-of photos of different people.
-These distances, which constitute
-the objectives of deep learning algorithms,
-are often expressed as norms.
+저희가 너무 앞서 나가고 싶지는 않지만,
+이러한 개념들이 왜 유용한지에 대한 약간의 직관을 이미 심을 수 있습니다.
+딥러닝에서는, 종종 최적화 문제를 풀려고 합니다.
+관찰된 데이터에 할당된 확률을 *최대화*하고,
+추천 모델과 관련된 수익을 *최대화*하고,
+예측과 정답 관찰 사이의 거리를 *최소화*하고,
+같은 사람의 사진의 표현들 사이의 거리는 *최소화*하면서
+다른 사람들의 사진의 표현들 사이의 거리는 *최대화*하는 것입니다.
+딥러닝 알고리즘의 목표를 구성하는 이러한 거리는
+종종 노름으로 표현됩니다.
 
 
-## Discussion
+## 논의
 
-In this section, we have reviewed all the linear algebra
-that you will need to understand
-a significant chunk of modern deep learning.
-There is a lot more to linear algebra, though,
-and much of it is useful for machine learning.
-For example, matrices can be decomposed into factors,
-and these decompositions can reveal
-low-dimensional structure in real-world datasets.
-There are entire subfields of machine learning
-that focus on using matrix decompositions
-and their generalizations to high-order tensors
-to discover structure in datasets
-and solve prediction problems.
-But this book focuses on deep learning.
-And we believe you will be more inclined
-to learn more mathematics
-once you have gotten your hands dirty
-applying machine learning to real datasets.
-So while we reserve the right
-to introduce more mathematics later on,
-we wrap up this section here.
+이 절에서, 저희는 여러분이 현대 딥러닝의 상당 부분을
+이해하는 데 필요한 모든 선형대수를 살펴보았습니다.
+하지만 선형대수에는 훨씬 더 많은 것이 있고,
+그 많은 부분이 머신러닝에 유용합니다.
+예를 들어, 행렬은 인자로 분해될 수 있으며,
+이러한 분해는 실제 데이터셋의
+저차원 구조를 드러낼 수 있습니다.
+데이터셋의 구조를 발견하고
+예측 문제를 풀기 위해
+행렬 분해와 고차 텐서로의 그것의 일반화를
+사용하는 데 초점을 맞춘
+머신러닝의 전체 하위 분야가 있습니다.
+하지만 이 책은 딥러닝에 초점을 맞춥니다.
+그리고 저희는 여러분이 일단 실제 데이터셋에 머신러닝을 적용하면서
+직접 다뤄본 후에 더 많은 수학을 배우는 데
+더 끌리게 될 것이라고 믿습니다.
+따라서 나중에 더 많은 수학을 소개할 권리는 유보하면서도,
+저희는 여기서 이 절을 마무리합니다.
 
-If you are eager to learn more linear algebra,
-there are many excellent books and online resources.
-For a more advanced crash course, consider checking out
-:citet:`Strang.1993`, :citet:`Kolter.2008`, and :citet:`Petersen.Pedersen.ea.2008`.
+더 많은 선형대수를 배우고 싶다면,
+훌륭한 책과 온라인 자료가 많이 있습니다.
+보다 고급의 속성 강좌를 원한다면,
+:citet:`Strang.1993`, :citet:`Kolter.2008`, :citet:`Petersen.Pedersen.ea.2008`을 확인해 보십시오.
 
-To recap:
+요약하자면,
 
-* Scalars, vectors, matrices, and tensors are
-  the basic mathematical objects used in linear algebra
-  and have zero, one, two, and an arbitrary number of axes, respectively.
-* Tensors can be sliced or reduced along specified axes
-  via indexing, or operations such as `sum` and `mean`, respectively.
-* Elementwise products are called Hadamard products.
-  By contrast, dot products, matrix--vector products, and matrix--matrix products
-  are not elementwise operations and in general return objects
-  having shapes that are different from the the operands.
-* Compared to Hadamard products, matrix--matrix products
-  take considerably longer to compute (cubic rather than quadratic time).
-* Norms capture various notions of the magnitude of a vector (or matrix),
-  and are commonly applied to the difference of two vectors
-  to measure their distance apart.
-* Common vector norms include the $\ell_1$ and $\ell_2$ norms,
-   and common matrix norms include the *spectral* and *Frobenius* norms.
+* 스칼라, 벡터, 행렬, 텐서는
+  선형대수에서 사용되는 기본 수학적 객체이며
+  각각 0, 1, 2, 임의의 수의 축을 가집니다.
+* 텐서는 인덱싱을 통해 지정된 축을 따라 슬라이싱되거나
+  `sum`과 `mean` 같은 연산을 통해 각각 축소될 수 있습니다.
+* 원소별 곱은 아다마르 곱이라고 부릅니다.
+  대조적으로, 내적, 행렬-벡터 곱, 행렬-행렬 곱은
+  원소별 연산이 아니며 일반적으로 피연산자와는 다른 모양을 가진
+  객체를 반환합니다.
+* 아다마르 곱과 비교하여, 행렬-행렬 곱은
+  계산하는 데 상당히 더 오래 걸립니다(이차 시간이 아닌 삼차 시간).
+* 노름은 벡터(또는 행렬)의 크기에 대한 다양한 개념을 포착하며,
+  거리를 측정하기 위해 두 벡터의 차이에
+  일반적으로 적용됩니다.
+* 일반적인 벡터 노름에는 $\ell_1$과 $\ell_2$ 노름이 포함되며,
+   일반적인 행렬 노름에는 *스펙트럼*과 *프로베니우스* 노름이 포함됩니다.
 
 
-## Exercises
+## 연습문제
 
-1. Prove that the transpose of the transpose of a matrix is the matrix itself: $(\mathbf{A}^\top)^\top = \mathbf{A}$.
-1. Given two matrices $\mathbf{A}$ and $\mathbf{B}$, show that sum and transposition commute: $\mathbf{A}^\top + \mathbf{B}^\top = (\mathbf{A} + \mathbf{B})^\top$.
-1. Given any square matrix $\mathbf{A}$, is $\mathbf{A} + \mathbf{A}^\top$ always symmetric? Can you prove the result by using only the results of the previous two exercises?
-1. We defined the tensor `X` of shape (2, 3, 4) in this section. What is the output of `len(X)`? Write your answer without implementing any code, then check your answer using code.
-1. For a tensor `X` of arbitrary shape, does `len(X)` always correspond to the length of a certain axis of `X`? What is that axis?
-1. Run `A / A.sum(axis=1)` and see what happens. Can you analyze the results?
-1. When traveling between two points in downtown Manhattan, what is the distance that you need to cover in terms of the coordinates, i.e., in terms of avenues and streets? Can you travel diagonally?
-1. Consider a tensor of shape (2, 3, 4). What are the shapes of the summation outputs along axes 0, 1, and 2?
-1. Feed a tensor with three or more axes to the `linalg.norm` function and observe its output. What does this function compute for tensors of arbitrary shape?
-1. Consider three large matrices, say $\mathbf{A} \in \mathbb{R}^{2^{10} \times 2^{16}}$, $\mathbf{B} \in \mathbb{R}^{2^{16} \times 2^{5}}$ and $\mathbf{C} \in \mathbb{R}^{2^{5} \times 2^{14}}$, initialized with Gaussian random variables. You want to compute the product $\mathbf{A} \mathbf{B} \mathbf{C}$. Is there any difference in memory footprint and speed, depending on whether you compute $(\mathbf{A} \mathbf{B}) \mathbf{C}$ or $\mathbf{A} (\mathbf{B} \mathbf{C})$? Why?
-1. Consider three large matrices, say $\mathbf{A} \in \mathbb{R}^{2^{10} \times 2^{16}}$, $\mathbf{B} \in \mathbb{R}^{2^{16} \times 2^{5}}$ and $\mathbf{C} \in \mathbb{R}^{2^{5} \times 2^{16}}$. Is there any difference in speed depending on whether you compute $\mathbf{A} \mathbf{B}$ or $\mathbf{A} \mathbf{C}^\top$? Why? What changes if you initialize $\mathbf{C} = \mathbf{B}^\top$ without cloning memory? Why?
-1. Consider three matrices, say $\mathbf{A}, \mathbf{B}, \mathbf{C} \in \mathbb{R}^{100 \times 200}$. Construct a tensor with three axes by stacking $[\mathbf{A}, \mathbf{B}, \mathbf{C}]$. What is the dimensionality? Slice out the second coordinate of the third axis to recover $\mathbf{B}$. Check that your answer is correct.
+1. 행렬의 전치의 전치가 그 행렬 자체임을 증명하세요: $(\mathbf{A}^\top)^\top = \mathbf{A}$.
+1. 두 행렬 $\mathbf{A}$와 $\mathbf{B}$가 주어졌을 때, 합과 전치가 가환임을 보이세요: $\mathbf{A}^\top + \mathbf{B}^\top = (\mathbf{A} + \mathbf{B})^\top$.
+1. 임의의 정사각 행렬 $\mathbf{A}$가 주어졌을 때, $\mathbf{A} + \mathbf{A}^\top$은 항상 대칭입니까? 이전 두 연습문제의 결과만을 사용하여 그 결과를 증명할 수 있나요?
+1. 저희는 이 절에서 모양이 (2, 3, 4)인 텐서 `X`를 정의했습니다. `len(X)`의 출력은 무엇입니까? 코드를 구현하지 않고 답을 작성한 다음, 코드를 사용하여 답을 확인하세요.
+1. 임의의 모양의 텐서 `X`에 대해, `len(X)`는 항상 `X`의 특정 축의 길이에 해당합니까? 그 축은 무엇입니까?
+1. `A / A.sum(axis=1)`을 실행하고 무슨 일이 일어나는지 보세요. 결과를 분석할 수 있나요?
+1. 맨해튼 시내의 두 지점 사이를 이동할 때, 좌표의 측면에서, 즉 거리(avenues)와 거리(streets)의 측면에서 이동해야 하는 거리는 얼마입니까? 대각선으로 이동할 수 있습니까?
+1. 모양이 (2, 3, 4)인 텐서를 고려해 보세요. 축 0, 1, 2를 따른 합산 출력의 모양은 무엇입니까?
+1. 세 개 이상의 축을 가진 텐서를 `linalg.norm` 함수에 공급하고 그 출력을 관찰해 보세요. 이 함수는 임의의 모양의 텐서에 대해 무엇을 계산합니까?
+1. 세 개의 큰 행렬, 예를 들어 가우시안 무작위 변수로 초기화된 $\mathbf{A} \in \mathbb{R}^{2^{10} \times 2^{16}}$, $\mathbf{B} \in \mathbb{R}^{2^{16} \times 2^{5}}$, $\mathbf{C} \in \mathbb{R}^{2^{5} \times 2^{14}}$를 고려해 보세요. 곱 $\mathbf{A} \mathbf{B} \mathbf{C}$를 계산하고자 합니다. $(\mathbf{A} \mathbf{B}) \mathbf{C}$를 계산하는지 $\mathbf{A} (\mathbf{B} \mathbf{C})$를 계산하는지에 따라 메모리 사용량과 속도에 차이가 있습니까? 왜 그렇습니까?
+1. 세 개의 큰 행렬, 예를 들어 $\mathbf{A} \in \mathbb{R}^{2^{10} \times 2^{16}}$, $\mathbf{B} \in \mathbb{R}^{2^{16} \times 2^{5}}$, $\mathbf{C} \in \mathbb{R}^{2^{5} \times 2^{16}}$을 고려해 보세요. $\mathbf{A} \mathbf{B}$를 계산하는지 $\mathbf{A} \mathbf{C}^\top$을 계산하는지에 따라 속도에 차이가 있습니까? 왜 그렇습니까? 메모리를 복제하지 않고 $\mathbf{C} = \mathbf{B}^\top$로 초기화하면 무엇이 바뀝니까? 왜 그렇습니까?
+1. 세 개의 행렬, 예를 들어 $\mathbf{A}, \mathbf{B}, \mathbf{C} \in \mathbb{R}^{100 \times 200}$을 고려해 보세요. $[\mathbf{A}, \mathbf{B}, \mathbf{C}]$를 쌓아 세 개의 축을 가진 텐서를 구성하세요. 차원성은 무엇입니까? 세 번째 축의 두 번째 좌표를 잘라내어 $\mathbf{B}$를 복원하세요. 답이 올바른지 확인하세요.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/30)
+[토론](https://discuss.d2l.ai/t/30)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/31)
+[토론](https://discuss.d2l.ai/t/31)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/196)
+[토론](https://discuss.d2l.ai/t/196)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17968)
+[토론](https://discuss.d2l.ai/t/17968)
 :end_tab:

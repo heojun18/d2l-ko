@@ -3,95 +3,89 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Dropout
+# 드롭아웃
 :label:`sec_dropout`
 
 
-Let's think briefly about what we
-expect from a good predictive model.
-We want it to peform well on unseen data.
-Classical generalization theory
-suggests that to close the gap between
-train and test performance,
-we should aim for a simple model.
-Simplicity can come in the form
-of a small number of dimensions.
-We explored this when discussing the
-monomial basis functions of linear models
-in :numref:`sec_generalization_basics`.
-Additionally, as we saw when discussing weight decay
-($\ell_2$ regularization) in :numref:`sec_weight_decay`,
-the (inverse) norm of the parameters also
-represents a useful measure of simplicity.
-Another useful notion of simplicity is smoothness,
-i.e., that the function should not be sensitive
-to small changes to its inputs.
-For instance, when we classify images,
-we would expect that adding some random noise
-to the pixels should be mostly harmless.
+좋은 예측 모델에서 저희가 무엇을 기대하는지
+잠깐 생각해 봅시다.
+저희는 모델이 보지 못한 데이터에서 잘 수행되기를 원합니다.
+고전적 일반화 이론은
+훈련 성능과 테스트 성능 사이의 격차를 좁히려면,
+저희가 단순한 모델을 목표로 해야 한다고
+시사합니다.
+단순성은 적은 차원 수의 형태로 올 수 있습니다.
+저희는 :numref:`sec_generalization_basics`에서 선형 모델의
+단항 기저 함수를 논의할 때 이를 탐구했습니다.
+또한 :numref:`sec_weight_decay`에서 가중치 감쇠
+(($\ell_2$ 정규화))를 논의할 때 보았듯이,
+파라미터의 ((역)) 노름도
+단순성의 유용한 척도를 나타냅니다.
+단순성의 또 다른 유용한 개념은 매끄러움입니다.
+즉, 함수가 입력의 작은 변화에 민감하지 않아야 한다는 것입니다.
+예를 들어, 이미지를 분류할 때,
+저희는 픽셀에 약간의 무작위 잡음을 추가하는 것이
+거의 무해해야 한다고 기대할 것입니다.
 
-:citet:`Bishop.1995` formalized
-this idea when he proved that training with input noise
-is equivalent to Tikhonov regularization.
-This work drew a clear mathematical connection
-between the requirement that a function be smooth (and thus simple),
-and the requirement that it be resilient
-to perturbations in the input.
+:citet:`Bishop.1995`는
+입력 잡음으로 훈련하는 것이 티호노프 정규화와 동등하다는 것을 증명함으로써
+이 아이디어를 형식화했습니다.
+이 연구는 함수가 매끄러워야 한다는 ((그리고 따라서 단순해야 한다는)) 요건과
+입력의 섭동에 견고해야 한다는 요건 사이에
+명확한 수학적 연결을 그어주었습니다.
 
-Then, :citet:`Srivastava.Hinton.Krizhevsky.ea.2014`
-developed a clever idea for how to apply Bishop's idea
-to the internal layers of a network, too.
-Their idea, called *dropout*, involves
-injecting noise while computing
-each internal layer during forward propagation,
-and it has become a standard technique
-for training neural networks.
-The method is called *dropout* because we literally
-*drop out* some neurons during training.
-Throughout training, on each iteration,
-standard dropout consists of zeroing out
-some fraction of the nodes in each layer
-before calculating the subsequent layer.
+그 후, :citet:`Srivastava.Hinton.Krizhevsky.ea.2014`는
+Bishop의 아이디어를 네트워크의 내부 층에도
+어떻게 적용할지에 대한 영리한 아이디어를 개발했습니다.
+*드롭아웃*이라고 불리는 그들의 아이디어는
+순전파 동안 각 내부 층을 계산하면서
+잡음을 주입하는 것을 포함하며,
+신경망 훈련의 표준 기법이 되었습니다.
+이 방법이 *드롭아웃*이라 불리는 것은 저희가 훈련 동안
+말 그대로 일부 뉴런을 *떨어뜨리기* 때문입니다.
+훈련 내내, 각 반복마다,
+표준 드롭아웃은 후속 층을 계산하기 전에
+각 층의 노드 중 일부를 0으로 만드는 것으로
+구성됩니다.
 
-To be clear, we are imposing
-our own narrative with the link to Bishop.
-The original paper on dropout
-offers intuition through a surprising
-analogy to sexual reproduction.
-The authors argue that neural network overfitting
-is characterized by a state in which
-each layer relies on a specific
-pattern of activations in the previous layer,
-calling this condition *co-adaptation*.
-Dropout, they claim, breaks up co-adaptation
-just as sexual reproduction is argued to
-break up co-adapted genes.
-While such an justification of this theory is certainly up for debate,
-the dropout technique itself has proved enduring,
-and various forms of dropout are implemented
-in most deep learning libraries. 
+분명히 하자면, 저희는 Bishop과의 연결로
+저희만의 서사를 강요하고 있는 것입니다.
+드롭아웃에 관한 원 논문은
+유성 생식과의 놀라운 비유를 통해
+직관을 제공합니다.
+저자들은 신경망 과적합이
+각 층이 이전 층의 활성화의 특정 패턴에 의존하는
+상태가 특징이라고 주장하며,
+이 조건을 *공동 적응*이라고 부릅니다.
+드롭아웃은, 그들이 주장하기를,
+유성 생식이 공동 적응된 유전자를 깨뜨린다고 주장되는 것과 마찬가지로
+공동 적응을 깨뜨립니다.
+이 이론의 그러한 정당화가 확실히 논쟁의 여지가 있지만,
+드롭아웃 기법 자체는 지속력이 있는 것으로 입증되었으며,
+다양한 형태의 드롭아웃이 대부분의 딥러닝 라이브러리에
+구현되어 있습니다.
 
 
-The key challenge is how to inject this noise.
-One idea is to inject it in an *unbiased* manner
-so that the expected value of each layer---while fixing
-the others---equals the value it would have taken absent noise.
-In Bishop's work, he added Gaussian noise
-to the inputs to a linear model.
-At each training iteration, he added noise
-sampled from a distribution with mean zero
-$\epsilon \sim \mathcal{N}(0,\sigma^2)$ to the input $\mathbf{x}$,
-yielding a perturbed point $\mathbf{x}' = \mathbf{x} + \epsilon$.
-In expectation, $E[\mathbf{x}'] = \mathbf{x}$.
+핵심 과제는 이 잡음을 어떻게 주입할 것인가입니다.
+한 가지 아이디어는 각 층의 기댓값이((다른 층들을 고정한 상태에서))
+잡음이 없었을 때 가졌을 값과 같도록
+*편향 없는* 방식으로 주입하는 것입니다.
+Bishop의 연구에서, 그는 선형 모델의 입력에
+가우시안 잡음을 추가했습니다.
+각 훈련 반복마다, 그는 입력 $\mathbf{x}$에
+평균이 0인 분포에서 샘플링한 잡음
+$\epsilon \sim \mathcal{N}(0,\sigma^2)$을 추가하여,
+섭동된 점 $\mathbf{x}' = \mathbf{x} + \epsilon$을 산출했습니다.
+기댓값에서, $E[\mathbf{x}'] = \mathbf{x}$입니다.
 
-In standard dropout regularization,
-one zeros out some fraction of the nodes in each layer
-and then *debiases* each layer by normalizing
-by the fraction of nodes that were retained (not dropped out).
-In other words,
-with *dropout probability* $p$,
-each intermediate activation $h$ is replaced by
-a random variable $h'$ as follows:
+표준 드롭아웃 정규화에서는,
+각 층의 노드 중 일부를 0으로 만들고
+유지된 노드의 비율 ((드롭되지 않은))로 정규화하여
+각 층을 *편향 해소*합니다.
+다시 말해,
+*드롭아웃 확률* $p$로,
+각 중간 활성화 $h$는 다음과 같이 무작위 변수 $h'$로
+대체됩니다.
 
 $$
 \begin{aligned}
@@ -103,7 +97,7 @@ h' =
 \end{aligned}
 $$
 
-By design, the expectation remains unchanged, i.e., $E[h'] = h$.
+설계상, 기댓값은 변하지 않습니다. 즉, $E[h'] = h$입니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -136,54 +130,52 @@ from jax import numpy as jnp
 import optax
 ```
 
-## Dropout in Practice
+## 실전에서의 드롭아웃
 
-Recall the MLP with a hidden layer and five hidden units
-from :numref:`fig_mlp`.
-When we apply dropout to a hidden layer,
-zeroing out each hidden unit with probability $p$,
-the result can be viewed as a network
-containing only a subset of the original neurons.
-In :numref:`fig_dropout2`, $h_2$ and $h_5$ are removed.
-Consequently, the calculation of the outputs
-no longer depends on $h_2$ or $h_5$
-and their respective gradient also vanishes
-when performing backpropagation.
-In this way, the calculation of the output layer
-cannot be overly dependent on any
-one element of $h_1, \ldots, h_5$.
+:numref:`fig_mlp`의 은닉층 하나와 다섯 개의 은닉 유닛을 가진
+MLP를 떠올려 봅시다.
+저희가 은닉층에 드롭아웃을 적용하여
+각 은닉 유닛을 확률 $p$로 0으로 만들면,
+결과는 원래 뉴런의 일부 부분 집합만을 포함하는
+네트워크로 볼 수 있습니다.
+:numref:`fig_dropout2`에서 $h_2$와 $h_5$가 제거됩니다.
+결과적으로, 출력의 계산은
+더 이상 $h_2$나 $h_5$에 의존하지 않으며
+역전파를 수행할 때 그들의 각 기울기도
+사라집니다.
+이런 식으로, 출력층의 계산은
+$h_1, \ldots, h_5$의 어느 한 원소에도
+지나치게 의존할 수 없게 됩니다.
 
-![MLP before and after dropout.](../img/dropout2.svg)
+![드롭아웃 적용 전후의 MLP.](../img/dropout2.svg)
 :label:`fig_dropout2`
 
-Typically, we disable dropout at test time.
-Given a trained model and a new example,
-we do not drop out any nodes
-and thus do not need to normalize.
-However, there are some exceptions:
-some researchers use dropout at test time as a heuristic
-for estimating the *uncertainty* of neural network predictions:
-if the predictions agree across many different dropout outputs,
-then we might say that the network is more confident.
+일반적으로, 저희는 테스트 시 드롭아웃을 비활성화합니다.
+훈련된 모델과 새로운 예제가 주어지면,
+저희는 어떤 노드도 드롭하지 않으며
+따라서 정규화할 필요가 없습니다.
+하지만 몇 가지 예외가 있습니다.
+일부 연구자들은 신경망 예측의 *불확실성*을 추정하기 위한
+휴리스틱으로 테스트 시 드롭아웃을 사용합니다.
+예측이 여러 다른 드롭아웃 출력에 걸쳐 일치한다면,
+저희는 네트워크가 더 확신을 가지고 있다고 말할 수 있을 것입니다.
 
-## Implementation from Scratch
+## 처음부터 구현하기
 
-To implement the dropout function for a single layer,
-we must draw as many samples
-from a Bernoulli (binary) random variable
-as our layer has dimensions,
-where the random variable takes value $1$ (keep)
-with probability $1-p$ and $0$ (drop) with probability $p$.
-One easy way to implement this is to first draw samples
-from the uniform distribution $U[0, 1]$.
-Then we can keep those nodes for which the corresponding
-sample is greater than $p$, dropping the rest.
+단일 층에 대해 드롭아웃 함수를 구현하려면,
+저희는 층이 가진 차원만큼 많은 표본을
+베르누이 ((이진)) 무작위 변수에서 뽑아야 합니다.
+이 무작위 변수는 확률 $1-p$로 값 $1$ ((유지))을,
+확률 $p$로 값 $0$ ((드롭))을 취합니다.
+이를 구현하는 한 가지 쉬운 방법은 먼저 균등 분포
+$U[0, 1]$에서 표본을 뽑는 것입니다.
+그런 다음 저희는 해당 표본이 $p$보다 큰 노드를 유지하고,
+나머지를 드롭할 수 있습니다.
 
-In the following code, we (**implement a `dropout_layer` function
-that drops out the elements in the tensor input `X`
-with probability `dropout`**),
-rescaling the remainder as described above:
-dividing the survivors by `1.0-dropout`.
+다음 코드에서, 저희는 (**텐서 입력 `X`의 원소를 확률 `dropout`으로
+드롭하고, 위에서 설명한 대로 나머지를 다시 스케일링하는,
+즉 생존자를 `1.0-dropout`으로 나누는 `dropout_layer` 함수를
+구현합니다**).
 
 ```{.python .input}
 %%tab mxnet
@@ -222,10 +214,10 @@ def dropout_layer(X, dropout, key=d2l.get_key()):
     return jnp.asarray(mask, dtype=jnp.float32) * X / (1.0 - dropout)
 ```
 
-We can [**test out the `dropout_layer` function on a few examples**].
-In the following lines of code,
-we pass our input `X` through the dropout operation,
-with probabilities 0, 0.5, and 1, respectively.
+저희는 [**몇 가지 예제에서 `dropout_layer` 함수를 시험해 볼 수 있습니다**].
+다음 코드에서,
+저희는 입력 `X`를 각각 확률 0, 0.5, 1로
+드롭아웃 연산에 통과시킵니다.
 
 ```{.python .input}
 %%tab all
@@ -242,14 +234,14 @@ print('dropout_p = 0.5:', dropout_layer(X, 0.5))
 print('dropout_p = 1:', dropout_layer(X, 1))
 ```
 
-### Defining the Model
+### 모델 정의
 
-The model below applies dropout to the output
-of each hidden layer (following the activation function).
-We can set dropout probabilities for each layer separately.
-A common choice is to set
-a lower dropout probability closer to the input layer.
-We ensure that dropout is only active during training.
+아래 모델은 각 은닉층의 출력에 ((활성화 함수에 이어))
+드롭아웃을 적용합니다.
+저희는 각 층에 대해 별도로 드롭아웃 확률을 설정할 수 있습니다.
+흔히 사용되는 선택은 입력층에 가까울수록
+드롭아웃 확률을 더 낮게 설정하는 것입니다.
+저희는 드롭아웃이 훈련 동안에만 활성화되도록 합니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -343,9 +335,9 @@ class DropoutMLPScratch(d2l.Classifier):
         return self.lin3(H2)
 ```
 
-### [**Training**]
+### [**훈련**]
 
-The following is similar to the training of MLPs described previously.
+다음은 앞서 설명한 MLP의 훈련과 유사합니다.
 
 ```{.python .input}
 %%tab all
@@ -357,18 +349,17 @@ trainer = d2l.Trainer(max_epochs=10)
 trainer.fit(model, data)
 ```
 
-## [**Concise Implementation**]
+## [**간결한 구현**]
 
-With high-level APIs, all we need to do is add a `Dropout` layer
-after each fully connected layer,
-passing in the dropout probability
-as the only argument to its constructor.
-During training, the `Dropout` layer will randomly
-drop out outputs of the previous layer
-(or equivalently, the inputs to the subsequent layer)
-according to the specified dropout probability.
-When not in training mode,
-the `Dropout` layer simply passes the data through during testing.
+고수준 API를 사용하면, 저희가 할 일은 각 완전 연결 층 뒤에
+`Dropout` 층을 추가하고,
+드롭아웃 확률을 생성자의 유일한 인수로
+전달하는 것뿐입니다.
+훈련 동안, `Dropout` 층은 지정된 드롭아웃 확률에 따라
+이전 층의 출력 ((또는 동등하게, 후속 층의 입력))을
+무작위로 드롭합니다.
+훈련 모드가 아닐 때는,
+`Dropout` 층은 테스트 동안 데이터를 그대로 통과시킵니다.
 
 ```{.python .input}
 %%tab mxnet
@@ -436,18 +427,19 @@ class DropoutMLP(d2l.Classifier):
 ```
 
 :begin_tab:`jax`
-Note that we need to redefine the loss function since a network
-with a dropout layer needs a PRNGKey when using `Module.apply()`,
-and this RNG seed should be explicitly named `dropout`. This key is
-used by the `dropout` layer in Flax to generate the random dropout
-mask internally. It is important to use a unique `dropout_rng` key
-with every epoch in the training loop, otherwise the generated dropout
-mask will not be stochastic and different between the epoch runs.
-This `dropout_rng` can be stored in the
-`TrainState` object (in the `d2l.Trainer` class defined in
-:numref:`oo-design-training`) as an attribute and with every epoch
-it is replaced with a new `dropout_rng`. We already handled this with the
-`fit_epoch` method defined in :numref:`sec_linear_scratch`.
+드롭아웃 층이 있는 네트워크는 `Module.apply()`를 사용할 때 PRNGKey가 필요하므로
+저희는 손실 함수를 다시 정의해야 한다는 점에 유의하세요.
+그리고 이 RNG 시드는 명시적으로 `dropout`이라고 명명되어야 합니다. 이 키는
+Flax의 `dropout` 층이 무작위 드롭아웃 마스크를
+내부적으로 생성하는 데 사용됩니다. 훈련 루프의 모든 에포크마다
+고유한 `dropout_rng` 키를 사용하는 것이 중요한데,
+그렇지 않으면 생성된 드롭아웃 마스크가 확률적이지 않고
+에포크 실행 사이에 동일해질 것입니다.
+이 `dropout_rng`는
+`TrainState` 객체 ((:numref:`oo-design-training`에 정의된 `d2l.Trainer` 클래스에 있음))에
+속성으로 저장될 수 있으며, 매 에포크마다
+새로운 `dropout_rng`로 교체됩니다. 저희는 이미 :numref:`sec_linear_scratch`에 정의된
+`fit_epoch` 메서드로 이를 처리했습니다.
 :end_tab:
 
 ```{.python .input}
@@ -466,7 +458,7 @@ def loss(self, params, X, Y, state, averaged=True):
     return (fn(Y_hat, Y).mean(), {}) if averaged else (fn(Y_hat, Y), {})
 ```
 
-Next, we [**train the model**].
+다음으로, 저희는 [**모델을 훈련합니다**].
 
 ```{.python .input}
 %%tab all
@@ -474,23 +466,23 @@ model = DropoutMLP(**hparams)
 trainer.fit(model, data)
 ```
 
-## Summary
+## 요약
 
-Beyond controlling the number of dimensions and the size of the weight vector, dropout is yet another tool for avoiding overfitting. Often tools are used jointly.
-Note that dropout is
-used only during training:
-it replaces an activation $h$ with a random variable with expected value $h$.
+차원의 수와 가중치 벡터의 크기를 통제하는 것 외에도, 드롭아웃은 과적합을 피하기 위한 또 다른 도구입니다. 흔히 도구들은 함께 사용됩니다.
+드롭아웃은 훈련 동안에만
+사용된다는 점에 유의하세요.
+이는 활성화 $h$를 기댓값이 $h$인 무작위 변수로 대체합니다.
 
 
-## Exercises
+## 연습문제
 
-1. What happens if you change the dropout probabilities for the first and second layers? In particular, what happens if you switch the ones for both layers? Design an experiment to answer these questions, describe your results quantitatively, and summarize the qualitative takeaways.
-1. Increase the number of epochs and compare the results obtained when using dropout with those when not using it.
-1. What is the variance of the activations in each hidden layer when dropout is and is not applied? Draw a plot to show how this quantity evolves over time for both models.
-1. Why is dropout not typically used at test time?
-1. Using the model in this section as an example, compare the effects of using dropout and weight decay. What happens when dropout and weight decay are used at the same time? Are the results additive? Are there diminished returns (or worse)? Do they cancel each other out?
-1. What happens if we apply dropout to the individual weights of the weight matrix rather than the activations?
-1. Invent another technique for injecting random noise at each layer that is different from the standard dropout technique. Can you develop a method that outperforms dropout on the Fashion-MNIST dataset (for a fixed architecture)?
+1. 첫 번째 층과 두 번째 층의 드롭아웃 확률을 바꾸면 어떤 일이 일어나나요? 특히, 두 층의 확률을 서로 바꾸면 어떤 일이 일어나나요? 이러한 질문에 답하기 위한 실험을 설계하고, 결과를 정량적으로 설명하며, 정성적 시사점을 요약하세요.
+1. 에포크 수를 늘리고 드롭아웃을 사용했을 때와 사용하지 않았을 때의 결과를 비교하세요.
+1. 드롭아웃을 적용했을 때와 적용하지 않았을 때 각 은닉층의 활성화의 분산은 무엇인가요? 두 모델에 대해 이 양이 시간에 따라 어떻게 진화하는지 보여주는 그래프를 그리세요.
+1. 드롭아웃이 일반적으로 테스트 시 사용되지 않는 이유는 무엇인가요?
+1. 이 절의 모델을 예로 들어, 드롭아웃과 가중치 감쇠를 사용하는 것의 효과를 비교하세요. 드롭아웃과 가중치 감쇠를 동시에 사용하면 어떤 일이 일어나나요? 결과는 가산적인가요? 수확 체감 ((또는 그보다 더 나쁜)) 현상이 있나요? 그들이 서로 상쇄되나요?
+1. 활성화 대신 가중치 행렬의 개별 가중치에 드롭아웃을 적용하면 어떤 일이 일어나나요?
+1. 표준 드롭아웃 기법과는 다른, 각 층에서 무작위 잡음을 주입하는 또 다른 기법을 발명하세요. ((고정된 구조에 대해)) Fashion-MNIST 데이터셋에서 드롭아웃을 능가하는 방법을 개발할 수 있나요?
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/100)

@@ -1,20 +1,20 @@
-# Optimization Algorithms
+# 최적화 알고리즘
 :label:`chap_optimization`
 
-If you read the book in sequence up to this point you already used a number of optimization algorithms to train deep learning models.
-They were the tools that allowed us to continue updating model parameters and to minimize the value of the loss function, as evaluated on the training set. Indeed, anyone content with treating optimization as a black box device to minimize objective functions in a simple setting might well content oneself with the knowledge that there exists an array of incantations of such a procedure (with names such as "SGD" and "Adam").
+이 책을 여기까지 순서대로 읽어 오셨다면, 딥러닝 모델을 학습시키기 위해 이미 여러 가지 최적화 알고리즘을 사용해 보셨을 것입니다.
+이 알고리즘들은 모델 파라미터를 지속적으로 업데이트하고, 학습 세트에서 평가한 손실 함수의 값을 최소화하도록 해주는 도구였습니다. 실제로, 단순한 환경에서 목적 함수를 최소화하는 블랙박스 장치로서 최적화를 다루는 데 만족하는 사람이라면, 그러한 절차의 다양한 주문(이를테면 "SGD"나 "Adam" 같은 이름들)이 존재한다는 사실만 알아도 충분히 만족할 수 있을 것입니다.
 
-To do well, however, some deeper knowledge is required.
-Optimization algorithms are important for deep learning.
-On the one hand, training a complex deep learning model can take hours, days, or even weeks.
-The performance of the optimization algorithm directly affects the model's training efficiency.
-On the other hand, understanding the principles of different optimization algorithms and the role of their hyperparameters
-will enable us to tune the hyperparameters in a targeted manner to improve the performance of deep learning models.
+그러나 잘하기 위해서는 좀 더 깊은 지식이 필요합니다.
+최적화 알고리즘은 딥러닝에 있어 중요합니다.
+한편으로는, 복잡한 딥러닝 모델을 학습시키는 데에 몇 시간, 며칠, 혹은 몇 주까지도 걸릴 수 있습니다.
+최적화 알고리즘의 성능은 모델의 학습 효율에 직접적인 영향을 미칩니다.
+다른 한편으로는, 다양한 최적화 알고리즘의 원리와 그 하이퍼파라미터의 역할을 이해하면
+딥러닝 모델의 성능을 향상시키기 위해 하이퍼파라미터를 목표에 맞게 조정할 수 있게 됩니다.
 
-In this chapter, we explore common deep learning optimization algorithms in depth.
-Almost all optimization problems arising in deep learning are *nonconvex*.
-Nonetheless, the design and analysis of algorithms in the context of *convex* problems have proven to be very instructive.
-It is for that reason that this chapter includes a primer on convex optimization and the proof for a very simple stochastic gradient descent algorithm on a convex objective function.
+이번 장에서는 일반적인 딥러닝 최적화 알고리즘을 깊이 있게 살펴봅니다.
+딥러닝에서 발생하는 거의 모든 최적화 문제는 *비볼록(nonconvex)*입니다.
+그럼에도 불구하고, *볼록(convex)* 문제의 맥락에서 이루어지는 알고리즘 설계와 분석은 매우 유익한 것으로 입증되었습니다.
+그 때문에 이 장에는 볼록 최적화에 대한 입문과, 볼록 목적 함수에 대한 매우 단순한 확률적 경사 하강법 알고리즘의 증명이 포함되어 있습니다.
 
 ```toc
 :maxdepth: 2

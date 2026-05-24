@@ -3,11 +3,11 @@
 tab.interact_select(['pytorch'])
 ```
 
-# Gaussian Process Priors
+# 가우스 과정 사전 분포
 
-Understanding Gaussian processes (GPs) is important for reasoning about model construction and generalization, and for achieving state-of-the-art performance in a variety of applications, including active learning, and hyperparameter tuning in deep learning. GPs are everywhere, and it is in our interests to know what they are and how we can use them.
+가우스 과정(GPs)을 이해하는 것은 모델 구성과 일반화에 대해 추론하고, 능동 학습과 딥러닝에서의 하이퍼파라미터 튜닝을 포함한 다양한 응용 분야에서 최첨단 성능을 달성하는 데 중요합니다. GP는 어디에나 존재하므로, 그것이 무엇이며 어떻게 사용할 수 있는지를 아는 것은 저희에게 도움이 됩니다.
 
-In this section, we introduce Gaussian process _priors_ over functions. In the next notebook, we show how to use these priors to do _posterior inference_ and make predictions. The next section can be viewed as "GPs in a nutshell", quickly giving what you need to apply Gaussian processes in practice.
+이 절에서는 함수에 대한 가우스 과정 _사전 분포(priors)_를 소개합니다. 다음 노트북에서는 이러한 사전 분포를 사용하여 _사후 추론(posterior inference)_을 수행하고 예측하는 방법을 보여드리겠습니다. 다음 절은 "한눈에 보는 GP"로 볼 수 있으며, 실제로 가우스 과정을 적용하는 데 필요한 것을 빠르게 제공합니다.
 
 ```{.python .input}
 from d2l import torch as d2l
@@ -17,24 +17,23 @@ from scipy.spatial import distance_matrix
 d2l.set_figsize()
 ```
 
-## Definition
+## 정의
 
-A Gaussian process is defined as _a collection of random variables, any finite number of which have a joint Gaussian distribution_. If a function $f(x)$ is a Gaussian process, with _mean function_ $m(x)$ and _covariance function_ or _kernel_ $k(x,x')$, $f(x) \sim \mathcal{GP}(m, k)$, then any collection of function values queried at any collection of input points $x$ (times, spatial locations, image pixels, etc.), has a joint multivariate Gaussian distribution with mean vector $\mu$ and covariance matrix $K$: $f(x_1),\dots,f(x_n) \sim \mathcal{N}(\mu, K)$, where $\mu_i = E[f(x_i)] = m(x_i)$ and $K_{ij} = \textrm{Cov}(f(x_i),f(x_j)) = k(x_i,x_j)$.
+가우스 과정은 _그 어떤 유한한 개수의 확률 변수들도 결합 가우스 분포를 가지는 확률 변수들의 모음_으로 정의됩니다. 함수 $f(x)$가 _평균 함수(mean function)_ $m(x)$와 _공분산 함수(covariance function)_ 또는 _커널(kernel)_ $k(x,x')$를 가진 가우스 과정 $f(x) \sim \mathcal{GP}(m, k)$이라면, 입력 점들의 어떤 모음 $x$ (시간, 공간 위치, 이미지 픽셀 등)에서 질의된 어떤 함숫값들의 모음도 평균 벡터 $\mu$와 공분산 행렬 $K$를 갖는 결합 다변량 가우스 분포를 가집니다. 즉, $f(x_1),\dots,f(x_n) \sim \mathcal{N}(\mu, K)$이며, 여기서 $\mu_i = E[f(x_i)] = m(x_i)$이고 $K_{ij} = \textrm{Cov}(f(x_i),f(x_j)) = k(x_i,x_j)$입니다.
 
-This definition may seem abstract and inaccessible, but Gaussian processes are in fact very simple objects. Any function
+이 정의는 추상적이고 접근하기 어려워 보일 수 있지만, 가우스 과정은 사실 매우 단순한 대상입니다. 다음과 같은 어떤 함수
 
 $$f(x) = w^{\top} \phi(x) = \langle w, \phi(x) \rangle,$$ :eqlabel:`eq_gp-function`
 
-with $w$ drawn from a Gaussian (normal) distribution, and $\phi$ being any vector of basis functions, for example $\phi(x) = (1, x, x^2, ..., x^d)^{\top}$,
-is a Gaussian process. Moreover, any Gaussian process f(x) can be expressed in the form of equation :eqref:`eq_gp-function`. Let's consider a few concrete examples, to begin getting acquainted with Gaussian processes, after which we can appreciate how simple and useful they really are.
+가우스(정규) 분포로부터 추출된 $w$와, 어떤 기저 함수 벡터인 $\phi$ (예: $\phi(x) = (1, x, x^2, ..., x^d)^{\top}$)를 갖는 위의 함수는 가우스 과정입니다. 더욱이, 어떤 가우스 과정 $f(x)$도 식 :eqref:`eq_gp-function`의 형태로 표현될 수 있습니다. 가우스 과정과 친숙해지기 위해 몇 가지 구체적인 예제를 살펴봅시다. 그 후에는 가우스 과정이 얼마나 단순하고 유용한지 진정으로 음미할 수 있게 될 것입니다.
 
-## A Simple Gaussian Process
+## 간단한 가우스 과정
 
-Suppose $f(x) = w_0 + w_1 x$, and $w_0, w_1 \sim \mathcal{N}(0,1)$, with $w_0, w_1, x$ all in one dimension. We can equivalently write this function as the inner product $f(x) = (w_0, w_1)(1, x)^{\top}$. In :eqref:`eq_gp-function` above, $w = (w_0, w_1)^{\top}$ and $\phi(x) = (1,x)^{\top}$.
+$f(x) = w_0 + w_1 x$이고, $w_0, w_1 \sim \mathcal{N}(0,1)$이며, $w_0, w_1, x$가 모두 일차원이라고 가정합시다. 이 함수를 내적 $f(x) = (w_0, w_1)(1, x)^{\top}$으로 동등하게 쓸 수 있습니다. 위의 :eqref:`eq_gp-function`에서 $w = (w_0, w_1)^{\top}$이고 $\phi(x) = (1,x)^{\top}$입니다.
 
-For any $x$, $f(x)$ is a sum of two Gaussian random variables. Since Gaussians are closed under addition, $f(x)$ is also a Gaussian random variable for any $x$. In fact, we can compute for any particular $x$ that $f(x)$ is $\mathcal{N}(0,1+x^2)$. Similarly, the joint distribution for any collection of function values, $(f(x_1),\dots,f(x_n))$, for any collection of inputs $x_1,\dots,x_n$, is a multivariate Gaussian distribution. Therefore $f(x)$ is a Gaussian process.
+어떤 $x$에 대해서도, $f(x)$는 두 가우스 확률 변수의 합입니다. 가우스는 덧셈에 닫혀 있으므로, $f(x)$는 어떤 $x$에 대해서도 가우스 확률 변수입니다. 실제로, 어떤 특정한 $x$에 대해서도 $f(x)$가 $\mathcal{N}(0,1+x^2)$임을 계산할 수 있습니다. 마찬가지로, 어떤 입력의 모음 $x_1,\dots,x_n$에 대한 어떤 함숫값들의 모음 $(f(x_1),\dots,f(x_n))$의 결합 분포도 다변량 가우스 분포입니다. 따라서 $f(x)$는 가우스 과정입니다.
 
-In short, $f(x)$ is a _random function_, or a _distribution over functions_. We can gain some insights into this distribution by repeatedly sampling values for $w_0, w_1$, and visualizing the corresponding functions $f(x)$, which are straight lines with slopes and different intercepts, as follows:
+요컨대, $f(x)$는 _확률 함수(random function)_, 즉 _함수에 대한 분포(distribution over functions)_입니다. $w_0, w_1$에 대한 값을 반복적으로 표본 추출하고, 다음과 같이 서로 다른 기울기와 절편을 갖는 직선들인 해당 함수 $f(x)$들을 시각화함으로써 이 분포에 대한 통찰을 얻을 수 있습니다.
 
 ```{.python .input}
 def lin_func(x, n_sample):
@@ -58,61 +57,60 @@ d2l.plt.ylabel("f(x)", fontsize=20)
 d2l.plt.show()
 ```
 
-If $w_0$ and $w_1$ are instead drawn from $\mathcal{N}(0,\alpha^2)$, how do you imagine varying $\alpha$ affects the distribution over functions?
+만약 $w_0$와 $w_1$이 $\mathcal{N}(0,\alpha^2)$에서 추출된다면, $\alpha$를 변화시키는 것이 함수에 대한 분포에 어떻게 영향을 줄 것 같나요?
 
-## From Weight Space to Function Space
+## 가중치 공간에서 함수 공간으로
 
-In the plot above, we saw how a distribution over parameters in a model induces a distribution over functions. While we often have ideas about the functions we want to model --- whether they're smooth, periodic, quickly varying, etc. --- it is relatively tedious to reason about the parameters, which are largely uninterpretable. Fortunately, Gaussian processes provide an easy mechanism to reason _directly_ about functions. Since a Gaussian distribution is entirely defined by its first two moments, its mean and covariance matrix, a Gaussian process by extension is defined by its mean function and covariance function.
+위 플롯에서, 저희는 모델의 매개변수에 대한 분포가 어떻게 함수에 대한 분포를 유도하는지 보았습니다. 비록 저희가 모델링하고자 하는 함수에 대해 종종 어떤 아이디어 (그것이 매끄러운지, 주기적인지, 빠르게 변화하는지 등)를 갖고 있긴 하지만, 매개변수에 대해 추론하는 것은 비교적 번거롭습니다. 매개변수들은 대체로 해석하기 어렵기 때문입니다. 다행히, 가우스 과정은 함수에 대해 _직접_ 추론할 수 있는 쉬운 메커니즘을 제공합니다. 가우스 분포는 처음 두 모멘트인 평균과 공분산 행렬로 완전히 정의되므로, 가우스 과정도 확장하여 평균 함수와 공분산 함수로 정의됩니다.
 
-In the above example, the mean function
+위 예제에서, 평균 함수는
 
 $$m(x) = E[f(x)] = E[w_0 + w_1x] = E[w_0] + E[w_1]x = 0+0 = 0.$$
 
-Similarly, the covariance function is
+마찬가지로, 공분산 함수는
 
 $$k(x,x') = \textrm{Cov}(f(x),f(x')) = E[f(x)f(x')]-E[f(x)]E[f(x')] = E[w_0^2 + w_0w_1x' + w_1w_0x + w_1^2xx'] = 1 + xx'.$$
 
-Our distribution over functions can now be directly specified and sampled from, without needing to sample from the distribution over parameters. For example, to draw from $f(x)$, we can simply form our multivariate Gaussian distribution associated with any collection of $x$ we want to query, and sample from it directly. We will begin to see just how advantageous this formulation will be.
+이제 매개변수에 대한 분포에서 표본을 추출할 필요 없이, 함수에 대한 분포를 직접 명시하고 표본을 추출할 수 있습니다. 예를 들어, $f(x)$로부터 추출하기 위해서는, 질의하고자 하는 $x$들의 어떤 모음에 대한 다변량 가우스 분포를 단순히 형성하고, 직접 표본을 추출할 수 있습니다. 이 정식화가 얼마나 유리할 것인지 살펴보기 시작할 것입니다.
 
-First, we note that essentially the same derivation for the simple straight line model above can be applied to find the mean and covariance function for _any_ model of the form $f(x) = w^{\top} \phi(x)$, with $w \sim \mathcal{N}(u,S)$. In this case, the mean function $m(x) = u^{\top}\phi(x)$, and the covariance function $k(x,x') = \phi(x)^{\top}S\phi(x')$. Since $\phi(x)$ can represent a vector of any non-linear basis functions, we are considering a very general model class, including models with an even an _infinite_ number of parameters.
+먼저, 위의 단순 직선 모델에 대한 본질적으로 동일한 유도가, $w \sim \mathcal{N}(u,S)$를 갖는 $f(x) = w^{\top} \phi(x)$ 형태의 _어떤_ 모델의 평균과 공분산 함수를 찾는 데에도 적용될 수 있음을 주목합시다. 이 경우, 평균 함수는 $m(x) = u^{\top}\phi(x)$이고, 공분산 함수는 $k(x,x') = \phi(x)^{\top}S\phi(x')$입니다. $\phi(x)$가 어떤 비선형 기저 함수의 벡터든 표현할 수 있으므로, 저희는 _무한히_ 많은 매개변수를 갖는 모델까지 포함하는 매우 일반적인 모델 클래스를 고려하고 있는 것입니다.
 
-## The Radial Basis Function (RBF) Kernel
+## 방사 기저 함수(RBF) 커널
 
-The _radial basis function_ (RBF) kernel is the most popular covariance function for Gaussian processes, and kernel machines in general.
-This kernel has the form $k_{\textrm{RBF}}(x,x') = a^2\exp\left(-\frac{1}{2\ell^2}||x-x'||^2\right)$, where $a$ is an amplitude parameter, and $\ell$ is a _lengthscale_ hyperparameter.
+_방사 기저 함수(radial basis function, RBF)_ 커널은 가우스 과정과 커널 머신 전반에 걸쳐 가장 인기 있는 공분산 함수입니다.
+이 커널은 $k_{\textrm{RBF}}(x,x') = a^2\exp\left(-\frac{1}{2\ell^2}||x-x'||^2\right)$ 형태이며, 여기서 $a$는 진폭 매개변수이고 $\ell$은 _길이 스케일(lengthscale)_ 하이퍼파라미터입니다.
 
-Let's derive this kernel starting from weight space. Consider the function
+가중치 공간에서 시작하여 이 커널을 유도해 봅시다. 다음 함수를 고려합시다.
 
 $$f(x) = \sum_{i=1}^J w_i \phi_i(x), w_i  \sim \mathcal{N}\left(0,\frac{\sigma^2}{J}\right), \phi_i(x) = \exp\left(-\frac{(x-c_i)^2}{2\ell^2 }\right).$$
 
-$f(x)$ is a sum of radial basis functions, with width $\ell$, centred at the points $c_i$, as shown in the following figure.
+$f(x)$는 다음 그림에서 보이듯이, 점 $c_i$를 중심으로 하고 너비 $\ell$을 갖는 방사 기저 함수들의 합입니다.
 
 
-We can recognize $f(x)$ as having the form $w^{\top} \phi(x)$, where $w = (w_1,\dots,w_J)^{\top}$ and $\phi(x)$ is a vector containing each of the radial basis functions. The covariance function of this Gaussian process is then
+$f(x)$가 $w^{\top} \phi(x)$ 형태를 갖는 것을 인식할 수 있는데, 여기서 $w = (w_1,\dots,w_J)^{\top}$이고 $\phi(x)$는 각 방사 기저 함수를 담은 벡터입니다. 그러면 이 가우스 과정의 공분산 함수는
 
 $$k(x,x') = \frac{\sigma^2}{J} \sum_{i=1}^{J} \phi_i(x)\phi_i(x').$$
 
-Now let's consider what happens as we take the number of parameters (and basis functions) to infinity. Let $c_J = \log J$, $c_1 = -\log J$, and $c_{i+1}-c_{i} = \Delta c = 2\frac{\log J}{J}$, and $J \to \infty$. The covariance function becomes the Riemann sum:
+이제 매개변수(와 기저 함수)의 개수를 무한대로 보낼 때 어떤 일이 일어나는지 살펴봅시다. $c_J = \log J$, $c_1 = -\log J$, $c_{i+1}-c_{i} = \Delta c = 2\frac{\log J}{J}$로 두고, $J \to \infty$가 되게 합시다. 공분산 함수는 리만 합(Riemann sum)이 됩니다.
 
 $$k(x,x') = \lim_{J \to \infty} \frac{\sigma^2}{J} \sum_{i=1}^{J} \phi_i(x)\phi_i(x') = \int_{c_0}^{c_\infty} \phi_c(x)\phi_c(x') dc.$$
 
-By setting $c_0 = -\infty$ and $c_\infty = \infty$, we spread the infinitely many basis functions across the whole real line, each
-a distance $\Delta c \to 0$ apart:
+$c_0 = -\infty$ 그리고 $c_\infty = \infty$로 설정함으로써, 저희는 무한히 많은 기저 함수를 실수 전체 직선에 걸쳐 펼치게 됩니다. 각 함수는 $\Delta c \to 0$의 거리만큼 떨어져 있습니다.
 
 $$k(x,x') = \int_{-\infty}^{\infty} \exp(-\frac{(x-c)^2}{2\ell^2}) \exp(-\frac{(x'-c)^2}{2\ell^2 }) dc = \sqrt{\pi}\ell \sigma^2 \exp(-\frac{(x-x')^2}{2(\sqrt{2} \ell)^2}) \propto k_{\textrm{RBF}}(x,x').$$
 
-It is worth taking a moment to absorb what we have done here. By moving into the function space representation, we have derived how to represent a model with an _infinite_ number of parameters, using a finite amount of computation. A Gaussian process with an RBF kernel is a _universal approximator_, capable of representing any continuous function to arbitrary precision. We can intuitively see why from the above derivation. We can collapse each radial basis function to a point mass taking $\ell \to 0$, and give each point mass any height we wish.
+저희가 여기서 한 일을 음미하기 위해 잠시 시간을 가질 가치가 있습니다. 함수 공간 표현으로 옮겨감으로써, 저희는 _무한히_ 많은 매개변수를 갖는 모델을 유한한 계산량을 사용하여 어떻게 표현할지를 유도했습니다. RBF 커널을 갖는 가우스 과정은 _보편 근사기(universal approximator)_이며, 어떤 연속 함수도 임의의 정밀도로 표현할 수 있습니다. 위 유도로부터 그 이유를 직관적으로 알 수 있습니다. $\ell \to 0$로 가져가서 각 방사 기저 함수를 점 질량(point mass)으로 압축할 수 있고, 각 점 질량에 원하는 어떤 높이도 부여할 수 있습니다.
 
-So a Gaussian process with an RBF kernel is a model with an infinite number of parameters and much more flexibility than any finite neural network. Perhaps all the fuss about _overparametrized_ neural networks is misplaced. As we will see, GPs with RBF kernels do not overfit, and in fact provide especially compelling generalization performance on small datasets. Moreover, the examples in :cite:`zhang2021understanding`, such as the ability to fit images with random labels perfectly, but still generalize well on structured problems, (can be perfectly reproduced using Gaussian processes) :cite:`wilson2020bayesian`. Neural networks are not as distinct as we make them out to be.
+따라서 RBF 커널을 갖는 가우스 과정은 무한히 많은 매개변수를 갖는 모델이며, 어떤 유한한 신경망보다도 훨씬 더 유연합니다. 어쩌면 _과매개변수화된(overparametrized)_ 신경망에 대한 모든 소동은 잘못된 것일 수 있습니다. 곧 보게 되겠지만, RBF 커널을 갖는 GP는 과적합되지 않으며, 실제로 작은 데이터셋에서 특히 인상적인 일반화 성능을 제공합니다. 더욱이, :cite:`zhang2021understanding`의 예제들, 예를 들어 임의의 라벨을 가진 이미지를 완벽하게 적합하면서도 구조화된 문제에서는 잘 일반화하는 능력은 (가우스 과정을 사용하여 완벽하게 재현할 수 있습니다) :cite:`wilson2020bayesian`. 신경망은 저희가 그렇다고 만드는 것만큼 그렇게 구별되지 않습니다.
 
-We can build further intuition about Gaussian processes with RBF kernels, and hyperparameters such as _length-scale_, by sampling directly from the distribution over functions. As before, this involves a simple procedure:
+함수에 대한 분포로부터 직접 표본 추출함으로써, RBF 커널을 갖는 가우스 과정과 _길이 스케일(length-scale)_과 같은 하이퍼파라미터에 대한 추가적인 직관을 쌓을 수 있습니다. 이전과 같이, 이는 간단한 절차를 포함합니다.
 
-1. Choose the input $x$ points we want to query the GP: $x_1,\dots,x_n$.
-2. Evaluate $m(x_i)$, $i = 1,\dots,n$, and $k(x_i,x_j)$ for $i,j = 1,\dots,n$ to respectively form the mean vector and covariance matrix $\mu$ and $K$, where $(f(x_1),\dots,f(x_n)) \sim \mathcal{N}(\mu, K)$.
-3. Sample from this multivariate Gaussian distribution to obtain the sample function values.
-4. Sample more times to visualize more sample functions queried at those points.
+1. GP를 질의하고자 하는 입력 $x$ 점들 $x_1,\dots,x_n$을 선택합니다.
+2. $i = 1,\dots,n$에 대해 $m(x_i)$를, 그리고 $i,j = 1,\dots,n$에 대해 $k(x_i,x_j)$를 평가하여 평균 벡터와 공분산 행렬 $\mu$와 $K$를 각각 형성합니다. 여기서 $(f(x_1),\dots,f(x_n)) \sim \mathcal{N}(\mu, K)$입니다.
+3. 이 다변량 가우스 분포로부터 표본을 추출하여 표본 함숫값을 얻습니다.
+4. 더 많은 표본 함수를 그 점들에서 질의해 시각화합니다.
 
-We illustrate this process in the figure below.
+이 과정을 아래 그림에서 설명합니다.
 
 ```{.python .input}
 def rbfkernel(x1, x2, ls=4.):  #@save
@@ -128,47 +126,47 @@ d2l.plt.plot(x_points, prior_samples.T, alpha=0.5)
 d2l.plt.show()
 ```
 
-## The Neural Network Kernel
+## 신경망 커널
 
-Research on Gaussian processes in machine learning was triggered by research on neural networks. Radford Neal was pursuing ever larger Bayesian neural networks, ultimately showing in 1994 (later published in 1996, as it was one of the most infamous NeurIPS rejections) that such networks with an infinite number of hidden units become Gaussian processes with particular kernel functions :cite:`neal1996bayesian`. Interest in this derivation has re-surfaced, with ideas like the neural tangent kernel being used to investigate the generalization properties of neural networks :cite:`matthews2018gaussian` :cite:`novak2018bayesian`. We can derive the neural network kernel as follows.
+머신러닝에서 가우스 과정 연구는 신경망 연구에 의해 촉발되었습니다. Radford Neal은 점점 더 큰 베이지안 신경망을 추구하고 있었고, 결국 1994년에 무한히 많은 은닉 유닛을 갖는 그러한 신경망이 특정 커널 함수를 갖는 가우스 과정이 됨을 보였습니다 (가장 악명 높은 NeurIPS 거절 사례 중 하나였기 때문에 나중에 1996년에 출판되었습니다) :cite:`neal1996bayesian`. 신경 탄젠트 커널(neural tangent kernel)과 같은 아이디어가 신경망의 일반화 속성을 조사하는 데 사용되면서, 이 유도에 대한 관심이 재조명되었습니다 :cite:`matthews2018gaussian` :cite:`novak2018bayesian`. 신경망 커널을 다음과 같이 유도할 수 있습니다.
 
-Consider a neural network function $f(x)$ with one hidden layer:
+은닉층이 하나인 신경망 함수 $f(x)$를 고려합시다.
 
 $$f(x) = b + \sum_{i=1}^{J} v_i h(x; u_i).$$
 
-$b$ is a bias, $v_i$ are the hidden to output weights, $h$ is any bounded hidden unit transfer function, $u_i$ are the input to hidden weights, and $J$ is the number of hidden units. Let $b$ and $v_i$ be independent with zero mean and variances $\sigma_b^2$ and $\sigma_v^2/J$, respectively, and let the $u_i$ have independent identical distributions. We can then use the central limit theorem to show that any collection of function values $f(x_1),\dots,f(x_n)$ has a joint multivariate Gaussian distribution.
+$b$는 편향, $v_i$는 은닉층-출력 가중치, $h$는 어떤 유계 은닉 유닛 전달 함수, $u_i$는 입력-은닉 가중치, $J$는 은닉 유닛의 수입니다. $b$와 $v_i$가 평균이 0이고 분산이 각각 $\sigma_b^2$와 $\sigma_v^2/J$인 독립이라 하고, $u_i$는 독립적이고 동일한 분포를 갖는다고 합시다. 그러면 중심극한정리(central limit theorem)를 사용하여, 어떤 함숫값들의 모음 $f(x_1),\dots,f(x_n)$이 결합 다변량 가우스 분포를 가짐을 보일 수 있습니다.
 
-The mean and covariance function of the corresponding Gaussian process are:
+해당 가우스 과정의 평균과 공분산 함수는 다음과 같습니다.
 
 $$m(x) = E[f(x)] = 0$$
 
 $$k(x,x') = \textrm{cov}[f(x),f(x')] = E[f(x)f(x')] = \sigma_b^2 + \frac{1}{J} \sum_{i=1}^{J} \sigma_v^2 E[h_i(x; u_i)h_i(x'; u_i)]$$
 
-In some cases, we can essentially evaluate this covariance function in closed form. Let $h(x; u) = \textrm{erf}(u_0 + \sum_{j=1}^{P} u_j x_j)$, where $\textrm{erf}(z) = \frac{2}{\sqrt{\pi}} \int_{0}^{z} e^{-t^2} dt$, and $u \sim \mathcal{N}(0,\Sigma)$. Then $k(x,x') = \frac{2}{\pi} \textrm{sin}(\frac{2 \tilde{x}^{\top} \Sigma \tilde{x}'}{\sqrt{(1 + 2 \tilde{x}^{\top} \Sigma \tilde{x})(1 + 2 \tilde{x}'^{\top} \Sigma \tilde{x}')}})$.
+일부 경우에는, 이 공분산 함수를 본질적으로 닫힌 형식으로 평가할 수 있습니다. $h(x; u) = \textrm{erf}(u_0 + \sum_{j=1}^{P} u_j x_j)$라 하고, 여기서 $\textrm{erf}(z) = \frac{2}{\sqrt{\pi}} \int_{0}^{z} e^{-t^2} dt$이며, $u \sim \mathcal{N}(0,\Sigma)$입니다. 그러면 $k(x,x') = \frac{2}{\pi} \textrm{sin}(\frac{2 \tilde{x}^{\top} \Sigma \tilde{x}'}{\sqrt{(1 + 2 \tilde{x}^{\top} \Sigma \tilde{x})(1 + 2 \tilde{x}'^{\top} \Sigma \tilde{x}')}})$입니다.
 
-The RBF kernel is _stationary_, meaning that it is _translation invariant_, and therefore can be written as a function of $\tau = x-x'$. Intuitively, stationarity means that the high-level properties of the function, such as rate of variation, do not change as we move in input space. The neural network kernel, however, is _non-stationary_. Below, we show sample functions from a Gaussian process with this kernel. We can see that the function looks qualitatively different near the origin.
+RBF 커널은 _정상(stationary)_, 즉 _평행이동 불변_이며, 따라서 $\tau = x-x'$의 함수로 쓸 수 있습니다. 직관적으로, 정상성은 함수의 고수준 속성(예: 변동률)이 입력 공간에서 이동할 때 변하지 않음을 의미합니다. 그러나 신경망 커널은 _비정상(non-stationary)_입니다. 아래에서는 이 커널을 갖는 가우스 과정으로부터의 표본 함수를 보여줍니다. 함수가 원점 근처에서 질적으로 다르게 보이는 것을 볼 수 있습니다.
 
-## Summary
-
-
-The first step in performing Bayesian inference involves specifying a prior. Gaussian processes can be used to specify a whole prior over functions. Starting from a traditional "weight space" view of modelling, we can induce a prior over functions by starting with the functional form of a model, and introducing a distribution over its parameters. We can alternatively specify a prior distribution directly in function space, with properties controlled by a kernel. The function-space approach has many advantages. We can build models that actually correspond to an infinite number of parameters, but use a finite amount of computation! Moreover, while these models have a great amount of flexibility, they also make strong assumptions about what types of functions are a priori likely, leading to relatively good generalization on small datasets.
-
-The assumptions of models in function space are intuitively controlled by kernels, which often encode higher level properties of functions, such as smoothness and periodicity. Many kernels are stationary, meaning that they are translation invariant. Functions drawn from a Gaussian process with a stationary kernel have roughly the same high-level properties (such as rate of variation) regardless of where we look in the input space.
-
-Gaussian processes are a relatively general model class, containing many examples of models we are already familiar with, including polynomials, Fourier series, and so on, as long as we have a Gaussian prior over the parameters. They also include neural networks with an infinite number of parameters, even without Gaussian distributions over the parameters. This connection, discovered by Radford Neal, triggered machine learning researchers to move away from neural networks, and towards Gaussian processes.
+## 요약
 
 
-## Exercises
+베이지안 추론을 수행하는 첫 번째 단계는 사전 분포를 명시하는 것입니다. 가우스 과정은 함수에 대한 전체 사전 분포를 명시하는 데 사용될 수 있습니다. 모델링에 대한 전통적인 "가중치 공간(weight space)" 관점에서 시작하여, 모델의 함수적 형태로부터 시작하고 그 매개변수에 대한 분포를 도입함으로써 함수에 대한 사전 분포를 유도할 수 있습니다. 대안으로, 커널에 의해 제어되는 속성을 가지고 함수 공간에서 사전 분포를 직접 명시할 수 있습니다. 함수 공간 접근법은 많은 이점이 있습니다. 저희는 실제로 무한히 많은 매개변수에 해당하는 모델을 만들 수 있지만, 유한한 계산량을 사용합니다! 더욱이, 이러한 모델은 큰 유연성을 갖지만, 사전적으로 어떤 종류의 함수가 가능성이 있는지에 대해 강한 가정을 하기 때문에, 작은 데이터셋에서 비교적 좋은 일반화로 이어집니다.
 
-1. Draw sample prior functions from a GP with an Ornstein-Uhlenbeck (OU) kernel, $k_{\textrm{OU}}(x,x') = \exp\left(-\frac{1}{2\ell}||x - x'|\right)$. If you fix the lengthscale $\ell$ to be the same, how do these functions look different than sample functions from a GP with an RBF kernel?
+함수 공간에서의 모델의 가정은 종종 매끄러움과 주기성과 같은 함수의 고수준 속성을 인코딩하는 커널에 의해 직관적으로 제어됩니다. 많은 커널이 정상성을 갖는데, 이는 평행이동 불변임을 의미합니다. 정상 커널을 가진 가우스 과정으로부터 추출된 함수는, 입력 공간의 어디를 보든 거의 동일한 고수준 속성(예: 변동률)을 가집니다.
 
-2. How does changing the _amplitude_ $a^2$ of the RBF kernel affect the distribution over functions?
+가우스 과정은 매개변수에 대해 가우스 사전 분포를 갖는 한, 저희가 이미 친숙한 모델들의 많은 예제 (다항식, 푸리에 급수 등)를 포함하는 비교적 일반적인 모델 클래스입니다. 그것은 또한 매개변수에 대한 가우스 분포 없이도, 무한히 많은 매개변수를 가진 신경망도 포함합니다. Radford Neal에 의해 발견된 이러한 연결은 머신러닝 연구자들이 신경망에서 가우스 과정으로 옮겨가도록 촉발했습니다.
 
-3. Suppose we form $u(x) = f(x) + 2g(x)$, where $f(x) \sim \mathcal{GP}(m_1,k_1)$ and $g(x) \sim \mathcal{GP}(m_2,k_2)$. Is $u(x)$ a Gaussian process, and if so, what is its mean and covariance function?
 
-4. Suppose we form $g(x) = a(x)f(x)$, where $f(x) \sim \mathcal{GP}(0,k)$ and $a(x) = x^2$. Is $g(x)$ a Gaussian process, and if so, what is its mean and covariance function? What is the effect of $a(x)$? What do sample functions drawn from $g(x)$ look like?
+## 연습 문제
 
-5. Suppose we form $u(x) = f(x)g(x)$, where $f(x) \sim \mathcal{GP}(m_1,k_1)$ and $g(x) \sim \mathcal{GP}(m_2,k_2)$. Is $u(x)$ a Gaussian process, and if so, what is its mean and covariance function?
+1. Ornstein-Uhlenbeck (OU) 커널 $k_{\textrm{OU}}(x,x') = \exp\left(-\frac{1}{2\ell}||x - x'|\right)$을 갖는 GP로부터 표본 사전 함수들을 추출하세요. 길이 스케일 $\ell$을 동일하게 고정한다면, 이러한 함수들은 RBF 커널을 갖는 GP로부터의 표본 함수와 어떻게 달라 보이나요?
+
+2. RBF 커널의 _진폭_ $a^2$을 변경하면 함수에 대한 분포가 어떻게 영향을 받나요?
+
+3. $u(x) = f(x) + 2g(x)$를 형성한다고 가정합시다. 여기서 $f(x) \sim \mathcal{GP}(m_1,k_1)$이고 $g(x) \sim \mathcal{GP}(m_2,k_2)$입니다. $u(x)$는 가우스 과정인가요? 만약 그렇다면, 그 평균과 공분산 함수는 무엇인가요?
+
+4. $g(x) = a(x)f(x)$를 형성한다고 가정합시다. 여기서 $f(x) \sim \mathcal{GP}(0,k)$이고 $a(x) = x^2$입니다. $g(x)$는 가우스 과정인가요? 만약 그렇다면, 그 평균과 공분산 함수는 무엇인가요? $a(x)$의 효과는 무엇인가요? $g(x)$로부터 추출된 표본 함수는 어떻게 보이나요?
+
+5. $u(x) = f(x)g(x)$를 형성한다고 가정합시다. 여기서 $f(x) \sim \mathcal{GP}(m_1,k_1)$이고 $g(x) \sim \mathcal{GP}(m_2,k_2)$입니다. $u(x)$는 가우스 과정인가요? 만약 그렇다면, 그 평균과 공분산 함수는 무엇인가요?
 
 :begin_tab:`pytorch`
 [Discussions](https://discuss.d2l.ai/t/12116)

@@ -4,73 +4,75 @@ tab.interact_select(["pytorch"])
 #required_libs("syne-tune[gpsearchers]==0.3.2")
 ```
 
-# Asynchronous Successive Halving
+# 비동기 연속 하빙
 
 :label:`sec_sh_async`
 
-As we have seen in :numref:`sec_rs_async`, we can accelerate HPO by
-distributing the evaluation of hyperparameter configurations across either
-multiple instances or multiples CPUs / GPUs on a single instance. However,
-compared to random search, it is not straightforward to run
-successive halving (SH) asynchronously in a distributed setting. Before we can
-decide which configuration to run next, we first have to collect all
-observations at the current rung level. This requires to
-synchronize workers at each rung level. For example, for the lowest rung level
-$r_{\mathrm{min}}$, we first have to evaluate all $N = \eta^K$ configurations, before we
-can promote the $\frac{1}{\eta}$ of them to the next rung level.
+:numref:`sec_rs_async`에서 보았듯이, 여러 인스턴스나 단일 인스턴스의
+여러 CPU/GPU에 걸쳐 하이퍼파라미터 구성의 산정을 분산시킴으로써 HPO를
+가속할 수 있습니다. 그러나 랜덤 탐색과 비교했을 때, 분산 설정에서
+연속 하빙(SH)을 비동기적으로 실행하는 것은 간단하지 않습니다. 다음에
+어떤 구성을 실행할지 결정하려면, 먼저 현재 룽 레벨의 모든 관측값을
+수집해야 합니다. 이는 각 룽 레벨에서 작업자들을 동기화해야 함을
+의미합니다. 예를 들어, 가장 낮은 룽 레벨 $r_{\mathrm{min}}$의 경우,
+그 중 $\frac{1}{\eta}$를 다음 룽 레벨로 승격시키기 전에 먼저
+모든 $N = \eta^K$개의 구성을 산정해야 합니다.
 
-In any distributed system, synchronization typically implies idle time for workers.
-First, we often observe high variations in training time across hyperparameter
-configurations. For example, assuming the number of filters per layer is a
-hyperparameter, then networks with less filters finish training faster than
-networks with more filters, which implies idle worker time due to stragglers.
-Moreover, the number of slots in a rung level is not always a multiple of the number
-of workers, in which case some workers may even sit idle for a full batch.
+어떤 분산 시스템에서든, 동기화는 일반적으로 작업자의 유휴 시간을
+의미합니다. 첫째, 저희는 하이퍼파라미터 구성에 걸쳐 학습 시간에 큰
+변동성을 자주 관찰합니다. 예를 들어, 층당 필터 수가 하이퍼파라미터라고
+가정하면, 더 적은 필터를 가진 신경망은 더 많은 필터를 가진 신경망보다
+학습이 빨리 끝나므로, 낙오자로 인한 작업자의 유휴 시간이 발생합니다.
+더욱이, 룽 레벨의 슬롯 수가 항상 작업자 수의 배수인 것은 아니어서,
+어떤 작업자들은 한 배치 동안 통째로 유휴 상태로 있을 수도 있습니다.
 
-Figure :numref:`synchronous_sh` shows the scheduling of synchronous SH with $\eta=2$
-for four different trials with two workers. We start with evaluating Trial-0 and
-Trial-1 for one epoch and immediately continue with the next two trials once they
-are finished. We first have to wait until Trial-2 finishes, which takes
-substantially more time than the other trials, before we can promote the best two
-trials, i.e., Trial-0 and Trial-3 to the next rung level. This causes idle time for
-Worker-1. Then, we continue with Rung 1. Also, here Trial-3 takes longer than Trial-0,
-which leads to an additional ideling time of Worker-0. Once, we reach Rung-2, only
-the best trial, Trial-0, remains which occupies only one worker. To avoid that
-Worker-1 idles during that time, most implementaitons of SH continue already with
-the next round, and start evaluating new trials (e.g Trial-4) on the first rung.
+:numref:`synchronous_sh` 그림은 두 작업자로 4개의 서로 다른 트라이얼에
+대해 $\eta=2$인 동기식 SH의 스케줄링을 보여줍니다. Trial-0와 Trial-1을
+1 에폭 동안 산정하는 것으로 시작하여, 끝나자마자 즉시 다음 두
+트라이얼을 진행합니다. 그 후 다음 룽 레벨로 최고의 두 트라이얼,
+즉 Trial-0와 Trial-3을 승격하기 전에, 다른 트라이얼들보다 상당히 더
+많은 시간이 걸리는 Trial-2가 끝나기를 먼저 기다려야 합니다. 이로 인해
+Worker-1에 유휴 시간이 발생합니다. 그 다음 Rung 1을 진행합니다. 여기서도
+Trial-3이 Trial-0보다 오래 걸려, Worker-0에도 추가적인 유휴 시간이
+발생합니다. Rung-2에 도달하면, 최고의 트라이얼인 Trial-0만 남아
+한 작업자만 사용하게 됩니다. 그 시간 동안 Worker-1이 유휴 상태가
+되는 것을 피하기 위해, 대부분의 SH 구현은 이미 다음 라운드로 진행하여
+첫 번째 룽에서 새로운 트라이얼(예: Trial-4)을 산정하기 시작합니다.
 
-![Synchronous successive halving with two workers.](../img/sync_sh.svg)
+![두 작업자를 사용한 동기식 연속 하빙.](../img/sync_sh.svg)
 :label:`synchronous_sh`
 
-Asynchronous successive halving (ASHA) :cite:`li-arxiv18` adapts SH to the asynchronous
-parallel scenario. The main idea of ASHA is to promote configurations to the next rung
-level as soon as we collected at least $\eta$ observations on the current rung level.
-This decision rule may lead to suboptimal promotions: configurations can be promoted to the
-next rung level, which in hindsight do not compare favourably against most others
-at the same rung level. On the other hand, we get rid of all synchronization points
-this way. In practice, such suboptimal initial promotions have only a modest impact on
-performance, not only because the ranking of hyperparameter configurations is often
-fairly consistent across rung levels, but also because rungs grow over time and
-reflect the distribution of metric values at this level better and better. If a
-worker is free, but no configuration can be promoted, we start a new configuration
-with $r = r_{\mathrm{min}}$, i.e the first rung level.
+비동기 연속 하빙(asynchronous successive halving, ASHA) :cite:`li-arxiv18`은
+SH를 비동기 병렬 시나리오에 적응시킵니다. ASHA의 핵심 아이디어는
+현재 룽 레벨에서 적어도 $\eta$개의 관측을 수집하자마자 구성들을 다음
+룽 레벨로 승격하는 것입니다. 이 결정 규칙은 차선의 승격을 초래할 수
+있습니다. 즉, 구성이 다음 룽 레벨로 승격될 수 있지만, 돌이켜보면 같은
+룽 레벨의 대부분의 다른 구성들과 비교했을 때 우호적으로 비교되지
+않을 수도 있습니다. 한편으로는, 이 방식으로 모든 동기화 지점을
+없앨 수 있습니다. 실제로는, 그러한 차선의 초기 승격이 성능에 미치는
+영향은 적은데, 이는 하이퍼파라미터 구성의 순위가 룽 레벨에 걸쳐
+상당히 일관적인 경우가 많기도 하지만, 룽이 시간이 지나면서 커지면서
+그 레벨의 지표 값 분포를 점점 더 잘 반영하기 때문이기도 합니다.
+작업자가 여유가 있지만 어떤 구성도 승격될 수 없다면, $r = r_{\mathrm{min}}$,
+즉 첫 번째 룽 레벨에서 새로운 구성을 시작합니다.
 
-:numref:`asha` shows the scheduling of the same configurations for ASHA. Once Trial-1
-finishes, we collect the results of two trials (i.e Trial-0 and Trial-1) and
-immediately promote the better of them (Trial-0) to the next rung level. After Trial-0
-finishes on rung 1, there are too few trials there in order to support a further
-promotion. Hence, we continue with rung 0 and evaluate Trial-3. Once Trial-3 finishes,
-Trial-2 is still pending. At this point we have 3 trials evaluated on rung 0 and one
-trial evaluated already on rung 1. Since Trial-3 performs worse than Trial-0 at rung 0,
-and $\eta=2$, we cannot promote any new trial yet, and Worker-1 starts Trial-4 from
-scratch instead. However, once Trial-2 finishes and
-scores worse than Trial-3, the latter is promoted towards rung 1. Afterwards, we
-collected 2 evaluations on rung 1, which means we can now promote Trial-0 towards
-rung 2. At the same time, Worker-1 continues with evaluating new trials (i.e.,
-Trial-5) on rung 0.
+:numref:`asha`는 ASHA에 대해 동일한 구성들의 스케줄링을 보여줍니다.
+Trial-1이 끝나면, 두 트라이얼(즉, Trial-0과 Trial-1)의 결과를 수집하고
+즉시 그 중 더 나은 쪽(Trial-0)을 다음 룽 레벨로 승격합니다. Trial-0이
+룽 1에서 끝난 후에는, 추가 승격을 지원하기에는 그곳에 트라이얼이
+너무 적습니다. 따라서 룽 0을 계속하여 Trial-3을 산정합니다. Trial-3이
+끝나면, Trial-2는 여전히 진행 중입니다. 이 시점에서 룽 0에서 산정된
+3개의 트라이얼과 룽 1에서 이미 산정된 한 개의 트라이얼이 있습니다.
+Trial-3이 룽 0에서 Trial-0보다 성능이 나쁘고 $\eta=2$이기 때문에,
+아직 새로운 트라이얼을 승격시킬 수 없으며, 대신 Worker-1이 처음부터
+Trial-4를 시작합니다. 그러나 Trial-2가 끝나고 Trial-3보다 점수가 나쁘면,
+후자가 룽 1로 승격됩니다. 그 후, 룽 1에서 2개의 산정값을 수집하게
+되며, 이는 이제 Trial-0을 룽 2로 승격할 수 있다는 뜻입니다. 동시에,
+Worker-1은 룽 0에서 새로운 트라이얼(즉, Trial-5)을 산정하는 것을
+계속합니다.
 
 
-![Asynchronous successive halving (ASHA) with two workers.](../img/asha.svg)
+![두 작업자를 사용한 비동기 연속 하빙(ASHA).](../img/asha.svg)
 :label:`asha`
 
 ```{.python .input}
@@ -85,10 +87,10 @@ from syne_tune import Tuner, StoppingCriterion
 from syne_tune.experiments import load_experiment
 ```
 
-## Objective Function
+## 목적 함수
 
-We will use *Syne Tune* with the same objective function as in
-:numref:`sec_rs_async`.
+:numref:`sec_rs_async`와 동일한 목적 함수와 함께 *Syne Tune*을
+사용하겠습니다.
 
 ```{.python .input  n=54}
 def hpo_objective_lenet_synetune(learning_rate, batch_size, max_epochs):
@@ -110,7 +112,7 @@ def hpo_objective_lenet_synetune(learning_rate, batch_size, max_epochs):
         report(epoch=epoch, validation_error=float(validation_error))
 ```
 
-We will also use the same configuration space as before:
+이전과 동일한 구성 공간도 사용하겠습니다.
 
 ```{.python .input  n=55}
 min_number_of_epochs = 2
@@ -128,19 +130,19 @@ initial_config = {
 }
 ```
 
-## Asynchronous Scheduler
+## 비동기 스케줄러
 
-First, we define the number of workers that evaluate trials concurrently. We
-also need to specify how long we want to run random search, by defining an
-upper limit on the total wall-clock time.
+먼저, 트라이얼을 동시에 산정하는 작업자의 수를 정의합니다. 또한
+총 벽시계 시간의 상한을 정의함으로써 랜덤 탐색을 얼마나 오래 실행할지
+지정해야 합니다.
 
 ```{.python .input  n=56}
 n_workers = 2  # Needs to be <= the number of available GPUs
 max_wallclock_time = 12 * 60  # 12 minutes
 ```
 
-The code for running ASHA is a simple variation of what we did for asynchronous
-random search.
+ASHA를 실행하기 위한 코드는 비동기 랜덤 탐색에서 했던 것의 간단한
+변형입니다.
 
 ```{.python .input  n=56}
 mode = "min"
@@ -159,11 +161,11 @@ scheduler = ASHA(
 )
 ```
 
-Here, `metric` and `resource_attr` specify the key names used with the `report`
-callback, and `max_resource_attr` denotes which input to the objective function
-corresponds to $r_{\mathrm{max}}$. Moreover, `grace_period` provides $r_{\mathrm{min}}$, and
-`reduction_factor` is $\eta$. We can run Syne Tune as before (this will
-take about 12 minutes):
+여기서 `metric`과 `resource_attr`은 `report` 콜백과 함께 사용되는
+키 이름을 지정하고, `max_resource_attr`은 목적 함수의 어떤 입력이
+$r_{\mathrm{max}}$에 해당하는지를 나타냅니다. 또한 `grace_period`는
+$r_{\mathrm{min}}$을 제공하고, `reduction_factor`는 $\eta$입니다.
+이전처럼 Syne Tune을 실행할 수 있습니다(약 12분이 걸립니다).
 
 ```{.python .input  n=57}
 trial_backend = PythonBackend(
@@ -182,15 +184,15 @@ tuner = Tuner(
 tuner.run()
 ```
 
-Note that we are running a variant of ASHA where underperforming trials are
-stopped early. This is different to our implementation in
-:numref:`sec_mf_hpo_sh`, where each training job is started with a fixed
-`max_epochs`. In the latter case, a well-performing trial which reaches the
-full 10 epochs, first needs to train 1, then 2, then 4, then 8 epochs, each
-time starting from scratch. This type of pause-and-resume scheduling can be
-implemented efficiently by checkpointing the training state after each epoch,
-but we avoid this extra complexity here. After the experiment has finished,
-we can retrieve and plot results.
+저희가 실행하는 것은 성능이 낮은 트라이얼이 조기에 중단되는 ASHA의
+변형이라는 점에 유의하세요. 이는 각 학습 작업이 고정된 `max_epochs`로
+시작되는 :numref:`sec_mf_hpo_sh`의 구현과 다릅니다. 후자의 경우,
+전체 10 에폭에 도달하는 좋은 성능의 트라이얼은 먼저 1, 그 다음 2,
+그 다음 4, 그 다음 8 에폭을 학습해야 하며, 매번 처음부터 시작해야
+합니다. 이러한 일시 중지 및 재개(pause-and-resume) 스케줄링은 각
+에폭 이후 학습 상태를 체크포인팅함으로써 효율적으로 구현될 수 있지만,
+여기서는 이 추가적인 복잡성을 피합니다. 실험이 끝난 후, 결과를 가져와
+시각화할 수 있습니다.
 
 ```{.python .input  n=59}
 d2l.set_figsize()
@@ -198,15 +200,16 @@ e = load_experiment(tuner.name)
 e.plot()
 ```
 
-## Visualize the Optimization Process
+## 최적화 과정의 시각화
 
-Once more, we visualize the learning curves of every trial (each color in the plot represents a trial). Compare this to
-asynchronous random search in :numref:`sec_rs_async`. As we have seen for
-successive halving in :numref:`sec_mf_hpo`, most of the trials are stopped
-at 1 or 2 epochs ($r_{\mathrm{min}}$ or $\eta * r_{\mathrm{min}}$). However, trials do not stop
-at the same point, because they require different amount of time per epoch. If
-we ran standard successive halving instead of ASHA, we would need to synchronize
-our workers, before we can promote configurations to the next rung level.
+다시 한 번, 모든 트라이얼의 학습 곡선(플롯의 각 색상은 하나의 트라이얼을
+나타냄)을 시각화합니다. 이를 :numref:`sec_rs_async`의 비동기 랜덤
+탐색과 비교해 보세요. :numref:`sec_mf_hpo`의 연속 하빙에서 보았듯이,
+대부분의 트라이얼은 1 또는 2 에폭($r_{\mathrm{min}}$ 또는
+$\eta * r_{\mathrm{min}}$)에서 중단됩니다. 그러나 트라이얼들은 에폭당
+필요한 시간이 다르기 때문에 같은 지점에서 멈추지 않습니다. ASHA 대신
+표준 연속 하빙을 실행했다면, 구성을 다음 룽 레벨로 승격시키기 전에
+저희 작업자들을 동기화해야 했을 것입니다.
 
 ```{.python .input  n=60}
 d2l.set_figsize([6, 2.5])
@@ -222,14 +225,14 @@ d2l.plt.xlabel("wall-clock time")
 d2l.plt.ylabel("objective function")
 ```
 
-## Summary
+## 요약
 
-Compared to random search, successive halving is not quite as trivial to run in
-an asynchronous distributed setting. To avoid synchronisation points, we promote
-configurations as quickly as possible to the next rung level, even if this means
-promoting some wrong ones. In practice, this usually does not hurt much, and the
-gains of asynchronous versus synchronous scheduling are usually much higher
-than the loss of the suboptimal decision making.
+랜덤 탐색과 비교했을 때, 연속 하빙은 비동기 분산 설정에서 실행하기가
+그렇게 사소하지 않습니다. 동기화 지점을 피하기 위해, 잘못된 구성을
+승격하는 것을 의미할 수도 있지만, 가능한 한 빨리 구성을 다음 룽
+레벨로 승격합니다. 실제로 이것은 보통 큰 문제가 되지 않으며, 비동기
+스케줄링 대 동기식 스케줄링의 이득이 차선의 의사결정으로 인한 손실보다
+보통 훨씬 큽니다.
 
 
 :begin_tab:`pytorch`

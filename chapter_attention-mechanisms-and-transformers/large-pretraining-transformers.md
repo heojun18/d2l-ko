@@ -1,463 +1,255 @@
-# Large-Scale Pretraining with Transformers
+# 트랜스포머를 사용한 대규모 사전학습
 :label:`sec_large-pretraining-transformers`
 
-So far in our image classification and machine translation experiments,
-models have been trained on datasets with input--output examples
-*from scratch* to perform specific tasks.
-For example, a Transformer was trained
-with English--French pairs (:numref:`sec_transformer`)
-so that this model can translate input English text into French.
-As a result, each model becomes a *specific expert*
-that is sensitive to even a slight shift in data distribution
-(:numref:`sec_environment-and-distribution-shift`).
-For better generalized models, or even more competent *generalists*
-that can perform multiple tasks with or without adaptation,
-*pretraining* models on large data has been increasingly common.
+지금까지 저희의 이미지 분류와 기계 번역 실험에서, 모델들은 특정 작업을 수행하기 위해 입력-출력 예시를 가진 데이터셋에서 *처음부터(from scratch)* 학습되었습니다.
+예를 들어 트랜스포머는 영어-프랑스어 쌍(:numref:`sec_transformer`)으로 학습되어 이 모델이 입력 영어 텍스트를 프랑스어로 번역할 수 있게 했습니다.
+결과적으로 각 모델은 데이터 분포의 약간의 이동에도 민감한 *특정 분야의 전문가(specific expert)* 가 됩니다(:numref:`sec_environment-and-distribution-shift`).
+더 잘 일반화된 모델, 또는 적응이 있든 없든 여러 작업을 수행할 수 있는 더 유능한 *제너럴리스트(generalists)* 를 위해, 대규모 데이터에서 모델을 *사전학습(pretraining)* 하는 것이 점점 더 흔해지고 있습니다.
 
-Given larger data for pretraining, the Transformer architecture
-performs better with an increased model size and training compute,
-demonstrating superior *scaling* behavior.
-Specifically, performance of Transformer-based language models
-scales as a power law with the amount of model parameters,
-training tokens, and training compute :cite:`kaplan2020scaling`.
-The scalability of Transformers is also evidenced
-by the significantly boosted performance
-from larger vision Transformers trained on larger data
-(discussed in :numref:`sec_vision-transformer`).
-More recent success stories include Gato, a *generalist* model
-that can play Atari, caption images, chat, and act as a robot :cite:`reed2022generalist`. Gato is a single  Transformer that scales well when pretrained on diverse modalities,
-including text, images, joint torques, and button presses.
-Notably, all such multimodal data is serialized into a flat sequence of tokens,
-which can be processed akin to text tokens (:numref:`sec_transformer`)
-or image patches (:numref:`sec_vision-transformer`) by Transformers.
+사전학습을 위한 더 큰 데이터가 주어지면, 트랜스포머 아키텍처는 모델 크기와 학습 컴퓨팅의 증가에 따라 더 잘 작동하여 우월한 *스케일링(scaling)* 행동을 보입니다.
+구체적으로, 트랜스포머 기반 언어 모델의 성능은 모델 매개변수의 양, 학습 토큰, 학습 컴퓨팅에 대해 거듭제곱 법칙으로 스케일됩니다 :cite:`kaplan2020scaling`.
+트랜스포머의 확장성은 더 큰 데이터에서 학습된 더 큰 비전 트랜스포머의 상당히 향상된 성능(:numref:`sec_vision-transformer` 에서 논의됨)에 의해서도 입증됩니다.
+더 최근의 성공 사례에는 Atari를 플레이하고, 이미지에 캡션을 달고, 채팅하고, 로봇으로 작동할 수 있는 *제너럴리스트(generalist)* 모델인 Gato가 포함됩니다 :cite:`reed2022generalist`. Gato는 텍스트, 이미지, 관절 토크, 버튼 누름을 포함한 다양한 모달리티에서 사전학습될 때 잘 스케일되는 단일 트랜스포머입니다.
+특히 그러한 모든 멀티모달 데이터는 평탄한 토큰 시퀀스로 직렬화되어, 트랜스포머에 의해 텍스트 토큰(:numref:`sec_transformer`)이나 이미지 패치(:numref:`sec_vision-transformer`)와 유사하게 처리될 수 있습니다.
 
-Prior to the compelling success of pretraining Transformers for multimodal data,
-Transformers were extensively pretrained  with a wealth of text.
-Originally proposed for machine translation,
-the Transformer architecture in :numref:`fig_transformer`
-consists of an encoder for representing input sequences
-and a decoder for generating target sequences.
-Primarily, Transformers can be used in three different modes:
-*encoder-only*, *encoder--decoder*, and *decoder-only*.
-To conclude this chapter, we will review these three modes
-and explain the scalability in pretraining Transformers.
+멀티모달 데이터를 위한 트랜스포머 사전학습의 흥미진진한 성공 이전에, 트랜스포머는 풍부한 텍스트로 광범위하게 사전학습되었습니다.
+원래 기계 번역을 위해 제안된 :numref:`fig_transformer` 의 트랜스포머 아키텍처는 입력 시퀀스를 표현하는 인코더와 타깃 시퀀스를 생성하는 디코더로 구성됩니다.
+주로 트랜스포머는 세 가지 다른 모드로 사용될 수 있습니다: *인코더 전용(encoder-only)*, *인코더-디코더(encoder-decoder)*, *디코더 전용(decoder-only)*.
+이 장을 마무리하기 위해, 저희는 이 세 가지 모드를 검토하고 트랜스포머 사전학습의 확장성을 설명할 것입니다.
 
-## Encoder-Only
+## 인코더 전용
 
-When only the Transformer encoder is used,
-a sequence of input tokens is converted
-into the same number of representations
-that can be further projected into output
-(e.g., classification). A Transformer encoder
-consists of  self-attention layers,
-where all input tokens attend to each other.
-For example, vision Transformers depicted in :numref:`fig_vit`
-are encoder-only, converting a sequence of input image patches into
-the representation of a special “&lt;cls&gt;” token.
-Since this representation depends on all input tokens,
-it is further projected into classification labels.
-This design was inspired by an earlier encoder-only Transformer
-pretrained on text: BERT (Bidirectional Encoder Representations from Transformers) :cite:`Devlin.Chang.Lee.ea.2018`.
+트랜스포머 인코더만 사용될 때, 입력 토큰 시퀀스는 출력(예: 분류)으로 추가 사영될 수 있는 같은 수의 표현으로 변환됩니다. 트랜스포머 인코더는 모든 입력 토큰이 서로에게 주의를 기울이는 셀프 어텐션 계층으로 구성됩니다.
+예를 들어 :numref:`fig_vit` 에 묘사된 비전 트랜스포머는 인코더 전용으로, 입력 이미지 패치의 시퀀스를 특수한 "&lt;cls&gt;" 토큰의 표현으로 변환합니다.
+이 표현이 모든 입력 토큰에 의존하므로, 그것은 분류 레이블로 추가 사영됩니다.
+이 설계는 텍스트에서 사전학습된 더 이전의 인코더 전용 트랜스포머인 BERT(Bidirectional Encoder Representations from Transformers) :cite:`Devlin.Chang.Lee.ea.2018` 에 영감을 받았습니다.
 
 
-### Pretraining BERT
+### BERT 사전학습
 
-![Left: Pretraining BERT with masked language modeling. Prediction of the masked "love" token depends on all input tokens before and after "love". Right: Attention pattern in the Transformer encoder. Each token along the vertical axis attends to all input tokens along the horizontal axis.](../img/bert-encoder-only.svg)
+![왼쪽: 마스킹된 언어 모델링으로 BERT 사전학습. 마스킹된 "love" 토큰의 예측은 "love" 전후의 모든 입력 토큰에 의존합니다. 오른쪽: 트랜스포머 인코더의 어텐션 패턴. 수직축을 따른 각 토큰은 수평축을 따른 모든 입력 토큰에 주의를 기울입니다.](../img/bert-encoder-only.svg)
 :label:`fig_bert-encoder-only`
 
-BERT is pretrained on text sequences using *masked language modeling*:
-input text with randomly masked tokens is fed
-into a Transformer encoder to predict the masked tokens.
-As illustrated in :numref:`fig_bert-encoder-only`,
-an original text sequence "I", "love", "this", "red", "car"
-is prepended with the “&lt;cls&gt;” token, and the “&lt;mask&gt;” token
-randomly replaces "love"; then the cross-entropy loss between the masked token "love"
-and its prediction is to be minimized during pretraining.
-Note that there is no constraint in the attention pattern of Transformer encoders
-(right of :numref:`fig_bert-encoder-only`)
-so all tokens can attend to each other.
-Thus, prediction of "love" depends on input tokens before and after it in the sequence.
-This is why BERT is a "bidirectional encoder".
-Without need for manual labeling, large-scale text data
-from books and Wikipedia can be used for pretraining BERT.
+BERT는 *마스킹된 언어 모델링(masked language modeling)* 을 사용해 텍스트 시퀀스에서 사전학습됩니다: 무작위로 마스킹된 토큰을 가진 입력 텍스트가 마스킹된 토큰을 예측하기 위해 트랜스포머 인코더에 공급됩니다.
+:numref:`fig_bert-encoder-only` 에서 보여지는 것처럼, 원본 텍스트 시퀀스 "I", "love", "this", "red", "car" 는 "&lt;cls&gt;" 토큰이 앞에 붙고, "&lt;mask&gt;" 토큰이 "love" 를 무작위로 대체합니다; 그런 다음 마스킹된 토큰 "love" 와 그 예측 간의 교차 엔트로피 손실이 사전학습 동안 최소화됩니다.
+트랜스포머 인코더의 어텐션 패턴(:numref:`fig_bert-encoder-only` 의 오른쪽)에는 제약이 없으므로 모든 토큰이 서로에게 주의를 기울일 수 있다는 점에 유의하십시오.
+따라서 "love" 의 예측은 시퀀스에서 그 전후의 입력 토큰에 의존합니다.
+이것이 BERT가 "양방향 인코더(bidirectional encoder)" 인 이유입니다.
+수동 레이블링이 필요 없이, 책과 위키피디아의 대규모 텍스트 데이터가 BERT 사전학습에 사용될 수 있습니다.
 
 
-### Fine-Tuning BERT
+### BERT 파인튜닝
 
-The pretrained BERT can be *fine-tuned* to downstream encoding tasks involving single text or text pairs. During fine-tuning, additional layers can be added to BERT with randomized parameters: these parameters and those pretrained BERT parameters will be *updated* to fit training data of downstream tasks.
+사전학습된 BERT는 단일 텍스트나 텍스트 쌍을 포함한 다운스트림 인코딩 작업에 *파인튜닝(fine-tuned)* 될 수 있습니다. 파인튜닝 동안, 무작위화된 매개변수를 가진 추가 계층이 BERT에 추가될 수 있습니다: 이러한 매개변수들과 사전학습된 BERT 매개변수들이 다운스트림 작업의 학습 데이터에 맞도록 *업데이트* 됩니다.
 
-![Fine-tuning BERT for sentiment analysis.](../img/bert-finetune-classification.svg)
+![감정 분석을 위한 BERT 파인튜닝.](../img/bert-finetune-classification.svg)
 :label:`fig_bert-finetune-classification`
 
-:numref:`fig_bert-finetune-classification` illustrates
-fine-tuning of BERT for sentiment analysis.
-The Transformer encoder is a pretrained BERT,
-which takes a text sequence as input
-and feeds the “&lt;cls&gt;” representation
-(global representation of the input)
-into an additional fully connected layer
-to predict the sentiment.
-During fine-tuning, the cross-entropy loss
-between the prediction and the label
-on sentiment analysis data
-is minimized via gradient-based algorithms,
-where the additional layer is trained from scratch
-while pretrained parameters of BERT are updated.
-BERT does more than sentiment analysis.
-The general language representations learned
-by the 350-million-parameter BERT
-from 250 billion training tokens
-advanced the state of the art for natural language tasks
-such as single text classification,
-text pair classification or regression,
-text tagging, and question answering.
+:numref:`fig_bert-finetune-classification` 은 감정 분석을 위한 BERT 파인튜닝을 보여줍니다.
+트랜스포머 인코더는 사전학습된 BERT로, 텍스트 시퀀스를 입력으로 받아 감정을 예측하기 위해 "&lt;cls&gt;" 표현(입력의 전역 표현)을 추가 완전 연결 계층에 공급합니다.
+파인튜닝 동안, 감정 분석 데이터의 예측과 레이블 간의 교차 엔트로피 손실이 그래디언트 기반 알고리즘을 통해 최소화되며, 추가 계층은 처음부터 학습되는 반면 BERT의 사전학습된 매개변수는 업데이트됩니다.
+BERT는 감정 분석 이상의 일을 합니다.
+2,500억 개의 학습 토큰으로부터 3억 5천만 매개변수 BERT가 학습한 일반 언어 표현은 단일 텍스트 분류, 텍스트 쌍 분류 또는 회귀, 텍스트 태깅, 질의 응답 같은 자연어 작업에서 최첨단을 진전시켰습니다.
 
-You may note that these downstream tasks include text pair understanding.
-BERT pretraining has another loss for predicting
-whether one sentence immediately follows the other.
-However, this loss was later found to be less useful when pretraining RoBERTa,
-a BERT variant of the same size, on 2000 billion tokens :cite:`Liu.Ott.Goyal.ea.2019`.
-Other derivatives of BERT improved model architectures or pretraining objectives,
-such as ALBERT (enforcing parameter sharing) :cite:`lan2019albert`,
-SpanBERT (representing and predicting spans of text) :cite:`joshi2020spanbert`,
-DistilBERT (lightweight via knowledge distillation) :cite:`sanh2019distilbert`,
-and ELECTRA (replaced token detection) :cite:`clark2019electra`.
-Moreover, BERT inspired Transformer pretraining in computer vision,
-such as with vision Transformers :cite:`Dosovitskiy.Beyer.Kolesnikov.ea.2021`,
-Swin Transformers :cite:`liu2021swin`,
-and MAE (masked autoencoders) :cite:`he2022masked`.
+여러분은 이러한 다운스트림 작업이 텍스트 쌍 이해를 포함한다는 점을 알아챘을 수 있습니다.
+BERT 사전학습은 한 문장이 다른 문장에 바로 뒤따르는지를 예측하기 위한 또 다른 손실을 가지고 있습니다.
+그러나 이 손실은 나중에 같은 크기의 BERT 변종인 RoBERTa를 2조 토큰에서 사전학습할 때 덜 유용함이 발견되었습니다 :cite:`Liu.Ott.Goyal.ea.2019`.
+BERT의 다른 파생물들은 모델 아키텍처나 사전학습 목표를 개선했는데, 예를 들어 ALBERT(매개변수 공유 강제) :cite:`lan2019albert`, SpanBERT(텍스트 스팬 표현 및 예측) :cite:`joshi2020spanbert`, DistilBERT(지식 증류를 통한 경량화) :cite:`sanh2019distilbert`, ELECTRA(대체된 토큰 탐지) :cite:`clark2019electra` 가 있습니다.
+또한 BERT는 비전 트랜스포머 :cite:`Dosovitskiy.Beyer.Kolesnikov.ea.2021`, Swin 트랜스포머 :cite:`liu2021swin`, MAE(마스킹된 오토인코더) :cite:`he2022masked` 같은 컴퓨터 비전에서의 트랜스포머 사전학습에 영감을 주었습니다.
 
-## Encoder--Decoder
+## 인코더-디코더
 
-Since a Transformer encoder converts a sequence of input tokens
-into the same number of output representations,
-the encoder-only mode cannot generate a sequence of arbitrary length as in machine translation.
-As originally proposed for machine translation,
-the Transformer architecture can be outfitted with a decoder
-that autoregressively predicts the target sequence
-of arbitrary length, token by token,
-conditional on both encoder output and decoder output:
-(i) for conditioning on encoder output, encoder--decoder cross-attention
-(multi-head attention of decoder in :numref:`fig_transformer`)
-allows target tokens to attend to *all* input tokens;
-(ii) conditioning on decoder output is achieved
-by a so-called *causal* attention
-(this name is common in the literature but is misleading
-as it has little connection to the proper study of causality)
-pattern (masked multi-head attention of decoder in :numref:`fig_transformer`),
-where any target token can only attend to *past* and *present* tokens in the target sequence.
+트랜스포머 인코더는 입력 토큰 시퀀스를 같은 수의 출력 표현으로 변환하므로, 인코더 전용 모드는 기계 번역에서처럼 임의 길이의 시퀀스를 생성할 수 없습니다.
+원래 기계 번역을 위해 제안된 것처럼, 트랜스포머 아키텍처는 인코더 출력과 디코더 출력 모두에 조건부로 토큰별로 임의 길이의 타깃 시퀀스를 자기회귀적으로 예측하는 디코더를 갖출 수 있습니다:
+(i) 인코더 출력에 조건화하기 위해, 인코더-디코더 교차 어텐션(:numref:`fig_transformer` 의 디코더의 멀티헤드 어텐션)은 타깃 토큰이 *모든* 입력 토큰에 주의를 기울이도록 허용합니다;
+(ii) 디코더 출력에 조건화하는 것은 이른바 *인과적(causal)* 어텐션(이 이름은 문헌에서 흔하지만 인과성에 대한 적절한 연구와의 관련성이 거의 없어 오해의 소지가 있음) 패턴(:numref:`fig_transformer` 의 디코더의 마스킹된 멀티헤드 어텐션)에 의해 달성되며, 여기서 어떤 타깃 토큰도 타깃 시퀀스의 *과거(past)* 와 *현재(present)* 토큰에만 주의를 기울일 수 있습니다.
 
-To pretrain encoder--decoder Transformers beyond human-labeled machine translation data,
-BART :cite:`lewis2019bart` and T5 :cite:`raffel2020exploring`
-are two concurrently proposed encoder--decoder Transformers
-pretrained on large-scale text corpora.
-Both attempt to reconstruct original text in their pretraining objectives,
-while the former emphasizes noising input
-(e.g., masking, deletion, permutation, and rotation)
-and the latter highlights multitask unification
-with comprehensive ablation studies.
+인간이 레이블링한 기계 번역 데이터를 넘어 인코더-디코더 트랜스포머를 사전학습하기 위해, BART :cite:`lewis2019bart` 와 T5 :cite:`raffel2020exploring` 는 대규모 텍스트 코퍼스에서 사전학습된 두 개의 동시에 제안된 인코더-디코더 트랜스포머입니다.
+둘 다 사전학습 목표에서 원본 텍스트를 재구성하려고 시도하는데, 전자는 입력에 노이즈를 가하는 것(예: 마스킹, 삭제, 순열, 회전)을 강조하고 후자는 포괄적인 절제 연구로 멀티태스크 통합을 부각시킵니다.
 
 
-### Pretraining T5
+### T5 사전학습
 
 
-As an example of the pretrained Transformer encoder--decoder,
-T5 (Text-to-Text Transfer Transformer)
-unifies many tasks as the same text-to-text problem:
-for any task, the input of the encoder is a task description
-(e.g., "Summarize", ":") followed by task input
-(e.g., a sequence of tokens from an article),
-and the decoder predicts the task output
-(e.g., a sequence of tokens summarizing the input article).
-To perform as text-to-text, T5 is trained
-to generate some target text conditional on input text.
+사전학습된 트랜스포머 인코더-디코더의 한 사례로서, T5(Text-to-Text Transfer Transformer)는 많은 작업을 같은 텍스트 투 텍스트 문제로 통합합니다: 어떤 작업이든 인코더의 입력은 작업 설명(예: "Summarize", ":")과 그 뒤에 작업 입력(예: 기사로부터의 토큰 시퀀스)이며, 디코더는 작업 출력(예: 입력 기사를 요약하는 토큰 시퀀스)을 예측합니다.
+텍스트 투 텍스트로 수행하기 위해, T5는 입력 텍스트에 조건부로 어떤 타깃 텍스트를 생성하도록 학습됩니다.
 
 
-![Left: Pretraining T5 by predicting consecutive spans. The original sentence is "I", "love", "this", "red", "car", where "love" is replaced by a special “&lt;X&gt;” token, and consecutive "red", "car" are replaced by a special “&lt;Y&gt;” token. The target sequence ends with a special “&lt;Z&gt;” token. Right: Attention pattern in the Transformer encoder--decoder. In the encoder self-attention (lower square), all input tokens attend to each other; In the encoder--decoder cross-attention (upper rectangle), each target token attends to all input tokens; In the decoder self-attention (upper triangle), each target token  attends to present and past target tokens only (causal).](../img/t5-encoder-decoder.svg)
+![왼쪽: 연속적인 스팬을 예측하여 T5 사전학습. 원본 문장은 "I", "love", "this", "red", "car" 인데, "love" 는 특수한 "&lt;X&gt;" 토큰으로 대체되고, 연속적인 "red", "car" 는 특수한 "&lt;Y&gt;" 토큰으로 대체됩니다. 타깃 시퀀스는 특수한 "&lt;Z&gt;" 토큰으로 끝납니다. 오른쪽: 트랜스포머 인코더-디코더의 어텐션 패턴. 인코더 셀프 어텐션(아래 사각형)에서, 모든 입력 토큰은 서로에게 주의를 기울입니다; 인코더-디코더 교차 어텐션(위 직사각형)에서, 각 타깃 토큰은 모든 입력 토큰에 주의를 기울입니다; 디코더 셀프 어텐션(위 삼각형)에서, 각 타깃 토큰은 현재와 과거의 타깃 토큰에만 주의를 기울입니다(인과적).](../img/t5-encoder-decoder.svg)
 :label:`fig_t5-encoder-decoder`
 
-To obtain input and output from any original text,
-T5 is pretrained to predict consecutive spans.
-Specifically, tokens from text are randomly replaced
-by special tokens where each consecutive span
-is replaced by the same special token.
-Consider the example in :numref:`fig_t5-encoder-decoder`,
-where the original text is "I", "love", "this", "red", "car".
-Tokens "love", "red", "car" are randomly replaced by special tokens.
-Since "red" and "car" are a consecutive span,
-they are replaced by the same special token.
-As a result, the input sequence is "I", "&lt;X&gt;", "this", "&lt;Y&gt;",
-and the target sequence is
-"&lt;X&gt;", "love", "&lt;Y&gt;", "red", "car", "&lt;Z&gt;",
-where "&lt;Z&gt;" is another special token marking the end.
-As shown in :numref:`fig_t5-encoder-decoder`,
-the decoder has a causal attention pattern to prevent itself
-from attending to future tokens during sequence prediction.
+어떤 원본 텍스트로부터 입력과 출력을 얻기 위해, T5는 연속적인 스팬을 예측하도록 사전학습됩니다.
+구체적으로, 텍스트의 토큰들은 특수 토큰으로 무작위로 대체되며, 각 연속적인 스팬은 같은 특수 토큰으로 대체됩니다.
+:numref:`fig_t5-encoder-decoder` 의 예시를 고려하십시오. 여기서 원본 텍스트는 "I", "love", "this", "red", "car" 입니다.
+토큰 "love", "red", "car" 가 특수 토큰으로 무작위로 대체됩니다.
+"red" 와 "car" 가 연속적인 스팬이므로, 그것들은 같은 특수 토큰으로 대체됩니다.
+결과적으로, 입력 시퀀스는 "I", "&lt;X&gt;", "this", "&lt;Y&gt;" 이고, 타깃 시퀀스는 "&lt;X&gt;", "love", "&lt;Y&gt;", "red", "car", "&lt;Z&gt;" 이며, 여기서 "&lt;Z&gt;" 는 끝을 표시하는 또 다른 특수 토큰입니다.
+:numref:`fig_t5-encoder-decoder` 에서 보여지는 것처럼, 디코더는 시퀀스 예측 동안 미래 토큰에 주의를 기울이는 것을 막기 위해 인과적 어텐션 패턴을 가집니다.
 
-In T5, predicting consecutive span is also referred to
-as reconstructing corrupted text.
-With this objective, T5 is pretrained
-with 1000 billion tokens from the C4
-(Colossal Clean Crawled Corpus) data,
-which consists of clean English text
-from the web :cite:`raffel2020exploring`.
+T5에서, 연속적인 스팬을 예측하는 것은 손상된 텍스트를 재구성하는 것이라고도 합니다.
+이 목표로 T5는 웹의 깨끗한 영어 텍스트로 구성된 C4(Colossal Clean Crawled Corpus) 데이터의 1조 토큰으로 사전학습됩니다 :cite:`raffel2020exploring`.
 
-### Fine-Tuning T5
+### T5 파인튜닝
 
-Similar to BERT, T5 needs to be fine-tuned (updating T5 parameters)
-on task-specific training data to perform this task.
-Major differences from BERT fine-tuning include:
-(i) T5 input includes task descriptions;
-(ii) T5 can generate sequences
-with arbitrary length
-with its Transformer decoder;
-(iii) No additional layers are required.
+BERT와 유사하게, T5는 이 작업을 수행하기 위해 작업별 학습 데이터에서 파인튜닝(T5 매개변수 업데이트)되어야 합니다.
+BERT 파인튜닝과의 주요 차이점은 다음을 포함합니다:
+(i) T5 입력은 작업 설명을 포함합니다;
+(ii) T5는 그것의 트랜스포머 디코더로 임의 길이의 시퀀스를 생성할 수 있습니다;
+(iii) 추가 계층이 필요하지 않습니다.
 
-![Fine-tuning T5 for text summarization. Both the task description and article tokens are fed into the Transformer encoder for predicting the summary.](../img/t5-finetune-summarization.svg)
+![텍스트 요약을 위한 T5 파인튜닝. 작업 설명과 기사 토큰 모두 요약을 예측하기 위해 트랜스포머 인코더에 공급됩니다.](../img/t5-finetune-summarization.svg)
 :label:`fig_t5-finetune-summarization`
 
-:numref:`fig_t5-finetune-summarization`
-explains fine-tuning T5
-using text summarization as an example.
-In this downstream task,
-the task description tokens "Summarize", ":"
-followed by the article tokens are input to the encoder.
+:numref:`fig_t5-finetune-summarization` 은 텍스트 요약을 예시로 사용해 T5 파인튜닝을 설명합니다.
+이 다운스트림 작업에서, 작업 설명 토큰 "Summarize", ":" 그리고 그 뒤에 기사 토큰이 인코더에 입력됩니다.
 
-After fine-tuning, the 11-billion-parameter T5 (T5-11B)
-achieved state-of-the-art results on multiple encoding (e.g., classification)
-and generation (e.g., summarization) benchmarks.
-Since released, T5 has been extensively used in later research.
-For example, switch Transformers are designed based on T5
-to activate a subset of the parameters
-for better computational efficiency :cite:`fedus2022switch`.
-In a text-to-image model called Imagen,
-text is input to a frozen T5 encoder (T5-XXL)
-with 4.6 billion parameters :cite:`saharia2022photorealistic`.
-The photorealistic text-to-image examples in :numref:`fig_imagen`
-suggest that the T5 encoder alone may effectively
-represent text even without fine-tuning.
+파인튜닝 후, 110억 매개변수 T5(T5-11B)는 여러 인코딩(예: 분류)과 생성(예: 요약) 벤치마크에서 최첨단 결과를 달성했습니다.
+출시된 이래, T5는 후속 연구에서 광범위하게 사용되어 왔습니다.
+예를 들어 switch 트랜스포머는 더 나은 계산 효율성을 위해 매개변수의 부분 집합을 활성화하도록 T5에 기반해 설계되었습니다 :cite:`fedus2022switch`.
+Imagen이라는 텍스트 투 이미지 모델에서, 텍스트는 46억 매개변수를 가진 고정된 T5 인코더(T5-XXL)에 입력됩니다 :cite:`saharia2022photorealistic`.
+:numref:`fig_imagen` 의 사실적인 텍스트 투 이미지 예시들은 T5 인코더만으로도 파인튜닝 없이 효과적으로 텍스트를 표현할 수 있음을 시사합니다.
 
-![Text-to-image examples by the Imagen model, whose text encoder is from T5 (figures taken from :citet:`saharia2022photorealistic`).](../img/imagen.png)
+![Imagen 모델에 의한 텍스트 투 이미지 예시들로, 그 텍스트 인코더는 T5에서 나온 것입니다(그림은 :citet:`saharia2022photorealistic` 에서 가져옴).](../img/imagen.png)
 :width:`700px`
 :label:`fig_imagen`
 
 
-## Decoder-Only
+## 디코더 전용
 
 
-We have reviewed encoder-only and encoder--decoder Transformers.
-Alternatively, decoder-only Transformers
-remove the entire encoder and the decoder sublayer
-with the encoder--decoder cross-attention
-from the original encoder--decoder architecture
-depicted in :numref:`fig_transformer`.
-Nowadays, decoder-only Transformers have been the *de facto* architecture
-in large-scale language modeling (:numref:`sec_language-model`),
-which leverages the world's abundant unlabeled text corpora via self-supervised learning.
+저희는 인코더 전용과 인코더-디코더 트랜스포머를 검토했습니다.
+대안적으로, 디코더 전용 트랜스포머는 :numref:`fig_transformer` 에 묘사된 원래 인코더-디코더 아키텍처에서 전체 인코더와 인코더-디코더 교차 어텐션을 가진 디코더 서브 계층을 제거합니다.
+오늘날 디코더 전용 트랜스포머는 자기 지도 학습을 통해 세계의 풍부한 레이블 없는 텍스트 코퍼스를 활용하는 대규모 언어 모델링(:numref:`sec_language-model`)에서 *사실상의(de facto)* 아키텍처가 되었습니다.
 
 
 
-### GPT and GPT-2
+### GPT와 GPT-2
 
-Using language modeling as the training objective,
-the GPT (generative pre-training) model
-chooses a Transformer decoder
-as its backbone :cite:`Radford.Narasimhan.Salimans.ea.2018`.
+학습 목표로 언어 모델링을 사용하면서, GPT(generative pre-training) 모델은 백본으로 트랜스포머 디코더를 선택합니다 :cite:`Radford.Narasimhan.Salimans.ea.2018`.
 
-![Left: Pretraining GPT with language modeling. The target sequence is the input sequence shifted by one token. Both “&lt;bos&gt;” and “&lt;eos&gt;” are special tokens marking the beginning and end of sequences, respectively. Right: Attention pattern in the Transformer decoder. Each token along the vertical axis attends to only its past tokens along the horizontal axis (causal).](../img/gpt-decoder-only.svg)
+![왼쪽: 언어 모델링으로 GPT 사전학습. 타깃 시퀀스는 한 토큰만큼 시프트된 입력 시퀀스입니다. "&lt;bos&gt;" 와 "&lt;eos&gt;" 모두 각각 시퀀스의 시작과 끝을 표시하는 특수 토큰입니다. 오른쪽: 트랜스포머 디코더의 어텐션 패턴. 수직축을 따른 각 토큰은 수평축을 따른 과거 토큰에만 주의를 기울입니다(인과적).](../img/gpt-decoder-only.svg)
 :label:`fig_gpt-decoder-only`
 
-Following the autoregressive language model training
-as described in :numref:`subsec_partitioning-seqs`,
-:numref:`fig_gpt-decoder-only` illustrates
-GPT pretraining with a Transformer encoder,
-where the target sequence is the input sequence shifted by one token.
-Note that the attention pattern in the Transformer decoder
-enforces that each token can only attend to its past tokens
-(future tokens cannot be attended to because they have not yet been chosen).
+:numref:`subsec_partitioning-seqs` 에서 묘사된 자기회귀 언어 모델 학습을 따라, :numref:`fig_gpt-decoder-only` 은 트랜스포머 인코더로 GPT 사전학습을 보여주며, 여기서 타깃 시퀀스는 한 토큰만큼 시프트된 입력 시퀀스입니다.
+트랜스포머 디코더의 어텐션 패턴은 각 토큰이 그 과거 토큰에만 주의를 기울일 수 있도록 강제한다는 점에 유의하십시오(미래 토큰은 아직 선택되지 않았기 때문에 주의를 기울일 수 없습니다).
 
 
-GPT has 100 million parameters and needs to be
-fine-tuned for individual downstream tasks.
-A much larger Transformer-decoder language model,
-GPT-2, was introduced one year later :cite:`Radford.Wu.Child.ea.2019`.
-Compared with the original Transformer decoder in GPT, pre-normalization
-(discussed in :numref:`subsec_vit-encoder`)
-and improved initialization and weight-scaling were adopted in GPT-2.
-Pretrained on 40 GB of text, the 1.5-billion-parameter
-GPT-2 obtained the state-of-the-art results on language modeling benchmarks
-and promising results on multiple other tasks
-*without updating the parameters or architecture*.
+GPT는 1억 매개변수를 가지며 개별 다운스트림 작업에 대해 파인튜닝되어야 합니다.
+1년 후 훨씬 더 큰 트랜스포머 디코더 언어 모델 GPT-2가 소개되었습니다 :cite:`Radford.Wu.Child.ea.2019`.
+GPT의 원래 트랜스포머 디코더와 비교하면, 사전 정규화(:numref:`subsec_vit-encoder` 에서 논의됨)와 개선된 초기화 및 가중치 스케일링이 GPT-2에서 채택되었습니다.
+40GB의 텍스트에서 사전학습된 15억 매개변수 GPT-2는 *매개변수나 아키텍처를 업데이트하지 않고* 언어 모델링 벤치마크에서 최첨단 결과와 여러 다른 작업에서 유망한 결과를 얻었습니다.
 
 
-### GPT-3 and Beyond
+### GPT-3와 그 너머
 
-GPT-2 demonstrated potential of using the same language model
-for multiple tasks without updating the model.
-This is more computationally efficient than fine-tuning,
-which requires model updates via gradient computation.
+GPT-2는 모델을 업데이트하지 않고 여러 작업에 같은 언어 모델을 사용할 잠재력을 입증했습니다.
+이는 그래디언트 계산을 통한 모델 업데이트를 요구하는 파인튜닝보다 계산상 더 효율적입니다.
 
 
-![Zero-shot, one-shot, few-shot in-context learning with language models (Transformer decoders). No parameter update is needed.](../img/gpt-3-xshot.svg)
+![언어 모델(트랜스포머 디코더)을 사용한 제로샷, 원샷, 퓨샷 인-컨텍스트 학습. 매개변수 업데이트가 필요 없습니다.](../img/gpt-3-xshot.svg)
 :label:`fig_gpt-3-xshot`
 
-Before explaining the more computationally efficient use
-of language models without parameter update,
-recall :numref:`sec_rnn-scratch` that a language model
-can be trained to generate a text sequence
-conditional on some prefix text sequence.
-Thus, a pretrained language model may generate the task output
-as a sequence *without parameter update*,
-conditional on an input sequence with the task description,
-task-specific input--output examples, and a prompt (task input).
-This learning paradigm is called *in-context learning* :cite:`brown2020language`,
-which can be further categorized
-into *zero-shot*, *one-shot*, and *few-shot*,
-when there is no, one, and a few task-specific input--output examples (:numref:`fig_gpt-3-xshot`).
+매개변수 업데이트 없이 언어 모델의 더 계산상 효율적인 사용을 설명하기 전에, :numref:`sec_rnn-scratch` 에서 언어 모델이 어떤 접두사 텍스트 시퀀스에 조건부로 텍스트 시퀀스를 생성하도록 학습될 수 있음을 떠올려 보십시오.
+따라서 사전학습된 언어 모델은 작업 설명, 작업별 입력-출력 예시, 프롬프트(작업 입력)를 가진 입력 시퀀스에 조건부로 *매개변수 업데이트 없이* 시퀀스로서 작업 출력을 생성할 수 있습니다.
+이 학습 패러다임은 *인-컨텍스트 학습(in-context learning)* :cite:`brown2020language` 이라고 불리며, 작업별 입력-출력 예시가 없을 때, 하나일 때, 몇 개일 때 *제로샷(zero-shot)*, *원샷(one-shot)*, *퓨샷(few-shot)* 으로 더 분류될 수 있습니다(:numref:`fig_gpt-3-xshot`).
 
 
-![Aggregate performance of GPT-3 for all 42 accuracy-denominated benchmarks (caption adapted and figure taken from :citet:`brown2020language`).](../img/gpt3-xshot-scaling.png)
+![모든 42개 정확도 기준 벤치마크에 대한 GPT-3의 종합 성능(캡션은 적응됨, 그림은 :citet:`brown2020language` 에서 가져옴).](../img/gpt3-xshot-scaling.png)
 :width:`400px`
 :label:`fig_gpt3-xshot-scaling`
 
-These three settings were tested in GPT-3 :cite:`brown2020language`,
-whose largest version uses data and model size
-about two orders of magnitude larger than those in GPT-2.
-GPT-3 uses the same Transformer decoder architecture
-as its direct predecessor GPT-2
-except that attention patterns
-(at the right in :numref:`fig_gpt-decoder-only`)
-are sparser at alternating layers.
-Pretrained with 300 billion tokens,
-GPT-3 performs better with larger model size,
-where few-shot performance increases most rapidly (:numref:`fig_gpt3-xshot-scaling`).
+이 세 가지 설정은 GPT-3 :cite:`brown2020language` 에서 테스트되었는데, 그 가장 큰 버전은 GPT-2보다 약 두 자릿수 더 큰 데이터와 모델 크기를 사용합니다.
+GPT-3는 어텐션 패턴(:numref:`fig_gpt-decoder-only` 의 오른쪽)이 교대 계층에서 더 희소하다는 점만 제외하면 그것의 직접 선조인 GPT-2와 같은 트랜스포머 디코더 아키텍처를 사용합니다.
+3,000억 토큰으로 사전학습된 GPT-3는 더 큰 모델 크기로 더 잘 작동하며, 퓨샷 성능이 가장 빠르게 증가합니다(:numref:`fig_gpt3-xshot-scaling`).
 
-The subsequent GPT-4 model did not fully disclose technical details in its report :cite:`openai2023gpt4`.
-By contrast with its predecessors, GPT-4
-is a large-scale, multimodal model that
-can take both text and images as input
-and generate text output.
+후속 GPT-4 모델은 그 보고서에서 기술적 세부 사항을 완전히 공개하지 않았습니다 :cite:`openai2023gpt4`.
+그 선조와 대조적으로, GPT-4는 텍스트와 이미지를 모두 입력으로 받아 텍스트 출력을 생성할 수 있는 대규모 멀티모달 모델입니다.
 
 
-## Scalability
+## 확장성
 
-:numref:`fig_gpt3-xshot-scaling` empirically demonstrates scalability
-of Transformers in the GPT-3 language model.
-For language modeling, more comprehensive empirical studies
-on the scalability of Transformers have led researchers to see promise
-in training larger Transformers with more data and compute :cite:`kaplan2020scaling`.
+:numref:`fig_gpt3-xshot-scaling` 은 GPT-3 언어 모델에서 트랜스포머의 확장성을 경험적으로 입증합니다.
+언어 모델링에 있어, 트랜스포머의 확장성에 대한 더 포괄적인 경험적 연구는 연구자들로 하여금 더 많은 데이터와 컴퓨팅으로 더 큰 트랜스포머를 학습시키는 데 가능성을 보게 했습니다 :cite:`kaplan2020scaling`.
 
-![Transformer language model performance improves smoothly as we increase the model size, dataset size, and amount of compute used for training. For optimal performance all three factors must be scaled up in tandem. Empirical performance has a power-law relationship with each individual factor when not bottlenecked by the other two (caption adapted and figure taken from :citet:`kaplan2020scaling`).](../img/scaling-power-law.png)
+![모델 크기, 데이터셋 크기, 학습에 사용된 컴퓨팅의 양을 늘릴수록 트랜스포머 언어 모델 성능은 매끄럽게 개선됩니다. 최적의 성능을 위해 이 세 가지 요인 모두 동시에 확장되어야 합니다. 경험적 성능은 다른 두 요인에 의해 병목 되지 않을 때 각 개별 요인과 거듭제곱 법칙 관계를 가집니다(캡션은 적응됨, 그림은 :citet:`kaplan2020scaling` 에서 가져옴).](../img/scaling-power-law.png)
 :width:`700px`
 :label:`fig_scaling-power-law3`
 
-As shown in :numref:`fig_scaling-power-law3`,
-*power-law scaling* can be observed in the performance
-with respect to the model size (number of parameters, excluding embedding layers),
-dataset size (number of training tokens),
-and amount of training compute (PetaFLOP/s-days, excluding embedding layers).
-In general, increasing all these three factors in tandem leads to better performance.
-However, *how* to increase them in tandem
-still remains a matter of debate :cite:`hoffmann2022training`.
+:numref:`fig_scaling-power-law3` 에서 보여지는 것처럼, *거듭제곱 법칙 스케일링(power-law scaling)* 이 모델 크기(임베딩 계층을 제외한 매개변수 수), 데이터셋 크기(학습 토큰 수), 학습 컴퓨팅의 양(임베딩 계층을 제외한 PetaFLOP/s-days)에 대한 성능에서 관찰될 수 있습니다.
+일반적으로, 이 세 가지 요인 모두를 동시에 증가시키면 더 나은 성능으로 이어집니다.
+그러나 그것들을 동시에 *어떻게(how)* 증가시킬지는 여전히 논쟁의 문제로 남아 있습니다 :cite:`hoffmann2022training`.
 
-![Transformer language model training runs (figure taken from :citet:`kaplan2020scaling`).](../img/scaling-sample-conv.png)
+![트랜스포머 언어 모델 학습 실행(그림은 :citet:`kaplan2020scaling` 에서 가져옴).](../img/scaling-sample-conv.png)
 :width:`700px`
 :label:`fig_scaling-sample-conv`
 
-As well as increased performance, large models also enjoy better sample efficiency than small models. :numref:`fig_scaling-sample-conv` shows that large models need fewer training samples (tokens processed) to perform at the same level achieved by small models, and performance is scaled smoothly with compute.
+증가한 성능 외에도, 대형 모델은 또한 소형 모델보다 더 나은 표본 효율성을 누립니다. :numref:`fig_scaling-sample-conv` 는 대형 모델이 소형 모델이 달성한 같은 수준에서 작동하기 위해 더 적은 학습 표본(처리된 토큰)을 필요로 하며, 성능이 컴퓨팅에 따라 매끄럽게 스케일됨을 보여줍니다.
 
 
 
-![GPT-3 performance (cross-entropy validation loss) follows a power-law trend with the amount of compute used for training. The power-law behavior observed in :citet:`kaplan2020scaling` continues for an additional two orders of magnitude with only small deviations from the predicted curve. Embedding parameters are excluded from compute and parameter counts (caption adapted and figure taken from :citet:`brown2020language`).](../img/scaling-gpt3.png)
+![GPT-3 성능(교차 엔트로피 검증 손실)은 학습에 사용된 컴퓨팅의 양에 따라 거듭제곱 법칙 추세를 따릅니다. :citet:`kaplan2020scaling` 에서 관찰된 거듭제곱 법칙 행동은 예측된 곡선에서 작은 편차만으로 추가 두 자릿수에 걸쳐 계속됩니다. 임베딩 매개변수는 컴퓨팅 및 매개변수 카운트에서 제외됩니다(캡션은 적응됨, 그림은 :citet:`brown2020language` 에서 가져옴).](../img/scaling-gpt3.png)
 :width:`250px`
 :label:`fig_scaling-gpt3`
 
 
-The empirical scaling behaviors in :citet:`kaplan2020scaling` have been tested in subsequent large Transformer models. For example, GPT-3 supported this hypothesis with two more orders of magnitude in :numref:`fig_scaling-gpt3`.
+:citet:`kaplan2020scaling` 의 경험적 스케일링 행동은 후속 대형 트랜스포머 모델에서 테스트되었습니다. 예를 들어 GPT-3는 :numref:`fig_scaling-gpt3` 에서 두 자릿수 더 추가하여 이 가설을 뒷받침했습니다.
 
 
 
 
 
-## Large Language Models
+## 대형 언어 모델
 
-The scalability of Transformers in the GPT series has inspired subsequent large language models. 
-The GPT-2 Transformer decoder was used for training the 530-billion-parameter Megatron-Turing NLG :cite:`smith2022using` with 270 billion training tokens. Following the GPT-2 design, the 280-billion-parameter Gopher :cite:`rae2021scaling` pretrained with 300 billion tokens, performed competitively across diverse tasks. 
-Inheriting the same architecture and using the same compute budget of Gopher, Chinchilla :cite:`hoffmann2022training` is a substantially smaller (70 billion parameters) model that trains for much longer (1.4 trillion training tokens), outperforming Gopher on many tasks and with more emphasis on the number of tokens than on the number of parameters.
-To continue the scaling line of language modeling, 
-PaLM (Pathway Language Model) :cite:`chowdhery2022palm`, a 540-billion-parameter Transformer decoder with modified designs pretrained on 780 billion tokens, outperformed average human performance on the BIG-Bench benchmark :cite:`srivastava2022beyond`. Its later version, PaLM 2 :cite:`anil2023palm`, scaled data and model roughly 1:1 and improved multilingual and reasoning capabilities. 
-Other large language models, such as Minerva  :cite:`lewkowycz2022solving` that further trains a generalist (PaLM) and Galactica :cite:`taylor2022galactica` that is not trained on a general corpus, have shown promising quantitative and scientific reasoning capabilities.
+GPT 시리즈에서 트랜스포머의 확장성은 후속 대형 언어 모델들에 영감을 주었습니다.
+GPT-2 트랜스포머 디코더는 2,700억 학습 토큰을 가진 5,300억 매개변수 Megatron-Turing NLG :cite:`smith2022using` 를 학습시키는 데 사용되었습니다. GPT-2 설계를 따라, 3,000억 토큰으로 사전학습된 2,800억 매개변수 Gopher :cite:`rae2021scaling` 는 다양한 작업에 걸쳐 경쟁력 있게 작동했습니다.
+같은 아키텍처를 상속받고 Gopher와 같은 컴퓨팅 예산을 사용하는 Chinchilla :cite:`hoffmann2022training` 는 훨씬 더 오래(1.4조 학습 토큰) 학습되는 상당히 더 작은(700억 매개변수) 모델로, 많은 작업에서 Gopher를 능가하며 매개변수 수보다 토큰 수에 더 큰 비중을 둡니다.
+언어 모델링의 스케일링 라인을 계속 이어가기 위해,
+PaLM(Pathway Language Model) :cite:`chowdhery2022palm` 은 7,800억 토큰으로 사전학습된 수정된 설계를 가진 5,400억 매개변수 트랜스포머 디코더로, BIG-Bench 벤치마크에서 평균 인간 성능을 능가했습니다 :cite:`srivastava2022beyond`. 그 이후 버전인 PaLM 2 :cite:`anil2023palm` 는 데이터와 모델을 대략 1:1로 스케일하고 다국어 및 추론 능력을 개선했습니다.
+제너럴리스트(PaLM)를 추가로 학습시키는 Minerva :cite:`lewkowycz2022solving` 와 일반 코퍼스에서 학습되지 않은 Galactica :cite:`taylor2022galactica` 같은 다른 대형 언어 모델들은 유망한 정량적 및 과학적 추론 능력을 보였습니다.
 
 
-Open-sourced releases, such as OPT (Open Pretrained Transformers) :cite:`zhang2022opt`, BLOOM :cite:` scao2022bloom`, and FALCON :cite:`penedo2023refinedweb`,
-democratized research and use of large language models.
-Focusing on computational efficiency at inference time,
-the open-sourced Llama 1 :cite:`touvron2023llama` outperformed much larger models by training on more tokens than had been typically used. The updated Llama 2 :cite:`touvron2023llama2` further increased the pretraining corpus by 40%, leading to product models that may match the performance of competitive close-sourced models. 
+OPT(Open Pretrained Transformers) :cite:`zhang2022opt`, BLOOM :cite:` scao2022bloom`, FALCON :cite:`penedo2023refinedweb` 같은 오픈소스 출시들은 대형 언어 모델의 연구와 사용을 민주화했습니다.
+추론 시 계산 효율성에 초점을 맞춰, 오픈소스 Llama 1 :cite:`touvron2023llama` 은 일반적으로 사용되어 온 것보다 더 많은 토큰에서 학습함으로써 훨씬 더 큰 모델들을 능가했습니다. 업데이트된 Llama 2 :cite:`touvron2023llama2` 는 사전학습 코퍼스를 40% 추가로 늘려, 경쟁력 있는 비공개 모델의 성능과 견줄 수 있는 제품 모델로 이어졌습니다.
 
 
 
-:citet:`wei2022emergent` discussed emergent abilities of large language models that are present in larger models, but not in smaller models.
-However, simply increasing model size does not inherently make models follow human instructions better.
-:citet:`wei2021finetuned,sanh2021multitask` have found that fine-tuning large language models
-on a range of datasets described via *instructions*
-can improve zero-shot performance on held-out tasks.
-Using *reinforcement learning from human feedback*,
-:citet:`ouyang2022training` fine-tuned GPT-3
-to follow a diverse set of instructions.
-Following the resultant InstructGPT which
-aligns language models with human intent
-via fine-tuning :cite:`ouyang2022training`,
-[ChatGPT](https://chat.openai.com/)
-can generate human-like responses (e.g., code debugging and creative writing)
-based on conversations with humans
-and can perform many natural language processing
-tasks zero-shot :cite:`qin2023chatgpt`.
-:citet:`bai2022constitutional` replaced human inputs (e.g., human-labeled data) with model outputs
-to partially automate the instruction tuning process, which is also known as *reinforcement learning from AI feedback*.
+:citet:`wei2022emergent` 는 더 큰 모델에는 존재하지만 더 작은 모델에는 존재하지 않는 대형 언어 모델의 출현적 능력(emergent abilities)을 논의했습니다.
+그러나 단순히 모델 크기를 증가시키는 것은 본질적으로 모델이 인간 지시를 더 잘 따르게 만들지는 않습니다.
+:citet:`wei2021finetuned,sanh2021multitask` 는 *지시(instructions)* 를 통해 묘사된 다양한 데이터셋에서 대형 언어 모델을 파인튜닝하는 것이 보류된 작업에서 제로샷 성능을 개선할 수 있음을 발견했습니다.
+*인간 피드백으로부터의 강화학습(reinforcement learning from human feedback)* 을 사용해, :citet:`ouyang2022training` 은 다양한 지시 집합을 따르도록 GPT-3를 파인튜닝했습니다.
+파인튜닝 :cite:`ouyang2022training` 을 통해 언어 모델을 인간 의도와 정렬시키는 그 결과인 InstructGPT를 따라, [ChatGPT](https://chat.openai.com/) 는 인간과의 대화에 기반해 인간과 유사한 응답(예: 코드 디버깅과 창의적 글쓰기)을 생성할 수 있으며 많은 자연어 처리 작업을 제로샷으로 수행할 수 있습니다 :cite:`qin2023chatgpt`.
+:citet:`bai2022constitutional` 은 인간 입력(예: 인간이 레이블링한 데이터)을 모델 출력으로 대체하여 지시 튜닝 과정을 부분적으로 자동화했으며, 이는 또한 *AI 피드백으로부터의 강화학습(reinforcement learning from AI feedback)* 으로도 알려져 있습니다.
 
 
-Large language models offer an exciting prospect
-of formulating text input to induce models to perform desired tasks via in-context learning,
-which is also known as *prompting*.
-Notably,
-*chain-of-thought prompting* :cite:`wei2022chain`,
-an in-context learning method
-with few-shot "question, intermediate reasoning steps, answer" demonstrations,
-elicits the complex reasoning capabilities of
-large language models
-in order to solve mathematical, commonsense, and symbolic reasoning tasks.
-Sampling multiple reasoning paths :cite:`wang2023self`, diversifying few-shot demonstrations :cite:`zhang2023automatic`, 
-and reducing complex problems to sub-problems :cite:`zhou2023least`
-can all improve the reasoning accuracy. In fact, with simple prompts like "Let's think step by step" just before each answer,
-large language models can even perform *zero-shot*
-chain-of-thought reasoning with decent accuracy :cite:`kojima2022large`.
-Even for multimodal inputs consisting of both text and images,
-language models can perform multimodal chain-of-thought reasoning with higher accuracy than using text input only :cite:`zhang2023multicot`.
+대형 언어 모델은 인-컨텍스트 학습을 통해 모델이 원하는 작업을 수행하도록 유도하기 위해 텍스트 입력을 형식화하는 흥미진진한 전망을 제공하며, 이는 또한 *프롬프팅(prompting)* 으로도 알려져 있습니다.
+특히, 퓨샷 "질문, 중간 추론 단계, 답변" 시연을 가진 인-컨텍스트 학습 방법인 *생각의 사슬 프롬프팅(chain-of-thought prompting)* :cite:`wei2022chain` 은 수학적, 상식적, 기호적 추론 작업을 풀기 위해 대형 언어 모델의 복잡한 추론 능력을 끌어냅니다.
+여러 추론 경로 표집 :cite:`wang2023self`, 퓨샷 시연 다양화 :cite:`zhang2023automatic`, 복잡한 문제를 하위 문제로 환원하는 것 :cite:`zhou2023least` 모두 추론 정확도를 개선할 수 있습니다. 실제로 각 답변 바로 전에 "단계별로 생각해 봅시다(Let's think step by step)" 같은 간단한 프롬프트로, 대형 언어 모델은 *제로샷* 생각의 사슬 추론을 적절한 정확도로 수행할 수도 있습니다 :cite:`kojima2022large`.
+텍스트와 이미지로 구성된 멀티모달 입력에 대해서도, 언어 모델은 텍스트 입력만 사용하는 것보다 더 높은 정확도로 멀티모달 생각의 사슬 추론을 수행할 수 있습니다 :cite:`zhang2023multicot`.
 
 
 
 
-## Summary and Discussion
+## 요약 및 논의
 
-Transformers have been pretrained as encoder-only (e.g., BERT), encoder--decoder (e.g., T5), and decoder-only (e.g., GPT series). Pretrained models may be adapted to perform different tasks with model update (e.g., fine-tuning) or not (e.g., few-shot). Scalability of Transformers suggests that better performance benefits from larger models, more training data, and more training compute. Since Transformers were first designed and pretrained for text data, this section leans slightly towards natural language processing. Nonetheless, those models discussed above can be often found in more recent models across multiple modalities. For example,
-(i) Chinchilla :cite:`hoffmann2022training` was further extended to Flamingo :cite:`alayrac2022flamingo`, a visual language model for few-shot learning;
-(ii) GPT-2 :cite:`Radford.Wu.Child.ea.2019` and the vision Transformer encode text and images in CLIP (Contrastive Language-Image Pre-training) :cite:`radford2021learning`, whose image and text embeddings were later adopted in the DALL-E 2 text-to-image system :cite:`ramesh2022hierarchical`. Although there have been no systematic studies on Transformer scalability in multimodal pretraining yet, an all-Transformer text-to-image model called Parti :cite:`yu2022scaling` shows potential of scalability across modalities:
-a larger Parti is more capable of high-fidelity image generation and content-rich text understanding (:numref:`fig_parti`).
+트랜스포머는 인코더 전용(예: BERT), 인코더-디코더(예: T5), 디코더 전용(예: GPT 시리즈)으로 사전학습되어 왔습니다. 사전학습된 모델은 모델 업데이트가 있는(예: 파인튜닝) 또는 없는(예: 퓨샷) 서로 다른 작업을 수행하도록 적응될 수 있습니다. 트랜스포머의 확장성은 더 나은 성능이 더 큰 모델, 더 많은 학습 데이터, 더 많은 학습 컴퓨팅으로부터 이익을 얻음을 시사합니다. 트랜스포머가 처음에 텍스트 데이터를 위해 설계되고 사전학습되었으므로, 이 절은 자연어 처리 쪽으로 약간 기울어져 있습니다. 그럼에도 불구하고, 위에서 논의된 그러한 모델들은 여러 모달리티에 걸친 더 최근 모델들에서 종종 발견될 수 있습니다. 예를 들어,
+(i) Chinchilla :cite:`hoffmann2022training` 는 퓨샷 학습을 위한 시각 언어 모델인 Flamingo :cite:`alayrac2022flamingo` 로 확장되었습니다;
+(ii) GPT-2 :cite:`Radford.Wu.Child.ea.2019` 와 비전 트랜스포머는 CLIP(Contrastive Language-Image Pre-training) :cite:`radford2021learning` 에서 텍스트와 이미지를 인코딩하는데, 그 이미지와 텍스트 임베딩은 나중에 DALL-E 2 텍스트 투 이미지 시스템 :cite:`ramesh2022hierarchical` 에서 채택되었습니다. 멀티모달 사전학습에서 트랜스포머 확장성에 대한 체계적 연구는 아직 없지만, Parti :cite:`yu2022scaling` 라고 불리는 올-트랜스포머 텍스트 투 이미지 모델은 모달리티 간 확장성의 잠재력을 보여줍니다:
+더 큰 Parti는 고충실도 이미지 생성과 콘텐츠가 풍부한 텍스트 이해에 더 능합니다(:numref:`fig_parti`).
 
 
-![Image examples generated from the same text by the Parti model of increasing sizes (350M, 750M, 3B, 20B) (examples taken from :citet:`yu2022scaling`).](../img/parti.png)
+![크기가 증가하는 Parti 모델(350M, 750M, 3B, 20B)에 의해 같은 텍스트로부터 생성된 이미지 예시(예시는 :citet:`yu2022scaling` 에서 가져옴).](../img/parti.png)
 :width:`700px`
 :label:`fig_parti`
 
 
 
 
-## Exercises
+## 연습문제
 
-1. Is it possible to fine-tune T5 using a minibatch consisting of different tasks? Why or why not? How about for GPT-2?
-1. Given a powerful language model, what applications can you think of?
-1. Say that you are asked to fine-tune a language model to perform text classification by adding additional layers. Where will you add them? Why?
-1. Consider sequence-to-sequence problems (e.g., machine translation) where the input sequence is always available throughout the target sequence prediction. What could be limitations of modeling with decoder-only Transformers? Why?
+1. 서로 다른 작업으로 구성된 미니배치를 사용해 T5를 파인튜닝하는 것이 가능합니까? 왜 그렇거나 그렇지 않습니까? GPT-2는 어떻습니까?
+1. 강력한 언어 모델이 주어지면, 어떤 응용이 떠오릅니까?
+1. 추가 계층을 추가하여 텍스트 분류를 수행하기 위해 언어 모델을 파인튜닝하도록 요청받았다고 가정합시다. 어디에 추가하시겠습니까? 왜 그렇습니까?
+1. 입력 시퀀스가 타깃 시퀀스 예측 내내 항상 사용 가능한 시퀀스 투 시퀀스 문제(예: 기계 번역)를 고려하십시오. 디코더 전용 트랜스포머로 모델링하는 것의 한계는 무엇일까요? 왜 그렇습니까?
 
 
 [Discussions](https://discuss.d2l.ai/t/9232)

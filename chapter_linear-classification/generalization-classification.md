@@ -1,587 +1,499 @@
-# Generalization in Classification
+# 분류에서의 일반화
 
 :label:`chap_classification_generalization`
 
 
 
-So far, we have focused on how to tackle multiclass classification problems
-by training (linear) neural networks with multiple outputs and softmax functions.
-Interpreting our model's outputs as probabilistic predictions,
-we motivated and derived the cross-entropy loss function,
-which calculates the negative log likelihood
-that our model (for a fixed set of parameters)
-assigns to the actual labels.
-And finally, we put these tools into practice
-by fitting our model to the training set.
-However, as always, our goal is to learn *general patterns*,
-as assessed empirically on previously unseen data (the test set).
-High accuracy on the training set means nothing.
-Whenever each of our inputs is unique
-(and indeed this is true for most high-dimensional datasets),
-we can attain perfect accuracy on the training set
-by just memorizing the dataset on the first training epoch,
-and subsequently looking up the label whenever we see a new image.
-And yet, memorizing the exact labels
-associated with the exact training examples
-does not tell us how to classify new examples.
-Absent further guidance, we might have to fall back
-on random guessing whenever we encounter new examples.
+지금까지 저희는 다중 출력과 소프트맥스 함수를 가진 (선형) 신경망을 학습함으로써
+다중 클래스 분류 문제를 다루는 방법에 초점을 맞췄습니다.
+모델의 출력을 확률론적 예측으로 해석하면서,
+저희는 (고정된 파라미터 집합에 대해)
+모델이 실제 레이블에 할당하는 음의 로그 가능도를 계산하는
+교차 엔트로피 손실 함수를 동기 부여하고 유도했습니다.
+그리고 마지막으로, 저희는 학습 셋에 모델을 적합함으로써
+이 도구들을 실제로 활용했습니다.
+그러나 항상 그렇듯, 저희의 목표는 *일반적인 패턴*을 학습하는 것입니다.
+이는 이전에 본 적 없는 데이터(테스트 셋)에서 경험적으로 평가됩니다.
+학습 셋에서의 높은 정확도는 아무 의미가 없습니다.
+입력이 각각 고유할 때마다
+(실제로 대부분의 고차원 데이터셋에서 이는 사실입니다),
+첫 번째 학습 에폭에 데이터셋을 단순히 외워 두고
+새로운 이미지를 볼 때마다 레이블을 찾아보기만 함으로써
+학습 셋에서 완벽한 정확도를 달성할 수 있습니다.
+그러나 정확한 학습 예제와 연관된 정확한 레이블을 외우는 것은
+새로운 예제를 어떻게 분류해야 할지 알려주지 않습니다.
+추가적인 지침이 없다면, 새로운 예제를 만날 때마다
+무작위 추측에 의존해야 할 수도 있습니다.
 
-A number of burning questions demand immediate attention:
+즉각적인 관심을 요구하는 몇 가지 절박한 질문들이 있습니다.
 
-1. How many test examples do we need to give a good estimate of the accuracy of our classifiers on the underlying population?
-1. What happens if we keep evaluating models on the same test repeatedly?
-1. Why should we expect that fitting our linear models to the training set
-   should fare any better than our naive memorization scheme?
+1. 기저 모집단에 대한 분류기의 정확도를 좋은 추정값으로 제공하려면 얼마나 많은 테스트 예제가 필요한가요?
+1. 동일한 테스트 셋에서 모델을 반복적으로 평가하면 어떻게 될까요?
+1. 왜 선형 모델을 학습 셋에 적합하는 것이
+   소박한 암기 방법보다 더 나을 것이라고 기대해야 할까요?
 
 
-Whereas :numref:`sec_generalization_basics` introduced
-the basics of overfitting and generalization
-in the context of linear regression,
-this chapter will go a little deeper,
-introducing some of the foundational ideas
-of statistical learning theory.
-It turns out that we often can guarantee generalization *a priori*:
-for many models,
-and for any desired upper bound
-on the generalization gap $\epsilon$,
-we can often determine some required number of samples $n$
-such that if our training set contains at least $n$
-samples, our empirical error will lie
-within $\epsilon$ of the true error,
-*for any data generating distribution*.
-Unfortunately, it also turns out
-that while these sorts of guarantees provide
-a profound set of intellectual building blocks,
-they are of limited practical utility
-to the deep learning practitioner.
-In short, these guarantees suggest
-that ensuring generalization
-of deep neural networks *a priori*
-requires an absurd number of examples
-(perhaps trillions or more),
-even when we find that, on the tasks we care about,
-deep neural networks typically generalize
-remarkably well with far fewer examples (thousands).
-Thus deep learning practitioners often forgo
-*a priori* guarantees altogether,
-instead employing methods
-that have generalized well
-on similar problems in the past,
-and certifying generalization *post hoc*
-through empirical evaluations.
-When we get to :numref:`chap_perceptrons`,
-we will revisit generalization
-and provide a light introduction
-to the vast scientific literature
-that has sprung in attempts
-to explain why deep neural networks generalize in practice.
+:numref:`sec_generalization_basics`에서 선형 회귀의 맥락에서
+과적합과 일반화의 기초를 소개한 반면,
+이 챕터에서는 좀 더 깊이 들어가
+통계적 학습 이론의 기초적인 아이디어들을
+소개할 것입니다.
+저희는 종종 *사전적(a priori)*으로 일반화를 보장할 수 있다는 것이 밝혀집니다.
+많은 모델에 대해,
+일반화 격차(generalization gap) $\epsilon$의 어떠한 원하는 상한에 대해서도,
+저희는 종종 어떤 필수 표본 수 $n$을 결정할 수 있어서,
+학습 셋이 최소한 $n$개의 표본을 포함한다면 경험적 오류가
+*어떠한 데이터 생성 분포에서도*
+참 오류의 $\epsilon$ 이내에 놓이도록 할 수 있습니다.
+불행히도, 이러한 종류의 보장이
+심오한 지적 토대를 제공하지만,
+딥러닝 실무자에게는 실용적인 유용성이 제한적이라는 것도 밝혀졌습니다.
+요컨대, 이러한 보장은
+심층 신경망의 일반화를
+*사전적*으로 보장하려면
+터무니없는 수의 예제(아마도 수조 개 이상)가 필요함을 시사합니다.
+저희가 관심 있는 작업에서는 심층 신경망이
+일반적으로 훨씬 적은 예제(수천 개)로도 놀랍도록 잘 일반화한다는 것을 발견하고 있음에도 말입니다.
+따라서 딥러닝 실무자들은 종종 *사전적* 보장을 완전히 포기하고,
+대신 과거에 유사한 문제에서 잘 일반화되었던
+방법들을 사용하며,
+경험적 평가를 통해
+*사후적(post hoc)*으로 일반화를 인증합니다.
+:numref:`chap_perceptrons`에 도달하면,
+저희는 일반화를 다시 살펴보고
+심층 신경망이 왜 실제로 일반화되는지를 설명하려는 시도에서
+나타난 방대한 과학 문헌에 대한 가벼운 소개를
+제공할 것입니다.
 
-## The Test Set
+## 테스트 셋
 
-Since we have already begun to rely on test sets
-as the gold standard method
-for assessing generalization error,
-let's get started by discussing
-the properties of such error estimates.
-Let's focus on a fixed classifier $f$,
-without worrying about how it was obtained.
-Moreover suppose that we possess
-a *fresh* dataset of examples $\mathcal{D} = {(\mathbf{x}^{(i)},y^{(i)})}_{i=1}^n$
-that were not used to train the classifier $f$.
-The *empirical error* of our classifier $f$ on $\mathcal{D}$
-is simply the fraction of instances
-for which the prediction $f(\mathbf{x}^{(i)})$
-disagrees with the true label $y^{(i)}$,
-and is given by the following expression:
+이미 일반화 오류를 평가하는 표준 방법으로
+테스트 셋에 의존하기 시작했으므로,
+이러한 오류 추정값의 속성을
+논의하는 것으로 시작합시다.
+이 분류기가 어떻게 얻어졌는지는 걱정하지 말고,
+고정된 분류기 $f$에 초점을 맞춥시다.
+또한 저희가 분류기 $f$를 학습하는 데 사용되지 않은
+*새로운(fresh)* 예제 데이터셋
+$\mathcal{D} = {(\mathbf{x}^{(i)},y^{(i)})}_{i=1}^n$을 가지고 있다고 가정합시다.
+$\mathcal{D}$에서 저희 분류기 $f$의 *경험적 오류(empirical error)*는
+단순히 예측 $f(\mathbf{x}^{(i)})$가
+실제 레이블 $y^{(i)}$와 일치하지 않는 인스턴스의 비율이며,
+다음 표현식으로 주어집니다.
 
 $$\epsilon_\mathcal{D}(f) = \frac{1}{n}\sum_{i=1}^n \mathbf{1}(f(\mathbf{x}^{(i)}) \neq y^{(i)}).$$
 
-By contrast, the *population error*
-is the *expected* fraction
-of examples in the underlying population
-(some distribution $P(X,Y)$  characterized
-by probability density function $p(\mathbf{x},y)$)
-for which our classifier disagrees
-with the true label:
+이와 대조적으로, *모집단 오류(population error)*는
+저희 분류기가 실제 레이블과 일치하지 않는
+기저 모집단(확률 밀도 함수 $p(\mathbf{x},y)$로 특징지어지는
+어떤 분포 $P(X,Y)$) 내 예제의
+*기대* 비율입니다.
 
 $$\epsilon(f) =  E_{(\mathbf{x}, y) \sim P} \mathbf{1}(f(\mathbf{x}) \neq y) =
 \int\int \mathbf{1}(f(\mathbf{x}) \neq y) p(\mathbf{x}, y) \;d\mathbf{x} dy.$$
 
-While $\epsilon(f)$ is the quantity that we actually care about,
-we cannot observe it directly,
-just as we cannot directly
-observe the average height in a large population
-without measuring every single person.
-We can only estimate this quantity based on samples.
-Because our test set $\mathcal{D}$
-is statistically representative
-of the underlying population,
-we can view $\epsilon_\mathcal{D}(f)$ as a statistical
-estimator of the population error $\epsilon(f)$.
-Moreover, because our quantity of interest $\epsilon(f)$
-is an expectation (of the random variable $\mathbf{1}(f(X) \neq Y)$)
-and the corresponding estimator $\epsilon_\mathcal{D}(f)$
-is the sample average,
-estimating the population error
-is simply the classic problem of mean estimation,
-which you may recall from :numref:`sec_prob`.
+$\epsilon(f)$는 저희가 실제로 관심을 가지는 양이지만,
+큰 모집단에서 모든 개별 사람의 키를 측정하지 않고는
+평균 키를 직접 관측할 수 없는 것처럼,
+이를 직접 관측할 수는 없습니다.
+저희는 단지 표본을 기반으로 이 양을 추정할 수 있을 뿐입니다.
+저희의 테스트 셋 $\mathcal{D}$가
+기저 모집단을 통계적으로 대표하기 때문에,
+$\epsilon_\mathcal{D}(f)$를 모집단 오류 $\epsilon(f)$의
+통계적 추정량으로 볼 수 있습니다.
+더욱이, 저희의 관심 양 $\epsilon(f)$는
+(확률 변수 $\mathbf{1}(f(X) \neq Y)$의) 기댓값이고
+대응되는 추정량 $\epsilon_\mathcal{D}(f)$는
+표본 평균이므로,
+모집단 오류를 추정하는 것은
+:numref:`sec_prob`에서 떠올리실 수 있을 평균 추정이라는
+고전적인 문제일 뿐입니다.
 
-An important classical result from probability theory
-called the *central limit theorem* guarantees
-that whenever we possess $n$ random samples $a_1, ..., a_n$
-drawn from any distribution with mean $\mu$ and standard deviation $\sigma$,
-then, as the number of samples $n$ approaches infinity,
-the sample average $\hat{\mu}$ approximately
-tends towards a normal distribution centered
-at the true mean and with standard deviation $\sigma/\sqrt{n}$.
-Already, this tells us something important:
-as the number of examples grows large,
-our test error $\epsilon_\mathcal{D}(f)$
-should approach the true error $\epsilon(f)$
-at a rate of $\mathcal{O}(1/\sqrt{n})$.
-Thus, to estimate our test error twice as precisely,
-we must collect four times as large a test set.
-To reduce our test error by a factor of one hundred,
-we must collect ten thousand times as large a test set.
-In general, such a rate of $\mathcal{O}(1/\sqrt{n})$
-is often the best we can hope for in statistics.
+확률 이론에서 중요한 고전적 결과인
+*중심 극한 정리(central limit theorem)*는
+저희가 평균 $\mu$와 표준 편차 $\sigma$를 가진 어떠한 분포에서 추출된
+$n$개의 무작위 표본 $a_1, ..., a_n$을 가지고 있을 때마다,
+표본 수 $n$이 무한대에 접근함에 따라,
+표본 평균 $\hat{\mu}$가
+참 평균을 중심으로 표준 편차 $\sigma/\sqrt{n}$을 가진
+정규 분포로 근사적으로 향한다는 것을 보장합니다.
+이것은 이미 저희에게 중요한 무언가를 말해 줍니다.
+예제 수가 커짐에 따라,
+저희의 테스트 오류 $\epsilon_\mathcal{D}(f)$는
+참 오류 $\epsilon(f)$에 $\mathcal{O}(1/\sqrt{n})$의 비율로
+접근해야 합니다.
+따라서 저희의 테스트 오류를 두 배 더 정밀하게 추정하려면,
+네 배 더 큰 테스트 셋을 수집해야 합니다.
+저희의 테스트 오류를 백 배 줄이려면,
+만 배 더 큰 테스트 셋을 수집해야 합니다.
+일반적으로, 이러한 $\mathcal{O}(1/\sqrt{n})$의 비율은
+통계학에서 종종 우리가 바랄 수 있는 최상의 것입니다.
 
-Now that we know something about the asymptotic rate
-at which our test error $\epsilon_\mathcal{D}(f)$ converges to the true error $\epsilon(f)$,
-we can zoom in on some important details.
-Recall that the random variable of interest
-$\mathbf{1}(f(X) \neq Y)$
-can only take values $0$ and $1$
-and thus is a Bernoulli random variable,
-characterized by a parameter
-indicating the probability that it takes value $1$.
-Here, $1$ means that our classifier made an error,
-so the parameter of our random variable
-is actually the true error rate $\epsilon(f)$.
-The variance $\sigma^2$ of a Bernoulli
-depends on its parameter (here, $\epsilon(f)$)
-according to the expression $\epsilon(f)(1-\epsilon(f))$.
-While $\epsilon(f)$ is initially unknown,
-we know that it cannot be greater than $1$.
-A little investigation of this function
-reveals that our variance is highest
-when the true error rate is close to $0.5$
-and can be far lower when it is
-close to $0$ or close to $1$.
-This tells us that the asymptotic standard deviation
-of our estimate $\epsilon_\mathcal{D}(f)$ of the error $\epsilon(f)$
-(over the choice of the $n$ test samples)
-cannot be any greater than $\sqrt{0.25/n}$.
+이제 저희가 테스트 오류 $\epsilon_\mathcal{D}(f)$가 참 오류 $\epsilon(f)$로 수렴하는
+점근적 비율에 대해 무언가를 알았으니,
+중요한 세부 사항을 확대해 볼 수 있습니다.
+관심 있는 확률 변수
+$\mathbf{1}(f(X) \neq Y)$는
+$0$과 $1$ 값만 가질 수 있으므로,
+값 $1$을 가질 확률을 나타내는
+파라미터로 특징지어지는
+베르누이 확률 변수임을 떠올려 보시기 바랍니다.
+여기서 $1$은 저희 분류기가 오류를 범했음을 의미하므로,
+저희 확률 변수의 파라미터는
+사실 참 오류율 $\epsilon(f)$입니다.
+베르누이의 분산 $\sigma^2$는
+그 파라미터에 따라(여기서는 $\epsilon(f)$)
+$\epsilon(f)(1-\epsilon(f))$ 표현식에 의해 달라집니다.
+$\epsilon(f)$는 처음에는 알려져 있지 않지만,
+$1$보다 클 수 없다는 것은 알고 있습니다.
+이 함수를 조금 살펴보면
+참 오류율이 $0.5$에 가까울 때 저희 분산이 가장 높고
+$0$이나 $1$에 가까울 때는 훨씬 더 낮을 수 있음을 알 수 있습니다.
+이는 (n개의 테스트 표본 선택에 대한) 오류 $\epsilon(f)$의 저희 추정값
+$\epsilon_\mathcal{D}(f)$의 점근적 표준 편차가
+$\sqrt{0.25/n}$보다 클 수 없음을 알려 줍니다.
 
-If we ignore the fact that this rate characterizes
-behavior as the test set size approaches infinity
-rather than when we possess finite samples,
-this tells us that if we want our test error $\epsilon_\mathcal{D}(f)$
-to approximate the population error $\epsilon(f)$
-such that one standard deviation corresponds
-to an interval of $\pm 0.01$,
-then we should collect roughly 2500 samples.
-If we want to fit two standard deviations
-in that range and thus be 95% confident
-that $\epsilon_\mathcal{D}(f) \in \epsilon(f) \pm 0.01$,
-then we will need 10,000 samples!
+이 비율이 유한 표본을 가지고 있을 때가 아니라
+테스트 셋 크기가 무한대에 접근할 때의 동작을 특징짓는다는 사실을 무시한다면,
+이는 저희의 테스트 오류 $\epsilon_\mathcal{D}(f)$가
+모집단 오류 $\epsilon(f)$를 근사하여 한 표준 편차가
+$\pm 0.01$의 구간에 해당하기를 원한다면,
+대략 2500개의 표본을 수집해야 함을 알려 줍니다.
+그 범위에 두 표준 편차를 맞추고자 하여
+$\epsilon_\mathcal{D}(f) \in \epsilon(f) \pm 0.01$임을 95% 확신하고자 한다면,
+10,000개의 표본이 필요할 것입니다!
 
-This turns out to be the size of the test sets
-for many popular benchmarks in machine learning.
-You might be surprised to find out that thousands
-of applied deep learning papers get published every year
-making a big deal out of error rate improvements of $0.01$ or less.
-Of course, when the error rates are much closer to $0$,
-then an improvement of $0.01$ can indeed be a big deal.
+이는 머신러닝에서 많은 인기 있는 벤치마크의
+테스트 셋 크기로 밝혀졌습니다.
+매년 수천 편의 응용 딥러닝 논문이 출판되어
+$0.01$ 이하의 오류율 개선을 큰일이라며 발표하는 것이
+놀라울 수도 있습니다.
+물론, 오류율이 $0$에 훨씬 가까울 때에는,
+$0.01$의 개선이 실제로 큰일일 수 있습니다.
 
 
-One pesky feature of our analysis thus far
-is that it really only tells us about asymptotics,
-i.e., how the relationship between $\epsilon_\mathcal{D}$ and $\epsilon$
-evolves as our sample size goes to infinity.
-Fortunately, because our random variable is bounded,
-we can obtain valid finite sample bounds
-by applying an inequality due to Hoeffding (1963):
+지금까지의 분석에서 한 가지 거슬리는 점은
+이것이 사실 점근에 대해서만,
+즉 표본 크기가 무한대로 갈 때 $\epsilon_\mathcal{D}$와 $\epsilon$ 사이의 관계가
+어떻게 진화하는지에 대해서만 알려준다는 것입니다.
+다행스럽게도, 저희의 확률 변수가 유계이므로,
+호에프딩(Hoeffding, 1963)의 부등식을 적용함으로써
+유효한 유한 표본 한계를 얻을 수 있습니다.
 
 $$P(\epsilon_\mathcal{D}(f) - \epsilon(f) \geq t) < \exp\left( - 2n t^2 \right).$$
 
-Solving for the smallest dataset size
-that would allow us to conclude
-with 95% confidence that the distance $t$
-between our estimate $\epsilon_\mathcal{D}(f)$
-and the true error rate $\epsilon(f)$
-does not exceed $0.01$,
-you will find that roughly 15,000 examples are required
-as compared to the 10,000 examples suggested
-by the asymptotic analysis above.
-If you go deeper into statistics
-you will find that this trend holds generally.
-Guarantees that hold even in finite samples
-are typically slightly more conservative.
-Note that in the scheme of things,
-these numbers are not so far apart,
-reflecting the general usefulness
-of asymptotic analysis for giving
-us ballpark figures even if they are not
-guarantees we can take to court.
+저희 추정값 $\epsilon_\mathcal{D}(f)$와
+참 오류율 $\epsilon(f)$ 사이의 거리 $t$가
+$0.01$을 초과하지 않는다고
+95% 확신을 가지고 결론지을 수 있는
+최소 데이터셋 크기를 풀어 보면,
+위 점근 분석에서 제안된 10,000개의 예제에 비해
+대략 15,000개의 예제가 필요함을 알 수 있습니다.
+통계학에 더 깊이 들어가면
+이 추세가 일반적으로 유지된다는 것을 알게 될 것입니다.
+유한 표본에서도 성립하는 보장은
+일반적으로 약간 더 보수적입니다.
+전반적으로 보면, 이 숫자들이 그렇게 멀리 떨어져 있지 않다는 점에 유의하시기 바랍니다.
+이는 점근 분석이 법정에 가져갈 수 있는 보장은 아니더라도
+대략적인 수치를 제공하는 데 일반적으로 유용함을 반영합니다.
 
-## Test Set Reuse
+## 테스트 셋 재사용
 
-In some sense, you are now set up to succeed
-at conducting empirical machine learning research.
-Nearly all practical models are developed
-and validated based on test set performance
-and you are now a master of the test set.
-For any fixed classifier $f$,
-you know how to evaluate its test error $\epsilon_\mathcal{D}(f)$,
-and know precisely what can (and cannot)
-be said about its population error $\epsilon(f)$.
+어떤 의미에서, 여러분은 이제 경험적 머신러닝 연구를 성공적으로
+수행할 준비가 되었습니다.
+거의 모든 실용적인 모델은 테스트 셋 성능을 기반으로
+개발되고 검증되며, 이제 여러분은 테스트 셋의 달인입니다.
+어떠한 고정된 분류기 $f$에 대해서도,
+저희는 그 테스트 오류 $\epsilon_\mathcal{D}(f)$를 평가하는 방법을 알고 있고,
+그 모집단 오류 $\epsilon(f)$에 대해 무엇을
+(그리고 무엇을 말할 수 없는지를) 정확히 알고 있습니다.
 
-So let's say that you take this knowledge
-and prepare to train your first model $f_1$.
-Knowing just how confident you need to be
-in the performance of your classifier's error rate
-you apply our analysis above to determine
-an appropriate number of examples
-to set aside for the test set.
-Moreover, let's assume that you took the lessons from
-:numref:`sec_generalization_basics` to heart
-and made sure to preserve the sanctity of the test set
-by conducting all of your preliminary analysis,
-hyperparameter tuning, and even selection
-among multiple competing model architectures
-on a validation set.
-Finally you evaluate your model $f_1$
-on the test set and report an unbiased
-estimate of the population error
-with an associated confidence interval.
+자, 여러분이 이 지식을 가지고
+첫 번째 모델 $f_1$을 학습할 준비를 한다고 가정해 봅시다.
+분류기의 오류율 성능에 얼마나 확신을 가져야 하는지 정확히 알고 있으므로,
+위 분석을 적용하여
+테스트 셋용으로 따로 떼어 둘
+적절한 예제 수를 결정합니다.
+또한 여러분이 :numref:`sec_generalization_basics`의 교훈을 마음에 새기고,
+모든 예비 분석, 하이퍼파라미터 튜닝, 그리고
+여러 경쟁 모델 아키텍처들 사이의 선택까지도
+검증 셋에서 수행함으로써
+테스트 셋의 신성함을 보존했다고 가정합시다.
+마지막으로 여러분은 테스트 셋에서 모델 $f_1$을 평가하고
+관련된 신뢰 구간과 함께
+모집단 오류의 편향되지 않은 추정값을 보고합니다.
 
-So far everything seems to be going well.
-However, that night you wake up at 3am
-with a brilliant idea for a new modeling approach.
-The next day, you code up your new model,
-tune its hyperparameters on the validation set
-and not only are you getting your new model $f_2$ to work
-but its error rate appears to be much lower than $f_1$'s.
-However, the thrill of discovery suddenly fades
-as you prepare for the final evaluation.
-You do not have a test set!
+지금까지는 모든 것이 잘 진행되는 것 같습니다.
+그러나 그날 밤 새벽 3시에 잠에서 깨어
+새로운 모델링 접근법에 대한 훌륭한 아이디어가 떠오릅니다.
+다음 날, 새 모델을 코딩하고,
+검증 셋에서 하이퍼파라미터를 튜닝하니
+새 모델 $f_2$가 작동할 뿐만 아니라
+그 오류율이 $f_1$보다 훨씬 낮은 것으로 보입니다.
+그러나 최종 평가를 준비하면서
+발견의 짜릿함이 갑자기 사그라듭니다.
+테스트 셋이 없습니다!
 
-Even though the original test set $\mathcal{D}$
-is still sitting on your server,
-you now face two formidable problems.
-First, when you collected your test set,
-you determined the required level of precision
-under the assumption that you were evaluating
-a single classifier $f$.
-However, if you get into the business
-of evaluating multiple classifiers $f_1, ..., f_k$
-on the same test set,
-you must consider the problem of false discovery.
-Before, you might have been 95% sure
-that $\epsilon_\mathcal{D}(f) \in \epsilon(f) \pm 0.01$
-for a single classifier $f$
-and thus the probability of a misleading result
-was a mere 5%.
-With $k$ classifiers in the mix,
-it can be hard to guarantee
-that there is not even one among them
-whose test set performance is misleading.
-With 20 classifiers under consideration,
-you might have no power at all
-to rule out the possibility
-that at least one among them
-received a misleading score.
-This problem relates to multiple hypothesis testing,
-which despite a vast literature in statistics,
-remains a persistent problem plaguing scientific research.
+원래의 테스트 셋 $\mathcal{D}$가
+여전히 서버에 남아 있긴 하지만,
+이제 두 가지 만만치 않은 문제에 직면하게 됩니다.
+첫째, 테스트 셋을 수집할 때,
+단일 분류기 $f$를 평가한다는 가정하에
+필요한 정밀도 수준을 결정했습니다.
+그러나 동일한 테스트 셋에서
+여러 분류기 $f_1, ..., f_k$를 평가하는 일에 들어간다면,
+거짓 발견(false discovery)의 문제를 고려해야 합니다.
+이전에는 단일 분류기 $f$에 대해
+$\epsilon_\mathcal{D}(f) \in \epsilon(f) \pm 0.01$임을 95% 확신하여
+오해의 소지가 있는 결과의 확률이
+단지 5%였을 것입니다.
+$k$개의 분류기가 섞여 있으면,
+그 중 단 하나라도 테스트 셋 성능이 오해의 소지가 있지 않다는 것을
+보장하기는 어려울 수 있습니다.
+20개의 분류기가 고려되고 있다면,
+그 중 적어도 하나가 오해의 소지가 있는 점수를 받았을 가능성을
+배제할 능력이 전혀 없을 수도 있습니다.
+이 문제는 다중 가설 검정과 관련이 있으며,
+통계학에 방대한 문헌이 있음에도 불구하고,
+과학 연구를 괴롭히는 지속적인 문제로 남아 있습니다.
 
 
-If that is not enough to worry you,
-there is a special reason to distrust
-the results that you get on subsequent evaluations.
-Recall that our analysis of test set performance
-rested on the assumption that the classifier
-was chosen absent any contact with the test set
-and thus we could view the test set
-as drawn randomly from the underlying population.
-Here, not only are you testing multiple functions,
-the subsequent function $f_2$ was chosen
-after you observed the test set performance of $f_1$.
-Once information from the test set has leaked to the modeler,
-it can never be a true test set again in the strictest sense.
-This problem is called *adaptive overfitting* and has recently emerged
-as a topic of intense interest to learning theorists and statisticians
+그것만으로 여러분을 걱정시키기에 충분치 않다면,
+이후 평가에서 얻은 결과를 불신해야 할
+특별한 이유가 있습니다.
+저희의 테스트 셋 성능 분석은
+분류기가 테스트 셋과의 어떠한 접촉도 없이
+선택되었다는 가정에 기반했으며, 따라서
+저희는 테스트 셋을 기저 모집단에서 무작위로 추출된 것으로
+볼 수 있었음을 떠올려 보시기 바랍니다.
+여기서, 여러분은 여러 함수를 테스트하고 있을 뿐만 아니라,
+이후 함수 $f_2$는
+$f_1$의 테스트 셋 성능을 관찰한 후에 선택되었습니다.
+일단 테스트 셋의 정보가 모델러에게 유출되면,
+가장 엄격한 의미에서 결코 다시 진정한 테스트 셋이 될 수 없습니다.
+이 문제를 *적응적 과적합(adaptive overfitting)*이라고 하며,
+최근 학습 이론가와 통계학자들에게
+강한 관심의 주제로 떠올랐습니다
 :cite:`dwork2015preserving`.
-Fortunately, while it is possible
-to leak all information out of a holdout set,
-and the theoretical worst case scenarios are bleak,
-these analyses may be too conservative.
-In practice, take care to create real test sets,
-to consult them as infrequently as possible,
-to account for multiple hypothesis testing
-when reporting confidence intervals,
-and to dial up your vigilance more aggressively
-when the stakes are high and your dataset size is small.
-When running a series of benchmark challenges,
-it is often good practice to maintain
-several test sets so that after each round,
-the old test set can be demoted to a validation set.
+다행스럽게도, 홀드아웃 셋(holdout set)에서 모든 정보를 유출하는 것이 가능하고
+이론적인 최악의 시나리오는 암울하지만,
+이러한 분석은 너무 보수적일 수 있습니다.
+실제로는, 실제 테스트 셋을 만들고,
+가능한 한 드물게 참조하며,
+신뢰 구간을 보고할 때 다중 가설 검정을 고려하고,
+이해 관계가 크고 데이터셋 크기가 작을 때 경계를 더 적극적으로 강화하도록
+주의를 기울이시기 바랍니다.
+일련의 벤치마크 챌린지를 운영할 때는,
+각 라운드 후에 이전 테스트 셋을 검증 셋으로 강등할 수 있도록
+여러 테스트 셋을 유지하는 것이 좋은 관행인 경우가 많습니다.
 
 
 
 
+## 통계적 학습 이론
 
-## Statistical Learning Theory
+간단히 말해, *테스트 셋은 저희가 정말로 가지고 있는 전부*이지만,
+이 사실은 묘하게 불만족스러워 보입니다.
+첫째, 저희는 *진정한 테스트 셋*을 거의 가지고 있지 않습니다(저희가 데이터셋을
+만드는 사람이 아닌 한, 누군가는 이미 표면상의 "테스트 셋"에서
+자신의 분류기를 평가했을 것입니다).
+그리고 저희가 먼저 권리를 가진 경우에도,
+저희는 곧 좌절감을 느끼며,
+저희 숫자를 신뢰할 수 없다는
+괴롭히는 느낌 없이 이후의 모델링 시도를 평가할 수 있기를
+바라게 됩니다.
+더욱이, 진정한 테스트 셋도
+분류기가 실제로 모집단에 일반화되었는지를 *사후적*으로만 알려줄 수 있을 뿐,
+*사전적*으로 일반화될 것이라고 기대할 만한 어떤 이유가 있는지를 알려주지는 않습니다.
 
-Put simply, *test sets are all that we really have*,
-and yet this fact seems strangely unsatisfying.
-First, we seldom possess a *true test set*---unless
-we are the ones creating the dataset,
-someone else has probably already evaluated
-their own classifier on our ostensible "test set".
-And even when we have first dibs,
-we soon find ourselves frustrated, wishing we could
-evaluate our subsequent modeling attempts
-without the gnawing feeling
-that we cannot trust our numbers.
-Moreover, even a true test set can only tell us *post hoc*
-whether a classifier has in fact generalized to the population,
-not whether we have any reason to expect *a priori*
-that it should generalize.
+이러한 미덥지 못한 점들을 염두에 두면,
+이제 *통계적 학습 이론(statistical learning theory)*의 매력을 충분히 알 준비가 되었을 것입니다.
+이는 머신러닝의 수학적 하위 분야로,
+이 분야의 실무자들은 경험적 데이터에서 학습된 모델이
+보지 못한 데이터에 대해 일반화될 수 있고/일반화될 이유와 시점을 설명하는
+근본적인 원리를 밝히는 것을 목표로 합니다.
+통계적 학습 연구자의 주요 목표 중 하나는
+일반화 격차의 한계를 설정하여
+모델 클래스의 속성과 데이터셋의 표본 수를 연관시키는 것이었습니다.
 
-With these misgivings in mind,
-you might now be sufficiently primed
-to see the appeal of *statistical learning theory*,
-the mathematical subfield of machine learning
-whose practitioners aim to elucidate the
-fundamental principles that explain
-why/when models trained on empirical data
-can/will generalize to unseen data.
-One of the primary aims
-of statistical learning researchers
-has been to bound the generalization gap,
-relating the properties of the model class
-to the number of samples in the dataset.
-
-Learning theorists aim to bound the difference
-between the *empirical error* $\epsilon_\mathcal{S}(f_\mathcal{S})$
-of a learned classifier $f_\mathcal{S}$,
-both trained and evaluated
-on the training set $\mathcal{S}$,
-and the true error $\epsilon(f_\mathcal{S})$
-of that same classifier on the underlying population.
-This might look similar to the evaluation problem
-that we just addressed but there is a major difference.
-Earlier, the classifier $f$ was fixed
-and we only needed a dataset
-for evaluative purposes.
-And indeed, any fixed classifier does generalize:
-its error on a (previously unseen) dataset
-is an unbiased estimate of the population error.
-But what can we say when a classifier
-is trained and evaluated on the same dataset?
-Can we ever be confident that the training error
-will be close to the testing error?
+학습 이론가들은 학습 셋 $\mathcal{S}$에서 학습되고 평가된
+학습된 분류기 $f_\mathcal{S}$의 *경험적 오류* $\epsilon_\mathcal{S}(f_\mathcal{S})$와,
+기저 모집단에서 동일한 분류기의
+참 오류 $\epsilon(f_\mathcal{S})$ 사이의 차이의 한계를
+설정하는 것을 목표로 합니다.
+이는 방금 다룬 평가 문제와 유사해 보일 수 있지만, 주요 차이점이 있습니다.
+이전에는, 분류기 $f$가 고정되어 있었고
+저희는 단지 평가 목적으로 데이터셋만 필요했습니다.
+실제로, 어떠한 고정된 분류기도 일반화됩니다.
+(이전에 본 적 없는) 데이터셋에서의 오류는
+모집단 오류의 편향되지 않은 추정값입니다.
+그러나 분류기가 동일한 데이터셋에서 학습되고 평가될 때
+어떤 말을 할 수 있을까요?
+학습 오류가 테스트 오류에 가까울 것이라고
+확신할 수 있을까요?
 
 
-Suppose that our learned classifier $f_\mathcal{S}$ must be chosen
-from some pre-specified set of functions $\mathcal{F}$.
-Recall from our discussion of test sets
-that while it is easy to estimate
-the error of a single classifier,
-things get hairy when we begin
-to consider collections of classifiers.
-Even if the empirical error
-of any one (fixed) classifier
-will be close to its true error
-with high probability,
-once we consider a collection of classifiers,
-we need to worry about the possibility
-that *just one* of them
-will receive a badly estimated error.
-The worry is that we might pick such a classifier
-and thereby grossly underestimate
-the population error.
-Moreover, even for linear models,
-because their parameters are continuously valued,
-we are typically choosing from
-an infinite class of functions ($|\mathcal{F}| = \infty$).
+저희가 학습한 분류기 $f_\mathcal{S}$가
+사전에 지정된 어떤 함수 집합 $\mathcal{F}$에서 선택되어야 한다고 가정합시다.
+테스트 셋에 대한 논의에서, 단일 분류기의 오류를 추정하는 것은 쉽지만,
+분류기들의 집합을 고려하기 시작하면 일이 까다로워진다는 것을 떠올려 보시기 바랍니다.
+어느 한 (고정된) 분류기의 경험적 오류가
+높은 확률로 그 참 오류에 가까울지라도,
+일단 분류기들의 집합을 고려하면,
+그 중 *단 하나라도* 잘못 추정된 오류를 받을 가능성에 대해
+걱정해야 합니다.
+걱정스러운 점은 저희가 그러한 분류기를 골라
+모집단 오류를 크게 과소평가할 수 있다는 것입니다.
+더욱이, 선형 모델의 경우에도,
+그 파라미터가 연속적인 값을 가지므로,
+저희는 일반적으로 무한한 함수 클래스($|\mathcal{F}| = \infty$)에서
+선택하고 있는 셈입니다.
 
-One ambitious solution to the problem
-is to develop analytic tools
-for proving uniform convergence, i.e.,
-that with high probability,
-the empirical error rate for every classifier in the class $f\in\mathcal{F}$
-will *simultaneously* converge to its true error rate.
-In other words, we seek a theoretical principle
-that would allow us to state that
-with probability at least $1-\delta$
-(for some small $\delta$)
-no classifier's error rate $\epsilon(f)$
-(among all classifiers in the class $\mathcal{F}$)
-will be misestimated by more
-than some  small amount $\alpha$.
-Clearly, we cannot make such statements
-for all model classes $\mathcal{F}$.
-Recall the class of memorization machines
-that always achieve empirical error $0$
-but never outperform random guessing
-on the underlying population.
+이 문제에 대한 한 가지 야심 찬 해결책은
+균등 수렴(uniform convergence), 즉
+높은 확률로 클래스 $f\in\mathcal{F}$의 모든 분류기에 대한 경험적 오류율이
+*동시에* 그 참 오류율로 수렴함을 증명하기 위한
+분석 도구를 개발하는 것입니다.
+다시 말해, 저희는 어떤 작은 $\delta$에 대해 적어도 $1-\delta$의 확률로,
+(클래스 $\mathcal{F}$의 모든 분류기 중에서)
+어떤 분류기의 오류율 $\epsilon(f)$도
+어떤 작은 양 $\alpha$보다 더 크게 잘못 추정되지 않을 것이라고
+말할 수 있게 해 줄 이론적 원리를 추구합니다.
+명백히, 저희는 모든 모델 클래스 $\mathcal{F}$에 대해
+그러한 진술을 할 수 없습니다.
+경험적 오류 $0$을 항상 달성하지만
+기저 모집단에서 결코 무작위 추측을 능가하지 못하는
+암기 머신 클래스를 떠올려 보시기 바랍니다.
 
-In a sense the class of memorizers is too flexible.
-No such a uniform convergence result could possibly hold.
-On the other hand, a fixed classifier is useless---it
-generalizes perfectly, but fits neither
-the training data nor the test data.
-The central question of learning
-has thus historically been framed as a trade-off
-between more flexible (higher variance) model classes
-that better fit the training data but risk overfitting,
-versus more rigid (higher bias) model classes
-that generalize well but risk underfitting.
-A central question in learning theory
-has been to develop the appropriate
-mathematical analysis to quantify
-where a model sits along this spectrum,
-and to provide the associated guarantees.
+어떤 의미에서 암기자 클래스는 너무 유연합니다.
+그러한 균등 수렴 결과는 성립할 수 없을 것입니다.
+다른 한편으로, 고정된 분류기는 쓸모가 없습니다(완벽하게 일반화되지만,
+학습 데이터에도 테스트 데이터에도 적합하지 않습니다).
+따라서 학습의 중심 질문은 역사적으로
+학습 데이터에 더 잘 적합하지만 과적합 위험이 있는 더 유연한(더 큰 분산의) 모델 클래스와,
+잘 일반화되지만 과소적합 위험이 있는 더 경직된(더 큰 편향의) 모델 클래스 사이의
+트레이드오프로 정식화되어 왔습니다.
+학습 이론의 중심 질문은
+모델이 이 스펙트럼의 어디에 위치하는지를 정량화하고
+관련된 보장을 제공하기 위한
+적절한 수학적 분석을 개발하는 것이었습니다.
 
-In a series of seminal papers,
-Vapnik and Chervonenkis extended
-the theory on the convergence
-of relative frequencies
-to more general classes of functions
+일련의 기념비적인 논문에서,
+Vapnik과 Chervonenkis는 상대 빈도의 수렴에 관한 이론을
+더 일반적인 함수 클래스로 확장했습니다
 :cite:`VapChe64,VapChe68,VapChe71,VapChe74b,VapChe81,VapChe91`.
-One of the key contributions of this line of work
-is the Vapnik--Chervonenkis (VC) dimension,
-which measures (one notion of)
-the complexity (flexibility) of a model class.
-Moreover, one of their key results bounds
-the difference between the empirical error
-and the population error as a function
-of the VC dimension and the number of samples:
+이 연구 흐름의 주요 기여 중 하나는
+모델 클래스의 복잡도(유연성)에 대한 (한 가지 개념을)
+측정하는 Vapnik--Chervonenkis (VC) 차원입니다.
+또한, 그들의 주요 결과 중 하나는
+VC 차원과 표본 수의 함수로서
+경험적 오류와 모집단 오류 사이의 차이의 한계를 설정합니다.
 
 $$P\left(R[p, f] - R_\textrm{emp}[\mathbf{X}, \mathbf{Y}, f] < \alpha\right) \geq 1-\delta
 \ \textrm{ for }\ \alpha \geq c \sqrt{(\textrm{VC} - \log \delta)/n}.$$
 
-Here $\delta > 0$ is the probability that the bound is violated,
-$\alpha$ is the upper bound on the generalization gap,
-and $n$ is the dataset size.
-Lastly, $c > 0$ is a constant that depends
-only on the scale of the loss that can be incurred.
-One use of the bound might be to plug in desired
-values of $\delta$ and $\alpha$
-to determine how many samples to collect.
-The VC dimension quantifies the largest
-number of data points for which we can assign
-any arbitrary (binary) labeling
-and for each find some model $f$ in the class
-that agrees with that labeling.
-For example, linear models on $d$-dimensional inputs
-have VC dimension $d+1$.
-It is easy to see that a line can assign
-any possible labeling to three points in two dimensions,
-but not to four.
-Unfortunately, the theory tends to be
-overly pessimistic for more complex models
-and obtaining this guarantee typically requires
-far more examples than are actually needed
-to achieve the desired error rate.
-Note also that fixing the model class and $\delta$,
-our error rate again decays
-with the usual $\mathcal{O}(1/\sqrt{n})$ rate.
-It seems unlikely that we could do better in terms of $n$.
-However, as we vary the model class,
-VC dimension can present
-a pessimistic picture
-of the generalization gap.
+여기서 $\delta > 0$은 한계가 위반될 확률이고,
+$\alpha$는 일반화 격차의 상한이며,
+$n$은 데이터셋 크기입니다.
+마지막으로, $c > 0$은 발생할 수 있는 손실의 규모에만
+의존하는 상수입니다.
+이 한계의 한 가지 사용법은 원하는 $\delta$와 $\alpha$의 값을 대입하여
+얼마나 많은 표본을 수집할지 결정하는 것일 수 있습니다.
+VC 차원은 어떠한 임의의 (이진) 레이블링도 할당할 수 있고
+각각에 대해 그 레이블링과 일치하는 클래스 내 어떤 모델 $f$를
+찾을 수 있는 최대 데이터 포인트 수를 정량화합니다.
+예를 들어, $d$차원 입력에 대한 선형 모델은
+VC 차원 $d+1$을 가집니다.
+직선이 2차원에서 세 점에 대한 어떠한 가능한 레이블링도
+할당할 수 있지만 네 점에는 할당할 수 없다는 것은 쉽게 알 수 있습니다.
+불행히도, 이 이론은 더 복잡한 모델에 대해
+지나치게 비관적인 경향이 있으며, 이 보장을 얻으려면 일반적으로
+원하는 오류율을 달성하는 데 실제 필요한 것보다 훨씬 더 많은 예제가
+필요합니다.
+또한 모델 클래스와 $\delta$를 고정하면,
+저희의 오류율이 다시 일반적인 $\mathcal{O}(1/\sqrt{n})$ 비율로
+감소함에 유의하시기 바랍니다.
+$n$의 관점에서 저희가 더 잘할 수 있을 것 같지는 않습니다.
+그러나 모델 클래스를 변화시키면,
+VC 차원은 일반화 격차에 대해
+비관적인 그림을 제시할 수 있습니다.
 
 
 
 
+## 요약
 
-## Summary
-
-The most straightforward way to evaluate a model
-is to consult a test set comprised of previously unseen data.
-Test set evaluations provide an unbiased estimate of the true error
-and converge at the desired $\mathcal{O}(1/\sqrt{n})$ rate as the test set grows.
-We can provide approximate confidence intervals
-based on exact asymptotic distributions
-or valid finite sample confidence intervals
-based on (more conservative) finite sample guarantees.
-Indeed test set evaluation is the bedrock
-of modern machine learning research.
-However, test sets are seldom true test sets
-(used by multiple researchers again and again).
-Once the same test set is used
-to evaluate multiple models,
-controlling for false discovery can be difficult.
-This can cause huge problems in theory.
-In practice, the significance of the problem
-depends on the size of the holdout sets in question
-and whether they are merely being used to choose hyperparameters
-or if they are leaking information more directly.
-Nevertheless, it is good practice to curate real test sets (or multiple)
-and to be as conservative as possible about how often they are used.
+모델을 평가하는 가장 직접적인 방법은
+이전에 본 적 없는 데이터로 구성된 테스트 셋을 참조하는 것입니다.
+테스트 셋 평가는 참 오류의 편향되지 않은 추정값을 제공하며,
+테스트 셋이 커짐에 따라 원하는 $\mathcal{O}(1/\sqrt{n})$ 비율로 수렴합니다.
+저희는 정확한 점근 분포에 기반하여 근사적인 신뢰 구간을 제공하거나,
+(더 보수적인) 유한 표본 보장에 기반하여 유효한 유한 표본
+신뢰 구간을 제공할 수 있습니다.
+실제로 테스트 셋 평가는
+현대 머신러닝 연구의 토대입니다.
+그러나 테스트 셋은 (여러 연구자에 의해 반복적으로 사용되는)
+진정한 테스트 셋인 경우가 드뭅니다.
+일단 동일한 테스트 셋이 여러 모델을 평가하는 데 사용되면,
+거짓 발견을 통제하기 어려울 수 있습니다.
+이는 이론적으로 큰 문제를 일으킬 수 있습니다.
+실제로는, 이 문제의 심각성은
+홀드아웃 셋의 크기와
+단순히 하이퍼파라미터 선택에 사용되는지,
+아니면 더 직접적으로 정보를 유출하고 있는지에 달려 있습니다.
+그럼에도 불구하고, 실제 테스트 셋(혹은 여러 개의 테스트 셋)을 큐레이팅하고
+얼마나 자주 사용되는지에 대해 가능한 한 보수적으로 임하는 것이
+좋은 관행입니다.
 
 
-Hoping to provide a more satisfying solution,
-statistical learning theorists have developed methods
-for guaranteeing uniform convergence over a model class.
-If indeed every model's empirical error simultaneously
-converges to its true error,
-then we are free to choose the model that performs
-best, minimizing the training error,
-knowing that it too will perform similarly well
-on the holdout data.
-Crucially, any one of such results must depend
-on some property of the model class.
-Vladimir Vapnik and Alexey Chernovenkis
-introduced the VC dimension,
-presenting uniform convergence results
-that hold for all models in a VC class.
-The training errors for all models in the class
-are (simultaneously) guaranteed
-to be close to their true errors,
-and guaranteed to grow even closer
-at $\mathcal{O}(1/\sqrt{n})$ rates.
-Following the revolutionary discovery of VC dimension,
-numerous alternative complexity measures have been proposed,
-each facilitating an analogous generalization guarantee.
-See :citet:`boucheron2005theory` for a detailed discussion
-of several advanced ways of measuring function complexity.
-Unfortunately, while these complexity measures
-have become broadly useful tools in statistical theory,
-they turn out to be powerless
-(as straightforwardly applied)
-for explaining why deep neural networks generalize.
-Deep neural networks often have millions of parameters (or more),
-and can easily assign random labels to large collections of points.
-Nevertheless, they generalize well on practical problems
-and, surprisingly, they often generalize better,
-when they are larger and deeper,
-despite incurring higher VC dimensions.
-In the next chapter, we will revisit generalization
-in the context of deep learning.
+더 만족스러운 해결책을 제공하기를 바라며,
+통계적 학습 이론가들은 모델 클래스에 걸친 균등 수렴을
+보장하기 위한 방법들을 개발했습니다.
+실제로 모든 모델의 경험적 오류가 동시에
+그 참 오류로 수렴한다면,
+저희는 학습 오류를 최소화하면서 가장 잘 수행하는 모델을
+자유롭게 선택할 수 있으며,
+이 모델도 홀드아웃 데이터에서 비슷하게 잘 수행될 것임을
+알 수 있습니다.
+결정적으로, 그러한 결과 중 어느 것도
+모델 클래스의 어떤 속성에 의존해야 합니다.
+Vladimir Vapnik과 Alexey Chernovenkis는
+VC 차원을 도입하여,
+VC 클래스 내 모든 모델에 대해 성립하는 균등 수렴 결과를 제시했습니다.
+클래스 내 모든 모델의 학습 오류는
+참 오류에 가까울 것이 (동시에) 보장되며,
+$\mathcal{O}(1/\sqrt{n})$ 비율로 더욱 가까워질 것이 보장됩니다.
+VC 차원의 혁명적인 발견에 이어,
+유사한 일반화 보장을 가능하게 하는
+수많은 대안적 복잡도 측정이 제안되었습니다.
+함수 복잡도를 측정하는 몇 가지 고급 방법에 대한 자세한 논의는
+:citet:`boucheron2005theory`를 참고하시기 바랍니다.
+불행히도, 이러한 복잡도 측정이
+통계 이론에서 광범위하게 유용한 도구가 되었지만,
+(직접적으로 적용할 때) 심층 신경망이 왜 일반화되는지를
+설명하는 데는 무력한 것으로 밝혀졌습니다.
+심층 신경망은 종종 수백만 개 (또는 그 이상의) 파라미터를 가지며,
+큰 점들의 집합에 무작위 레이블을 쉽게 할당할 수 있습니다.
+그럼에도 불구하고, 실용적인 문제에서 잘 일반화되며,
+놀랍게도, 더 크고 깊을수록
+더 높은 VC 차원을 발생시킴에도 불구하고 종종 더 잘 일반화됩니다.
+다음 챕터에서, 저희는 딥러닝의 맥락에서
+일반화를 다시 살펴볼 것입니다.
 
-## Exercises
+## 연습문제
 
-1. If we wish to estimate the error of a fixed model $f$
-   to within $0.0001$ with probability greater than 99.9%,
-   how many samples do we need?
-1. Suppose that somebody else possesses a labeled test set
-   $\mathcal{D}$ and only makes available the unlabeled inputs (features).
-   Now suppose that you can only access the test set labels
-   by running a model $f$ (with no restrictions placed on the model class)
-   on each of the unlabeled inputs
-   and receiving the corresponding error $\epsilon_\mathcal{D}(f)$.
-   How many models would you need to evaluate
-   before you leak the entire test set
-   and thus could appear to have error $0$,
-   regardless of your true error?
-1. What is the VC dimension of the class of fifth-order polynomials?
-1. What is the VC dimension of axis-aligned rectangles on two-dimensional data?
+1. 고정된 모델 $f$의 오류를 99.9%보다 큰 확률로
+   $0.0001$ 이내로 추정하려면,
+   얼마나 많은 표본이 필요한가요?
+1. 다른 누군가가 레이블이 붙은 테스트 셋
+   $\mathcal{D}$를 가지고 있고 레이블이 없는 입력(특성)만 제공한다고 가정해 봅시다.
+   이제 레이블이 없는 각 입력에 대해 (모델 클래스에 제한이 없는) 모델 $f$를 실행하고
+   대응되는 오류 $\epsilon_\mathcal{D}(f)$를 받음으로써만
+   테스트 셋 레이블에 접근할 수 있다고 가정해 봅시다.
+   참 오류와 상관없이 마치 오류 $0$을 가진 것처럼 보이도록
+   전체 테스트 셋을 유출하기 전에
+   얼마나 많은 모델을 평가해야 할까요?
+1. 5차 다항식 클래스의 VC 차원은 무엇인가요?
+1. 2차원 데이터에 대한 축 정렬 직사각형의 VC 차원은 무엇인가요?
 
-[Discussions](https://discuss.d2l.ai/t/6829)
+[토론](https://discuss.d2l.ai/t/6829)

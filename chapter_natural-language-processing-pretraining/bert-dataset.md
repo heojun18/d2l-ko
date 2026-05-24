@@ -1,23 +1,21 @@
-# The Dataset for Pretraining BERT
+# BERT 사전 학습을 위한 데이터셋
 :label:`sec_bert-dataset`
 
-To pretrain the BERT model as implemented in :numref:`sec_bert`,
-we need to generate the dataset in the ideal format to facilitate
-the two pretraining tasks:
-masked language modeling and next sentence prediction.
-On the one hand,
-the original BERT model is pretrained on the concatenation of
-two huge corpora BookCorpus and English Wikipedia (see :numref:`subsec_bert_pretraining_tasks`),
-making it hard to run for most readers of this book.
-On the other hand,
-the off-the-shelf pretrained BERT model
-may not fit for applications from specific domains like medicine.
-Thus, it is getting popular to pretrain BERT on a customized dataset.
-To facilitate the demonstration of BERT pretraining,
-we use a smaller corpus WikiText-2 :cite:`Merity.Xiong.Bradbury.ea.2016`.
+:numref:`sec_bert`에서 구현된 BERT 모델을 사전 학습하기 위해,
+저희는 두 사전 학습 작업, 즉 마스킹된 언어 모델링과 다음 문장 예측을 수월하게 하기 위해
+이상적인 형식으로 데이터셋을 생성해야 합니다.
+한편으로는,
+원래의 BERT 모델은 두 거대한 말뭉치 BookCorpus와 영어 위키피디아의 연결로 사전 학습되며(:numref:`subsec_bert_pretraining_tasks` 참조),
+이 책의 대부분 독자가 실행하기 어렵게 만듭니다.
+다른 한편으로는,
+기성 사전 학습된 BERT 모델은
+의학 같은 특정 도메인의 응용에 맞지 않을 수 있습니다.
+따라서, 맞춤형 데이터셋에서 BERT를 사전 학습하는 것이 인기를 얻고 있습니다.
+BERT 사전 학습의 시연을 수월하게 하기 위해,
+저희는 더 작은 말뭉치 WikiText-2 :cite:`Merity.Xiong.Bradbury.ea.2016`를 사용합니다.
 
-Comparing with the PTB dataset used for pretraining word2vec in :numref:`sec_word2vec_data`,
-WikiText-2 (i) retains the original punctuation, making it suitable for next sentence prediction; (ii) retains the original case and numbers; (iii) is over twice larger.
+:numref:`sec_word2vec_data`에서 word2vec 사전 학습에 사용된 PTB 데이터셋과 비교하면,
+WikiText-2는 (i) 원래의 구두점을 유지하여 다음 문장 예측에 적합하게 하고, (ii) 원래의 대소문자와 숫자를 유지하며, (iii) 두 배 이상 큽니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -37,13 +35,12 @@ import random
 import torch
 ```
 
-In [**the WikiText-2 dataset**],
-each line represents a paragraph where
-space is inserted between any punctuation and its preceding token.
-Paragraphs with at least two sentences are retained.
-To split sentences, we only use the period as the delimiter for simplicity.
-We leave discussions of more complex sentence splitting techniques in the exercises
-at the end of this section.
+[**WikiText-2 데이터셋**]에서,
+각 줄은 문단을 나타내며
+구두점과 그 앞 토큰 사이에 공백이 삽입되어 있습니다.
+적어도 두 문장 이상인 문단이 유지됩니다.
+문장을 분리하기 위해, 저희는 단순화를 위해 마침표만을 구분자로 사용합니다.
+더 복잡한 문장 분리 기법에 대한 논의는 이 절 끝의 연습문제에 남겨둡니다.
 
 ```{.python .input}
 #@tab all
@@ -64,20 +61,21 @@ def _read_wiki(data_dir):
     return paragraphs
 ```
 
-## Defining Helper Functions for Pretraining Tasks
+## 사전 학습 작업을 위한 헬퍼 함수 정의
 
-In the following,
-we begin by implementing helper functions for the two BERT pretraining tasks:
-next sentence prediction and masked language modeling.
-These helper functions will be invoked later
-when transforming the raw text corpus
-into the dataset of the ideal format to pretrain BERT.
+다음에서,
+저희는 두 BERT 사전 학습 작업을 위한 헬퍼 함수를 구현하는 것부터 시작합니다.
+다음 문장 예측과 마스킹된 언어 모델링입니다.
+이러한 헬퍼 함수는
+나중에 원본 텍스트 말뭉치를
+BERT를 사전 학습하기 위한 이상적인 형식의 데이터셋으로 변환할 때
+호출될 것입니다.
 
-### [**Generating the Next Sentence Prediction Task**]
+### [**다음 문장 예측 작업 생성**]
 
-According to descriptions of :numref:`subsec_nsp`,
-the `_get_next_sentence` function generates a training example
-for the binary classification task.
+:numref:`subsec_nsp`의 설명에 따라,
+`_get_next_sentence` 함수는
+이진 분류 작업을 위한 학습 예제를 생성합니다.
 
 ```{.python .input}
 #@tab all
@@ -92,10 +90,10 @@ def _get_next_sentence(sentence, next_sentence, paragraphs):
     return sentence, next_sentence, is_next
 ```
 
-The following function generates training examples for next sentence prediction
-from the input `paragraph` by invoking the `_get_next_sentence` function.
-Here `paragraph` is a list of sentences, where each sentence is a list of tokens.
-The argument `max_len` specifies the maximum length of a BERT input sequence during pretraining.
+다음 함수는 `_get_next_sentence` 함수를 호출하여
+입력 `paragraph`로부터 다음 문장 예측을 위한 학습 예제를 생성합니다.
+여기서 `paragraph`는 문장의 리스트이며, 각 문장은 토큰의 리스트입니다.
+인수 `max_len`은 사전 학습 동안 BERT 입력 시퀀스의 최대 길이를 지정합니다.
 
 ```{.python .input}
 #@tab all
@@ -113,22 +111,20 @@ def _get_nsp_data_from_paragraph(paragraph, paragraphs, vocab, max_len):
     return nsp_data_from_paragraph
 ```
 
-### [**Generating the Masked Language Modeling Task**]
+### [**마스킹된 언어 모델링 작업 생성**]
 :label:`subsec_prepare_mlm_data`
 
-In order to generate training examples
-for the masked language modeling task
-from a BERT input sequence,
-we define the following `_replace_mlm_tokens` function.
-In its inputs, `tokens` is a list of tokens representing a BERT input sequence,
-`candidate_pred_positions` is a list of token indices of the BERT input sequence
-excluding those of special tokens (special tokens are not predicted in the masked language modeling task),
-and `num_mlm_preds` indicates the number of predictions (recall 15% random tokens to predict).
-Following the definition of the masked language modeling task in :numref:`subsec_mlm`,
-at each prediction position, the input may be replaced by
-a special “&lt;mask&gt;” token or a random token, or remain unchanged.
-In the end, the function returns the input tokens after possible replacement,
-the token indices where predictions take place and labels for these predictions.
+BERT 입력 시퀀스에서
+마스킹된 언어 모델링 작업을 위한 학습 예제를 생성하기 위해,
+저희는 다음의 `_replace_mlm_tokens` 함수를 정의합니다.
+그 입력에서, `tokens`는 BERT 입력 시퀀스를 나타내는 토큰의 리스트이고,
+`candidate_pred_positions`는 특수 토큰의 인덱스를 제외한 BERT 입력 시퀀스의 토큰 인덱스 리스트이며(특수 토큰은 마스킹된 언어 모델링 작업에서 예측되지 않습니다),
+`num_mlm_preds`는 예측의 수(15% 무작위 토큰을 예측함을 떠올리십시오)를 가리킵니다.
+:numref:`subsec_mlm`의 마스킹된 언어 모델링 작업의 정의에 따라,
+각 예측 위치에서, 입력은
+특수 "&lt;mask&gt;" 토큰 또는 무작위 토큰으로 대체되거나, 변경되지 않을 수 있습니다.
+결국, 함수는 가능한 대체 후의 입력 토큰,
+예측이 발생하는 토큰 인덱스, 그리고 이러한 예측에 대한 레이블을 반환합니다.
 
 ```{.python .input}
 #@tab all
@@ -162,12 +158,11 @@ def _replace_mlm_tokens(tokens, candidate_pred_positions, num_mlm_preds,
     return mlm_input_tokens, pred_positions_and_labels
 ```
 
-By invoking the aforementioned `_replace_mlm_tokens` function,
-the following function takes a BERT input sequence (`tokens`)
-as an input and returns indices of the input tokens
-(after possible token replacement as described in :numref:`subsec_mlm`),
-the token indices where predictions take place,
-and label indices for these predictions.
+앞서 언급한 `_replace_mlm_tokens` 함수를 호출함으로써,
+다음 함수는 BERT 입력 시퀀스(`tokens`)를 입력으로 받아
+입력 토큰의 인덱스(:numref:`subsec_mlm`에서 설명된 가능한 토큰 대체 후),
+예측이 발생하는 토큰 인덱스,
+그리고 이러한 예측에 대한 레이블 인덱스를 반환합니다.
 
 ```{.python .input}
 #@tab all
@@ -192,13 +187,13 @@ def _get_mlm_data_from_tokens(tokens, vocab):
     return vocab[mlm_input_tokens], pred_positions, vocab[mlm_pred_labels]
 ```
 
-## Transforming Text into the Pretraining Dataset
+## 텍스트를 사전 학습 데이터셋으로 변환
 
-Now we are almost ready to customize a `Dataset` class for pretraining BERT.
-Before that, 
-we still need to define a helper function `_pad_bert_inputs`
-to [**append the special “&lt;pad&gt;” tokens to the inputs.**]
-Its argument `examples` contain the outputs from the helper functions `_get_nsp_data_from_paragraph` and `_get_mlm_data_from_tokens` for the two pretraining tasks.
+이제 저희는 BERT를 사전 학습하기 위한 `Dataset` 클래스를 맞춤 제작할 준비가 거의 되었습니다.
+그 전에,
+[**입력에 특수 "&lt;pad&gt;" 토큰을 추가하기**] 위해
+헬퍼 함수 `_pad_bert_inputs`를 여전히 정의해야 합니다.
+그 인수 `examples`는 두 사전 학습 작업을 위한 헬퍼 함수 `_get_nsp_data_from_paragraph`와 `_get_mlm_data_from_tokens`로부터의 출력을 포함합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -261,19 +256,18 @@ def _pad_bert_inputs(examples, max_len, vocab):
             all_mlm_weights, all_mlm_labels, nsp_labels)
 ```
 
-Putting the helper functions for
-generating training examples of the two pretraining tasks,
-and the helper function for padding inputs together,
-we customize the following `_WikiTextDataset` class as [**the WikiText-2 dataset for pretraining BERT**].
-By implementing the `__getitem__ `function,
-we can arbitrarily access the pretraining (masked language modeling and next sentence prediction) examples 
-generated from a pair of sentences from the WikiText-2 corpus.
+두 사전 학습 작업의 학습 예제를 생성하기 위한 헬퍼 함수와
+입력을 패딩하기 위한 헬퍼 함수를 함께 묶어서,
+저희는 다음의 `_WikiTextDataset` 클래스를 [**BERT 사전 학습을 위한 WikiText-2 데이터셋**]으로 맞춤 제작합니다.
+`__getitem__` 함수를 구현함으로써,
+저희는 WikiText-2 말뭉치에서 한 쌍의 문장으로부터 생성된 사전 학습(마스킹된 언어 모델링과 다음 문장 예측) 예제에
+임의로 접근할 수 있습니다.
 
-The original BERT model uses WordPiece embeddings whose vocabulary size is 30000 :cite:`Wu.Schuster.Chen.ea.2016`.
-The tokenization method of WordPiece is a slight modification of
-the original byte pair encoding algorithm in :numref:`subsec_Byte_Pair_Encoding`.
-For simplicity, we use the `d2l.tokenize` function for tokenization.
-Infrequent tokens that appear less than five times are filtered out.
+원래의 BERT 모델은 어휘 크기가 30000인 WordPiece 임베딩을 사용합니다 :cite:`Wu.Schuster.Chen.ea.2016`.
+WordPiece의 토큰화 방법은
+:numref:`subsec_Byte_Pair_Encoding`의 원래 바이트 페어 인코딩 알고리즘의 약간의 수정입니다.
+단순화를 위해, 저희는 토큰화를 위해 `d2l.tokenize` 함수를 사용합니다.
+다섯 번 미만 등장하는 드문 토큰은 필터링됩니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -353,9 +347,9 @@ class _WikiTextDataset(torch.utils.data.Dataset):
         return len(self.all_token_ids)
 ```
 
-By using the `_read_wiki` function and the `_WikiTextDataset` class,
-we define the following `load_data_wiki` to [**download and WikiText-2 dataset
-and generate pretraining examples**] from it.
+`_read_wiki` 함수와 `_WikiTextDataset` 클래스를 사용함으로써,
+저희는 [**WikiText-2 데이터셋을 다운로드하고 그로부터 사전 학습 예제를 생성하기**] 위해
+다음의 `load_data_wiki`를 정의합니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -385,10 +379,10 @@ def load_data_wiki(batch_size, max_len):
     return train_iter, train_set.vocab
 ```
 
-Setting the batch size to 512 and the maximum length of a BERT input sequence to be 64,
-we [**print out the shapes of a minibatch of BERT pretraining examples**].
-Note that in each BERT input sequence,
-$10$ ($64 \times 0.15$) positions are predicted for the masked language modeling task.
+배치 크기를 512로 설정하고 BERT 입력 시퀀스의 최대 길이를 64로 두고,
+저희는 [**BERT 사전 학습 예제의 미니배치 형상을 출력합니다**].
+각 BERT 입력 시퀀스에서,
+$10$개 ($64 \times 0.15$) 위치가 마스킹된 언어 모델링 작업을 위해 예측됨에 유의하십시오.
 
 ```{.python .input}
 #@tab all
@@ -403,25 +397,25 @@ for (tokens_X, segments_X, valid_lens_x, pred_positions_X, mlm_weights_X,
     break
 ```
 
-In the end, let's take a look at the vocabulary size.
-Even after filtering out infrequent tokens,
-it is still over twice larger than that of the PTB dataset.
+마지막으로, 어휘 크기를 살펴봅시다.
+드문 토큰을 필터링한 후에도,
+PTB 데이터셋의 그것보다 여전히 두 배 이상 큽니다.
 
 ```{.python .input}
 #@tab all
 len(vocab)
 ```
 
-## Summary
+## 요약
 
-* Comparing with the PTB dataset, the WikiText-2 dateset retains the original punctuation, case and numbers, and is over twice larger.
-* We can arbitrarily access the pretraining (masked language modeling and next sentence prediction) examples generated from a pair of sentences from the WikiText-2 corpus.
+* PTB 데이터셋과 비교하여, WikiText-2 데이터셋은 원래의 구두점, 대소문자, 숫자를 유지하며, 두 배 이상 큽니다.
+* 저희는 WikiText-2 말뭉치에서 한 쌍의 문장으로부터 생성된 사전 학습(마스킹된 언어 모델링과 다음 문장 예측) 예제에 임의로 접근할 수 있습니다.
 
 
-## Exercises
+## 연습문제
 
-1. For simplicity, the period is used as the only delimiter for splitting sentences. Try other sentence splitting techniques, such as the spaCy and NLTK. Take NLTK as an example. You need to install NLTK first: `pip install nltk`. In the code, first `import nltk`. Then, download the Punkt sentence tokenizer: `nltk.download('punkt')`. To split sentences such as `sentences = 'This is great ! Why not ?'`, invoking `nltk.tokenize.sent_tokenize(sentences)` will return a list of two sentence strings: `['This is great !', 'Why not ?']`.
-1. What is the vocabulary size if we do not filter out any infrequent token?
+1. 단순화를 위해, 마침표가 문장을 분리하는 유일한 구분자로 사용됩니다. spaCy와 NLTK 같은 다른 문장 분리 기법을 시도해 보십시오. NLTK를 예로 들어 봅시다. 먼저 NLTK를 설치해야 합니다. `pip install nltk`. 코드에서, 먼저 `import nltk`. 그런 다음, Punkt 문장 토크나이저를 다운로드합니다. `nltk.download('punkt')`. `sentences = 'This is great ! Why not ?'`와 같은 문장을 분리하려면, `nltk.tokenize.sent_tokenize(sentences)`를 호출하면 두 문장 문자열 리스트 `['This is great !', 'Why not ?']`를 반환할 것입니다.
+1. 드문 토큰을 필터링하지 않으면 어휘 크기는 얼마입니까?
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/389)

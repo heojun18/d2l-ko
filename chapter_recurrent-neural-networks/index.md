@@ -1,142 +1,138 @@
-# Recurrent Neural Networks
+# 순환 신경망 (Recurrent Neural Networks)
 :label:`chap_rnn`
 
-Up until now, we have focused primarily on fixed-length data.
-When introducing linear and logistic regression
-in :numref:`chap_regression` and :numref:`chap_classification`
-and multilayer perceptrons in :numref:`chap_perceptrons`,
-we were happy to assume that each feature vector $\mathbf{x}_i$
-consisted of a fixed number of components $x_1, \dots, x_d$,
-where each numerical feature $x_j$
-corresponded to a particular attribute.
-These datasets are sometimes called *tabular*,
-because they can be arranged in tables,
-where each example $i$ gets its own row,
-and each attribute gets its own column.
-Crucially, with tabular data, we seldom
-assume any particular structure over the columns.
+지금까지 저희는 주로 고정 길이 데이터에 초점을 맞추어 왔습니다.
+:numref:`chap_regression`와 :numref:`chap_classification`에서 선형 회귀와
+로지스틱 회귀를 소개하고,
+:numref:`chap_perceptrons`에서 다층 퍼셉트론을 소개할 때,
+저희는 각 특징 벡터 $\mathbf{x}_i$가
+고정된 개수의 성분 $x_1, \dots, x_d$로 구성된다고
+편하게 가정했고,
+여기서 각 수치 특징 $x_j$는
+특정 속성에 대응되었습니다.
+이러한 데이터셋은 때때로 *표 형식(tabular)* 이라고 불리는데,
+이는 표 형태로 정리될 수 있기 때문입니다.
+표에서는 각 예시 $i$가 자신만의 행을 가지고,
+각 속성이 자신만의 열을 갖습니다.
+결정적으로, 표 형식 데이터에서는
+열에 대해 어떤 특정한 구조를 가정하는 일이 거의 없습니다.
 
-Subsequently, in :numref:`chap_cnn`,
-we moved on to image data, where inputs consist
-of the raw pixel values at each coordinate in an image.
-Image data hardly fitted the bill
-of a protypical tabular dataset.
-There, we needed to call upon convolutional neural networks (CNNs)
-to handle the hierarchical structure and invariances.
-However, our data were still of fixed length.
-Every Fashion-MNIST image is represented
-as a $28 \times 28$ grid of pixel values.
-Moreover, our goal was to develop a model
-that looked at just one image and then
-outputted a single prediction.
-But what should we do when faced with a
-sequence of images, as in a video,
-or when tasked with producing
-a sequentially structured prediction,
-as in the case of image captioning?
+그 이후 :numref:`chap_cnn`에서는
+이미지 데이터로 옮겨갔는데, 여기서 입력은
+이미지의 각 좌표에 있는 원시 픽셀 값들로 구성됩니다.
+이미지 데이터는 전형적인 표 형식 데이터셋의 모습에는
+거의 들어맞지 않았습니다.
+그래서 저희는 계층적 구조와 불변성을 다루기 위해
+합성곱 신경망(CNN)을 끌어와야 했습니다.
+하지만 그래도 데이터는 여전히 고정 길이였습니다.
+모든 Fashion-MNIST 이미지는
+$28 \times 28$ 크기의 픽셀 값 격자로 표현됩니다.
+더 나아가, 저희의 목표는 단 하나의 이미지를 보고
+하나의 예측을 출력하는 모델을 개발하는 것이었습니다.
+그러나 비디오에서처럼 이미지 시퀀스에 직면하거나,
+이미지 캡셔닝의 경우처럼 순차적으로 구조화된 예측을
+만들어 내야 하는 과제를 받았을 때
+저희는 무엇을 해야 할까요?
 
-A great many learning tasks require dealing with sequential data.
-Image captioning, speech synthesis, and music generation
-all require that models produce outputs consisting of sequences.
-In other domains, such as time series prediction,
-video analysis, and musical information retrieval,
-a model must learn from inputs that are sequences.
-These demands often arise simultaneously:
-tasks such as translating passages of text
-from one natural language to another,
-engaging in dialogue, or controlling a robot,
-demand that models both ingest and output
-sequentially structured data.
+매우 많은 학습 과제는 순차 데이터를 다루어야 합니다.
+이미지 캡셔닝, 음성 합성, 음악 생성은
+모두 모델이 시퀀스로 구성된 출력을 만들어내야 합니다.
+시계열 예측, 비디오 분석,
+음악 정보 검색과 같은 다른 영역에서는
+모델이 시퀀스인 입력으로부터 학습해야 합니다.
+이러한 요구는 종종 동시에 발생합니다.
+한 자연어로 된 텍스트 단락을 다른 자연어로 번역하거나,
+대화에 참여하거나, 로봇을 제어하는 것과 같은 과제는
+모델이 순차적으로 구조화된 데이터를
+입력으로 받으면서 동시에 출력해야 합니다.
 
 
-Recurrent neural networks (RNNs) are deep learning models
-that capture the dynamics of sequences via
-*recurrent* connections, which can be thought of
-as cycles in the network of nodes.
-This might seem counterintuitive at first.
-After all, it is the feedforward nature of neural networks
-that makes the order of computation unambiguous.
-However, recurrent edges are defined in a precise way
-that ensures that no such ambiguity can arise.
-Recurrent neural networks are *unrolled* across time steps (or sequence steps),
-with the *same* underlying parameters applied at each step.
-While the standard connections are applied *synchronously*
-to propagate each layer's activations
-to the subsequent layer *at the same time step*,
-the recurrent connections are *dynamic*,
-passing information across adjacent time steps.
-As the unfolded view in :numref:`fig_unfolded-rnn` reveals,
-RNNs can be thought of as feedforward neural networks
-where each layer's parameters (both conventional and recurrent)
-are shared across time steps.
+순환 신경망(RNN)은 *순환(recurrent)* 연결을 통해
+시퀀스의 동역학을 포착하는 딥러닝 모델로,
+순환 연결은 노드 네트워크 내의 사이클로
+생각할 수 있습니다.
+이는 처음에는 직관에 반하는 것처럼 보일 수 있습니다.
+결국 계산 순서를 모호하지 않게 만드는 것은
+신경망의 피드포워드 특성이기 때문입니다.
+그러나 순환 간선(edge)은 그러한 모호함이 발생할 수 없도록
+정밀한 방식으로 정의되어 있습니다.
+순환 신경망은 타임스텝(또는 시퀀스 스텝)에 걸쳐 *펼쳐지며(unrolled)*,
+각 스텝마다 *동일한* 기저 파라미터가 적용됩니다.
+표준 연결은 각 층의 활성값을
+*같은 타임스텝에서* 다음 층으로 전파하기 위해
+*동기적으로* 적용되는 반면,
+순환 연결은 *동적(dynamic)* 이며,
+인접한 타임스텝 사이로 정보를 전달합니다.
+:numref:`fig_unfolded-rnn`의 펼쳐진 시각이 보여주듯이,
+RNN은 각 층의 파라미터(일반 연결과 순환 연결 모두)가
+타임스텝에 걸쳐 공유되는
+피드포워드 신경망으로 생각할 수 있습니다.
 
 
-![On the left recurrent connections are depicted via cyclic edges. On the right, we unfold the RNN over time steps. Here, recurrent edges span adjacent time steps, while conventional connections are computed synchronously.](../img/unfolded-rnn.svg)
+![왼쪽에서는 순환 연결이 순환 간선으로 표현되어 있습니다. 오른쪽에서는 RNN을 타임스텝에 걸쳐 펼쳤습니다. 여기서 순환 간선은 인접한 타임스텝을 잇고, 일반 연결은 동기적으로 계산됩니다.](../img/unfolded-rnn.svg)
 :label:`fig_unfolded-rnn`
 
 
-Like neural networks more broadly,
-RNNs have a long discipline-spanning history,
-originating as models of the brain popularized
-by cognitive scientists and subsequently adopted
-as practical modeling tools employed
-by the machine learning community.
-As we do for deep learning more broadly,
-in this book we adopt the machine learning perspective,
-focusing on RNNs as practical tools that rose
-to popularity in the 2010s owing to
-breakthrough results on such diverse tasks
-as handwriting recognition :cite:`graves2008novel`,
-machine translation :cite:`Sutskever.Vinyals.Le.2014`,
-and recognizing medical diagnoses :cite:`Lipton.Kale.2016`.
-We point the reader interested in more
-background material to a publicly available
-comprehensive review :cite:`Lipton.Berkowitz.Elkan.2015`.
-We also note that sequentiality is not unique to RNNs.
-For example, the CNNs that we already introduced
-can be adapted to handle data of varying length,
-e.g., images of varying resolution.
-Moreover, RNNs have recently ceded considerable
-market share to Transformer models,
-which will be covered in :numref:`chap_attention-and-transformers`.
-However, RNNs rose to prominence as the default models
-for handling complex sequential structure in deep learning,
-and remain staple models for sequential modeling to this day.
-The stories of RNNs and of sequence modeling
-are inextricably linked, and this is as much
-a chapter about the ABCs of sequence modeling problems
-as it is a chapter about RNNs.
+신경망 전반과 마찬가지로,
+RNN도 여러 학문에 걸친 긴 역사를 가지고 있으며,
+인지과학자들이 대중화한 뇌의 모델로 출발하여,
+이후 머신러닝 커뮤니티에서 사용하는
+실용적인 모델링 도구로 채택되었습니다.
+저희는 딥러닝 전반에서 그렇게 하듯이,
+이 책에서는 머신러닝의 관점을 취하며,
+필기 인식 :cite:`graves2008novel`,
+기계 번역 :cite:`Sutskever.Vinyals.Le.2014`,
+의학적 진단 인식 :cite:`Lipton.Kale.2016`처럼
+다양한 과제에서의 획기적인 성과 덕분에
+2010년대에 인기를 끌게 된 실용적 도구로서의
+RNN에 초점을 맞춥니다.
+더 많은 배경 자료에 관심 있는 독자에게는
+공개적으로 이용 가능한 포괄적 리뷰
+:cite:`Lipton.Berkowitz.Elkan.2015`를 안내합니다.
+또한 순차성이 RNN만의 고유한 특성은 아니라는 점도 짚어 둡니다.
+예를 들어 저희가 이미 소개한 CNN도
+가변 해상도 이미지와 같이 가변 길이 데이터를
+다루도록 적응시킬 수 있습니다.
+더욱이 RNN은 최근 Transformer 모델에게
+상당한 시장 점유율을 내어 주었는데,
+이는 :numref:`chap_attention-and-transformers`에서 다룰 것입니다.
+그러나 RNN은 딥러닝에서 복잡한 순차 구조를 다루는
+기본 모델로 부상하였고,
+오늘날까지도 시퀀스 모델링의 핵심 모델로 남아 있습니다.
+RNN의 이야기와 시퀀스 모델링의 이야기는
+떼려야 뗄 수 없을 만큼 얽혀 있으며,
+이 장은 RNN에 관한 장인 만큼이나
+시퀀스 모델링 문제의 기초에 관한 장이기도 합니다.
 
 
-One key insight paved the way for a revolution in sequence modeling.
-While the inputs and targets for many fundamental tasks in machine learning
-cannot easily be represented as fixed-length vectors,
-they can often nevertheless be represented as
-varying-length sequences of fixed-length vectors.
-For example, documents can be represented as sequences of words;
-medical records can often be represented as sequences of events
-(encounters, medications, procedures, lab tests, diagnoses);
-videos can be represented as varying-length sequences of still images.
+하나의 핵심 통찰이 시퀀스 모델링에서의 혁명을 위한 길을 열었습니다.
+머신러닝의 많은 기본 과제에서 입력과 타깃을
+고정 길이 벡터로 손쉽게 표현할 수는 없지만,
+그래도 그것들을 고정 길이 벡터로 이루어진
+가변 길이 시퀀스로는 종종 표현할 수 있습니다.
+예를 들어 문서는 단어들의 시퀀스로 표현할 수 있고,
+의료 기록은 흔히 사건들(진료, 약물, 시술, 검사, 진단)의 시퀀스로 표현할 수 있으며,
+비디오는 정지 이미지들의 가변 길이 시퀀스로 표현할 수 있습니다.
 
 
-While sequence models have popped up in numerous application areas,
-basic research in the area has been driven predominantly
-by advances on core tasks in natural language processing.
-Thus, throughout this chapter, we will focus
-our exposition and examples on text data.
-If you get the hang of these examples,
-then applying the models to other data modalities
-should be relatively straightforward.
-In the next few sections, we introduce basic
-notation for sequences and some evaluation measures
-for assessing the quality of sequentially structured model outputs.
-After that, we discuss basic concepts of a language model
-and use this discussion to motivate our first RNN models.
-Finally, we describe the method for calculating gradients
-when backpropagating through RNNs and explore some challenges
-that are often encountered when training such networks,
-motivating the modern RNN architectures that will follow
-in :numref:`chap_modern_rnn`.
+시퀀스 모델은 수많은 응용 분야에서 등장해 왔지만,
+이 분야의 기초 연구는 주로
+자연어 처리의 핵심 과제에서의 발전이 견인해 왔습니다.
+따라서 이 장 전반에 걸쳐 저희는
+설명과 예제를 텍스트 데이터에 집중할 것입니다.
+이 예제들에 익숙해지신다면,
+모델을 다른 데이터 형식에 적용하는 것은
+비교적 수월할 것입니다.
+다음 몇 절에서는 시퀀스에 대한 기본 표기법과,
+순차적으로 구조화된 모델 출력의 품질을 평가하기 위한
+몇 가지 평가 지표를 소개합니다.
+그 다음에는 언어 모델의 기본 개념을 논의하고,
+이 논의를 바탕으로 저희의 첫 RNN 모델에 동기를 부여합니다.
+마지막으로 RNN을 통해 역전파할 때 그래디언트를
+계산하는 방법을 설명하고, 그러한 신경망을 학습할 때
+흔히 마주치는 몇 가지 어려움을 살펴보며,
+:numref:`chap_modern_rnn`에서 이어질
+현대적인 RNN 아키텍처에 동기를 부여합니다.
 
 ```toc
 :maxdepth: 2

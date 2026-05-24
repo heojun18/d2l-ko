@@ -1,31 +1,31 @@
-# AutoRec: Rating Prediction with Autoencoders
+# AutoRec: 오토인코더를 사용한 평점 예측
 
-Although the matrix factorization model achieves decent performance on the rating prediction task, it is essentially a linear model. Thus, such models are not capable of capturing complex nonlinear and intricate relationships that may be predictive of users' preferences. In this section, we introduce a nonlinear neural network collaborative filtering model, AutoRec :cite:`Sedhain.Menon.Sanner.ea.2015`. It identifies collaborative filtering (CF) with an autoencoder architecture and aims to integrate nonlinear transformations into CF on the basis of explicit feedback. Neural networks have been proven to be capable of approximating any continuous function, making it suitable to address the limitation of matrix factorization and enrich the expressiveness of matrix factorization.
+비록 행렬 분해 모델이 평점 예측 작업에서 적절한 성능을 달성하지만, 그것은 본질적으로 선형 모델입니다. 따라서 이러한 모델은 사용자의 선호도를 예측할 수 있는 복잡한 비선형적이고 정교한 관계를 포착할 수 없습니다. 이 절에서는 비선형 신경망 협업 필터링 모델인 AutoRec :cite:`Sedhain.Menon.Sanner.ea.2015`을 소개합니다. 이 모델은 협업 필터링(CF)을 오토인코더 구조로 식별하고 명시적 피드백을 기반으로 CF에 비선형 변환을 통합하는 것을 목표로 합니다. 신경망은 어떤 연속 함수도 근사할 수 있음이 입증되었으며, 이는 행렬 분해의 한계를 해결하고 행렬 분해의 표현력을 풍부하게 하는 데 적합하게 만듭니다.
 
-On the one hand, AutoRec has the same structure as an autoencoder which consists of an input layer, a hidden layer, and a reconstruction (output) layer.  An autoencoder is a neural network that learns to copy its input to its output in order to code the inputs into the hidden (and usually low-dimensional) representations. In AutoRec, instead of explicitly embedding users/items into low-dimensional space, it uses the column/row of the interaction matrix as input, then reconstructs the interaction matrix in the output layer.
+한편으로, AutoRec은 입력 계층, 은닉 계층, 그리고 재구성(출력) 계층으로 구성된 오토인코더와 동일한 구조를 갖습니다. 오토인코더는 입력을 은닉(보통 저차원) 표현으로 인코딩하기 위해 자신의 입력을 출력으로 복사하는 것을 학습하는 신경망입니다. AutoRec에서는 사용자/아이템을 저차원 공간에 명시적으로 임베딩하는 대신, 상호작용 행렬의 열/행을 입력으로 사용하고 출력 계층에서 상호작용 행렬을 재구성합니다.
 
-On the other hand, AutoRec differs from a traditional autoencoder: rather than learning the hidden representations, AutoRec focuses on learning/reconstructing the output layer. It uses a partially observed interaction matrix as input, aiming to reconstruct a completed rating matrix. In the meantime, the missing entries of the input are filled in the output layer via reconstruction for the purpose of recommendation.
+다른 한편으로, AutoRec은 전통적인 오토인코더와 다릅니다. 은닉 표현을 학습하는 대신, AutoRec은 출력 계층을 학습/재구성하는 데 중점을 둡니다. 부분적으로 관찰된 상호작용 행렬을 입력으로 사용하여 완성된 평점 행렬을 재구성하는 것을 목표로 합니다. 그동안 입력의 누락된 항목들은 추천을 목적으로 재구성을 통해 출력 계층에 채워집니다.
 
-There are two variants of AutoRec: user-based and item-based. For brevity, here we only introduce the item-based AutoRec. User-based AutoRec can be derived accordingly.
+AutoRec에는 사용자 기반과 아이템 기반의 두 가지 변형이 있습니다. 간결성을 위해 여기서는 아이템 기반 AutoRec만 소개합니다. 사용자 기반 AutoRec은 그에 따라 유도될 수 있습니다.
 
 
-## Model
+## 모델
 
-Let $\mathbf{R}_{*i}$ denote the $i^\textrm{th}$ column of the rating matrix, where unknown ratings are set to zeros by default. The neural architecture is defined as:
+$\mathbf{R}_{*i}$가 평점 행렬의 $i^\textrm{th}$ 열을 나타내며, 알 수 없는 평점은 기본적으로 0으로 설정된다고 합시다. 신경망 구조는 다음과 같이 정의됩니다.
 
 $$
 h(\mathbf{R}_{*i}) = f(\mathbf{W} \cdot g(\mathbf{V} \mathbf{R}_{*i} + \mu) + b)
 $$
 
-where $f(\cdot)$ and $g(\cdot)$ represent activation functions, $\mathbf{W}$ and $\mathbf{V}$ are weight matrices, $\mu$ and $b$ are biases. Let $h( \cdot )$ denote the whole network of AutoRec. The output $h(\mathbf{R}_{*i})$ is the reconstruction of the $i^\textrm{th}$ column of the rating matrix.
+여기서 $f(\cdot)$와 $g(\cdot)$는 활성화 함수를 나타내고, $\mathbf{W}$와 $\mathbf{V}$는 가중치 행렬이며, $\mu$와 $b$는 편향입니다. $h( \cdot )$가 AutoRec의 전체 네트워크를 나타낸다고 합시다. 출력 $h(\mathbf{R}_{*i})$는 평점 행렬의 $i^\textrm{th}$ 열의 재구성입니다.
 
-The following objective function aims to minimize the reconstruction error:
+다음 목적 함수는 재구성 오차를 최소화하는 것을 목표로 합니다.
 
 $$
 \underset{\mathbf{W},\mathbf{V},\mu, b}{\mathrm{argmin}} \sum_{i=1}^M{\parallel \mathbf{R}_{*i} - h(\mathbf{R}_{*i})\parallel_{\mathcal{O}}^2} +\lambda(\| \mathbf{W} \|_F^2 + \| \mathbf{V}\|_F^2)
 $$
 
-where $\| \cdot \|_{\mathcal{O}}$ means only the contribution of observed ratings are considered, that is, only weights that are associated with observed inputs are updated during back-propagation.
+여기서 $\| \cdot \|_{\mathcal{O}}$는 관찰된 평점의 기여만 고려된다는 것을 의미합니다. 즉, 역전파 동안 관찰된 입력과 연관된 가중치만 업데이트됩니다.
 
 ```{.python .input  n=3}
 #@tab mxnet
@@ -37,9 +37,9 @@ import mxnet as mx
 npx.set_np()
 ```
 
-## Implementing the Model
+## 모델 구현
 
-A typical autoencoder consists of an encoder and a decoder. The encoder projects the input to hidden representations and the decoder maps the hidden layer to the reconstruction layer. We follow this practice and create the encoder and decoder with fully connected layers. The activation of encoder is set to `sigmoid` by default and no activation is applied for decoder. Dropout is included after the encoding transformation to reduce over-fitting. The gradients of unobserved inputs are masked out to ensure that only observed ratings contribute to the model learning process.
+전형적인 오토인코더는 인코더와 디코더로 구성됩니다. 인코더는 입력을 은닉 표현으로 투영하고 디코더는 은닉 계층을 재구성 계층으로 매핑합니다. 저희는 이 관행을 따르고 완전 연결 계층으로 인코더와 디코더를 생성합니다. 인코더의 활성화는 기본적으로 `sigmoid`로 설정되고 디코더에는 활성화가 적용되지 않습니다. 과적합을 줄이기 위해 인코딩 변환 후에 드롭아웃이 포함됩니다. 관찰되지 않은 입력의 그래디언트는 마스킹되어 관찰된 평점만 모델 학습 과정에 기여하도록 보장합니다.
 
 ```{.python .input  n=2}
 #@tab mxnet
@@ -60,9 +60,9 @@ class AutoRec(nn.Block):
             return pred
 ```
 
-## Reimplementing the Evaluator
+## 평가자 재구현
 
-Since the input and output have been changed, we need to reimplement the evaluation function, while we still use RMSE as the accuracy measure.
+입력과 출력이 변경되었으므로, 저희는 여전히 RMSE를 정확도 측도로 사용하면서도 평가 함수를 재구현해야 합니다.
 
 ```{.python .input  n=3}
 #@tab mxnet
@@ -78,9 +78,9 @@ def evaluator(network, inter_matrix, test_data, devices):
     return float(rmse)
 ```
 
-## Training and Evaluating the Model
+## 모델 훈련 및 평가
 
-Now, let's train and evaluate AutoRec on the MovieLens dataset. We can clearly see that the test RMSE is lower than the matrix factorization model, confirming the effectiveness of neural networks in the rating prediction task.
+이제 MovieLens 데이터셋에서 AutoRec을 훈련하고 평가합시다. 테스트 RMSE가 행렬 분해 모델보다 낮은 것을 확인할 수 있으며, 이는 평점 예측 작업에서 신경망의 효과성을 입증합니다.
 
 ```{.python .input  n=4}
 #@tab mxnet
@@ -109,19 +109,19 @@ d2l.train_recsys_rating(net, train_iter, test_iter, loss, trainer, num_epochs,
                         devices, evaluator, inter_mat=test_inter_mat)
 ```
 
-## Summary
+## 요약
 
-* We can frame the matrix factorization algorithm with autoencoders, while integrating non-linear layers and dropout regularization.
-* Experiments on the MovieLens 100K dataset show that AutoRec achieves superior performance than matrix factorization.
+* 저희는 비선형 계층과 드롭아웃 정규화를 통합하면서 행렬 분해 알고리즘을 오토인코더로 구성할 수 있습니다.
+* MovieLens 100K 데이터셋에서의 실험은 AutoRec이 행렬 분해보다 우수한 성능을 달성한다는 것을 보여줍니다.
 
 
 
-## Exercises
+## 연습문제
 
-* Vary the hidden dimension of AutoRec to see its impact on the model performance.
-* Try to add more hidden layers. Is it helpful to improve the model performance?
-* Can you find a better combination of decoder and encoder activation functions?
+* AutoRec의 은닉 차원을 변화시켜 모델 성능에 미치는 영향을 살펴보십시오.
+* 더 많은 은닉 계층을 추가해 보십시오. 모델 성능을 향상시키는 데 도움이 됩니까?
+* 디코더와 인코더 활성화 함수의 더 나은 조합을 찾을 수 있습니까?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/401)
+[토론](https://discuss.d2l.ai/t/401)
 :end_tab:

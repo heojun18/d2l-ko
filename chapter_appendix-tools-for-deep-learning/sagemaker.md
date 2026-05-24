@@ -1,126 +1,121 @@
-# Using Amazon SageMaker
+# Amazon SageMaker 사용하기
 :label:`sec_sagemaker`
 
-Deep learning applications
-may demand so much computational resource
-that easily goes beyond
-what your local machine can offer.
-Cloud computing services
-allow you to 
-run GPU-intensive code of this book
-more easily
-using more powerful computers.
-This section will introduce 
-how to use Amazon SageMaker
-to run the code of this book.
+딥러닝 애플리케이션은
+로컬 머신이 제공할 수 있는 것을 쉽게 넘어설 만큼
+매우 많은 계산 자원을 요구할 수 있습니다.
+클라우드 컴퓨팅 서비스를 사용하면
+더 강력한 컴퓨터를 사용하여
+이 책의 GPU 집약적인 코드를
+더 쉽게 실행할 수 있습니다.
+이 절에서는 Amazon SageMaker를 사용하여
+이 책의 코드를 실행하는 방법을 소개하겠습니다.
 
-## Signing Up
+## 회원 가입
 
-First, we need to sign up an account at https://aws.amazon.com/.
-For additional security,
-using two-factor authentication 
-is encouraged.
-It is also a good idea to
-set up detailed billing and spending alerts to
-avoid any surprise,
-e.g., 
-when forgetting to stop running instances.
-After logging into your AWS account, 
-go to your [console](http://console.aws.amazon.com/) and search for "Amazon SageMaker" (see :numref:`fig_sagemaker`), 
-then click it to open the SageMaker panel.
+먼저 https://aws.amazon.com/ 에서 계정을 등록해야 합니다.
+추가 보안을 위해
+이중 인증(two-factor authentication)을 사용하는 것이
+권장됩니다.
+또한 인스턴스 중지를 잊어버리는 등의 예상치 못한 상황을 피하기 위해
+상세한 결제 및 지출 알림을 설정하는 것도
+좋은 방법입니다.
+AWS 계정에 로그인한 후,
+[콘솔](http://console.aws.amazon.com/)로 이동하여 "Amazon SageMaker"를 검색하고(:numref:`fig_sagemaker` 참조),
+이를 클릭하여 SageMaker 패널을 엽니다.
 
-![Search for and open the SageMaker panel.](../img/sagemaker.png)
+![SageMaker 패널 검색 및 열기.](../img/sagemaker.png)
 :width:`300px`
 :label:`fig_sagemaker`
 
-## Creating a SageMaker Instance
+## SageMaker 인스턴스 생성하기
 
-Next, let's create a notebook instance as described in :numref:`fig_sagemaker-create`.
+다음으로 :numref:`fig_sagemaker-create`에 설명된 대로 노트북 인스턴스를 만들어 보겠습니다.
 
-![Create a SageMaker instance.](../img/sagemaker-create.png)
+![SageMaker 인스턴스 만들기.](../img/sagemaker-create.png)
 :width:`400px`
 :label:`fig_sagemaker-create`
 
-SageMaker provides multiple [instance types](https://aws.amazon.com/sagemaker/pricing/instance-types/) with varying computational power and prices.
-When creating a notebook instance,
-we can specify its name and type.
-In :numref:`fig_sagemaker-create-2`, we choose `ml.p3.2xlarge`: with one Tesla V100 GPU and an 8-core CPU, this instance is powerful enough for most of the book.
+SageMaker는 다양한 계산 성능과 가격을 가진 여러 [인스턴스 타입](https://aws.amazon.com/sagemaker/pricing/instance-types/)을 제공합니다.
+노트북 인스턴스를 만들 때
+이름과 타입을 지정할 수 있습니다.
+:numref:`fig_sagemaker-create-2`에서 저희는 `ml.p3.2xlarge`를 선택합니다. Tesla V100 GPU 1개와 8코어 CPU를 갖춘 이 인스턴스는 이 책의 대부분 내용을 다루기에 충분히 강력합니다.
 
-![Choose the instance type.](../img/sagemaker-create-2.png)
+![인스턴스 타입 선택하기.](../img/sagemaker-create-2.png)
 :width:`400px`
 :label:`fig_sagemaker-create-2`
 
 :begin_tab:`mxnet`
-The entire book in the ipynb format for running with SageMaker is available at https://github.com/d2l-ai/d2l-en-sagemaker. We can specify this GitHub repository URL (:numref:`fig_sagemaker-create-3`) to allow SageMaker to clone it when creating the instance.
+SageMaker로 실행하기 위한 ipynb 형식의 책 전체는 https://github.com/d2l-ai/d2l-en-sagemaker 에서 이용할 수 있습니다. 이 GitHub 저장소 URL(:numref:`fig_sagemaker-create-3`)을 지정하여 인스턴스를 만들 때 SageMaker가 이를 복제하도록 할 수 있습니다.
 :end_tab:
 
 :begin_tab:`pytorch`
-The entire book in the ipynb format for running with SageMaker is available at https://github.com/d2l-ai/d2l-pytorch-sagemaker. We can specify this GitHub repository URL (:numref:`fig_sagemaker-create-3`) to allow SageMaker to clone it when creating the instance.
+SageMaker로 실행하기 위한 ipynb 형식의 책 전체는 https://github.com/d2l-ai/d2l-pytorch-sagemaker 에서 이용할 수 있습니다. 이 GitHub 저장소 URL(:numref:`fig_sagemaker-create-3`)을 지정하여 인스턴스를 만들 때 SageMaker가 이를 복제하도록 할 수 있습니다.
 :end_tab:
 
 :begin_tab:`tensorflow`
-The entire book in the ipynb format for running with SageMaker is available at https://github.com/d2l-ai/d2l-tensorflow-sagemaker. We can specify this GitHub repository URL (:numref:`fig_sagemaker-create-3`) to allow SageMaker to clone it when creating the instance.
+SageMaker로 실행하기 위한 ipynb 형식의 책 전체는 https://github.com/d2l-ai/d2l-tensorflow-sagemaker 에서 이용할 수 있습니다. 이 GitHub 저장소 URL(:numref:`fig_sagemaker-create-3`)을 지정하여 인스턴스를 만들 때 SageMaker가 이를 복제하도록 할 수 있습니다.
 :end_tab:
 
-![Specify the GitHub repository.](../img/sagemaker-create-3.png)
+![GitHub 저장소 지정하기.](../img/sagemaker-create-3.png)
 :width:`400px`
 :label:`fig_sagemaker-create-3`
 
-## Running and Stopping an Instance
+## 인스턴스 실행 및 중지하기
 
-Creating an instance
-may take a few minutes.
-When it is ready,
-click on the "Open Jupyter" link next to it (:numref:`fig_sagemaker-open`) so you can
-edit and run all the Jupyter notebooks
-of this book on this instance
-(similar to steps in :numref:`sec_jupyter`).
+인스턴스 생성에는
+몇 분이 걸릴 수 있습니다.
+준비가 되면,
+옆에 있는 "Open Jupyter" 링크를 클릭하여(:numref:`fig_sagemaker-open`) 이 인스턴스에서
+이 책의 모든 Jupyter 노트북을
+편집하고 실행할 수 있습니다
+(:numref:`sec_jupyter`의 단계와 유사합니다).
 
-![Open Jupyter on the created SageMaker instance.](../img/sagemaker-open.png)
+![생성된 SageMaker 인스턴스에서 Jupyter 열기.](../img/sagemaker-open.png)
 :width:`400px`
 :label:`fig_sagemaker-open`
 
 
-After finishing your work,
-do not forget to stop the instance to avoid 
-being charged further (:numref:`fig_sagemaker-stop`).
+작업을 마치신 후에는
+추가 요금이 청구되는 것을 피하기 위해
+인스턴스를 중지하는 것을 잊지 마세요(:numref:`fig_sagemaker-stop`).
 
-![Stop a SageMaker instance.](../img/sagemaker-stop.png)
+![SageMaker 인스턴스 중지하기.](../img/sagemaker-stop.png)
 :width:`300px`
 :label:`fig_sagemaker-stop`
 
-## Updating Notebooks
+## 노트북 업데이트하기
 
 :begin_tab:`mxnet`
-Notebooks of this open-source book will be regularly updated in the [d2l-ai/d2l-en-sagemaker](https://github.com/d2l-ai/d2l-en-sagemaker) repository
-on GitHub.
-To update to the latest version,
-you may open a terminal on the SageMaker instance (:numref:`fig_sagemaker-terminal`).
+이 오픈 소스 책의 노트북은 GitHub의 [d2l-ai/d2l-en-sagemaker](https://github.com/d2l-ai/d2l-en-sagemaker) 저장소에서
+정기적으로 업데이트될 것입니다.
+최신 버전으로 업데이트하려면,
+SageMaker 인스턴스에서 터미널을 여시면 됩니다(:numref:`fig_sagemaker-terminal`).
 :end_tab:
 
 :begin_tab:`pytorch`
-Notebooks of this open-source book will be regularly updated in the [d2l-ai/d2l-pytorch-sagemaker](https://github.com/d2l-ai/d2l-pytorch-sagemaker) repository
-on GitHub.
-To update to the latest version,
-you may open a terminal on the SageMaker instance (:numref:`fig_sagemaker-terminal`).
+이 오픈 소스 책의 노트북은 GitHub의 [d2l-ai/d2l-pytorch-sagemaker](https://github.com/d2l-ai/d2l-pytorch-sagemaker) 저장소에서
+정기적으로 업데이트될 것입니다.
+최신 버전으로 업데이트하려면,
+SageMaker 인스턴스에서 터미널을 여시면 됩니다(:numref:`fig_sagemaker-terminal`).
 :end_tab:
 
 
 :begin_tab:`tensorflow`
-Notebooks of this open-source book will be regularly updated in the [d2l-ai/d2l-tensorflow-sagemaker](https://github.com/d2l-ai/d2l-tensorflow-sagemaker) repository
-on GitHub.
-To update to the latest version,
-you may open a terminal on the SageMaker instance (:numref:`fig_sagemaker-terminal`).
+이 오픈 소스 책의 노트북은 GitHub의 [d2l-ai/d2l-tensorflow-sagemaker](https://github.com/d2l-ai/d2l-tensorflow-sagemaker) 저장소에서
+정기적으로 업데이트될 것입니다.
+최신 버전으로 업데이트하려면,
+SageMaker 인스턴스에서 터미널을 여시면 됩니다(:numref:`fig_sagemaker-terminal`).
 :end_tab:
 
 
-![Open a terminal on the SageMaker instance.](../img/sagemaker-terminal.png)
+![SageMaker 인스턴스에서 터미널 열기.](../img/sagemaker-terminal.png)
 :width:`300px`
 :label:`fig_sagemaker-terminal`
 
-You may wish to commit your local changes before pulling updates from the remote repository. 
-Otherwise, simply discard all your local changes
-with the following commands in the terminal:
+원격 저장소에서 업데이트를 가져오기 전에 로컬 변경 사항을 커밋하고 싶을 수 있습니다.
+그렇지 않다면 터미널에서 다음 명령을 사용하여
+모든 로컬 변경 사항을 그냥 폐기하세요.
 
 :begin_tab:`mxnet`
 
@@ -155,17 +150,17 @@ git pull
 
 :end_tab:
 
-## Summary
+## 요약
 
-* We can create a notebook instance using Amazon SageMaker to run GPU-intensive code of this book.
-* We can update notebooks via the terminal on the Amazon SageMaker instance.
-
-
-## Exercises
+* Amazon SageMaker를 사용하여 노트북 인스턴스를 만들어 이 책의 GPU 집약적인 코드를 실행할 수 있습니다.
+* Amazon SageMaker 인스턴스의 터미널을 통해 노트북을 업데이트할 수 있습니다.
 
 
-1. Edit and run any section that requires a GPU using Amazon SageMaker.
-1. Open a terminal to access the local directory that hosts all the notebooks of this book.
+## 연습문제
 
 
-[Discussions](https://discuss.d2l.ai/t/422)
+1. Amazon SageMaker를 사용하여 GPU가 필요한 절을 편집하고 실행해 보세요.
+1. 이 책의 모든 노트북을 호스팅하는 로컬 디렉터리에 접근하기 위해 터미널을 열어 보세요.
+
+
+[토론](https://discuss.d2l.ai/t/422)

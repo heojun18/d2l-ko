@@ -1,204 +1,180 @@
-# Word Embedding with Global Vectors (GloVe)
+# 전역 벡터를 이용한 단어 임베딩 (GloVe)
 :label:`sec_glove`
 
 
-Word-word co-occurrences
-within context windows
-may carry rich semantic information.
-For example,
-in a large corpus
-word "solid" is
-more likely to co-occur
-with "ice" than "steam",
-but word "gas"
-probably co-occurs with "steam"
-more frequently than "ice".
-Besides,
-global corpus statistics
-of such co-occurrences
-can be precomputed:
-this can lead to more efficient training.
-To leverage statistical
-information in the entire corpus
-for word embedding,
-let's first revisit
-the skip-gram model in :numref:`subsec_skip-gram`,
-but interpreting it
-using global corpus statistics
-such as co-occurrence counts.
+문맥 윈도우 내에서의
+단어-단어 동시 출현은
+풍부한 의미 정보를 담고 있을 수 있습니다.
+예를 들어,
+큰 말뭉치에서
+"solid"라는 단어는
+"steam"보다 "ice"와
+동시 출현할 가능성이 더 높지만,
+"gas"라는 단어는
+아마도 "ice"보다 "steam"과
+더 자주 동시 출현할 것입니다.
+또한,
+이러한 동시 출현에 대한
+전역 말뭉치 통계는
+미리 계산될 수 있으며, 이는 더 효율적인 학습으로 이어질 수 있습니다.
+단어 임베딩을 위해
+전체 말뭉치의 통계 정보를 활용하기 위해,
+먼저 :numref:`subsec_skip-gram`의
+스킵그램 모델을 다시 살펴봅시다.
+다만 동시 출현 횟수 같은
+전역 말뭉치 통계를 사용하여
+이를 해석해 봅시다.
 
-## Skip-Gram with Global Corpus Statistics
+## 전역 말뭉치 통계를 이용한 스킵그램
 :label:`subsec_skipgram-global`
 
-Denoting by $q_{ij}$
-the conditional probability
-$P(w_j\mid w_i)$
-of word $w_j$ given word $w_i$
-in the skip-gram model,
-we have
+스킵그램 모델에서 단어 $w_i$가 주어졌을 때
+단어 $w_j$의 조건부 확률
+$P(w_j\mid w_i)$를
+$q_{ij}$로 표기하면,
+다음을 얻습니다.
 
 $$q_{ij}=\frac{\exp(\mathbf{u}_j^\top \mathbf{v}_i)}{ \sum_{k \in \mathcal{V}} \exp(\mathbf{u}_k^\top \mathbf{v}_i)},$$
 
-where
-for any index $i$
-vectors $\mathbf{v}_i$ and $\mathbf{u}_i$
-represent word $w_i$
-as the center word and context word,
-respectively, and $\mathcal{V} = \{0, 1, \ldots, |\mathcal{V}|-1\}$
-is the index set of the vocabulary.
+여기서
+임의의 인덱스 $i$에 대해
+벡터 $\mathbf{v}_i$와 $\mathbf{u}_i$는
+단어 $w_i$를 중심 단어와 문맥 단어로 각각 표현하며,
+$\mathcal{V} = \{0, 1, \ldots, |\mathcal{V}|-1\}$는
+어휘의 인덱스 집합입니다.
 
-Consider word $w_i$
-that may occur multiple times
-in the corpus.
-In the entire corpus,
-all the context words
-wherever $w_i$ is taken as their center word
-form a *multiset* $\mathcal{C}_i$
-of word indices
-that *allows for multiple instances of the same element*.
-For any element,
-its number of instances is called its *multiplicity*.
-To illustrate with an example,
-suppose that word $w_i$ occurs twice in the corpus
-and indices of the context words
-that take $w_i$ as their center word
-in the two context windows
-are
-$k, j, m, k$ and $k, l, k, j$.
-Thus, multiset $\mathcal{C}_i = \{j, j, k, k, k, k, l, m\}$, where
-multiplicities of elements $j, k, l, m$
-are 2, 4, 1, 1, respectively.
+말뭉치에서 여러 번 등장할 수 있는
+단어 $w_i$를 고려합시다.
+전체 말뭉치에서,
+$w_i$가 그들의 중심 단어로 사용된
+모든 문맥 단어들은
+*같은 원소의 여러 인스턴스를 허용하는*
+단어 인덱스의 *다중집합(multiset)* $\mathcal{C}_i$를
+형성합니다.
+임의의 원소에 대해,
+그 인스턴스의 수를 *중복도(multiplicity)* 라고 합니다.
+예를 들어 설명하자면,
+단어 $w_i$가 말뭉치에서 두 번 등장하고
+두 문맥 윈도우에서 $w_i$를 그들의 중심 단어로 하는
+문맥 단어들의 인덱스가
+$k, j, m, k$와 $k, l, k, j$라고 가정합시다.
+따라서, 다중집합 $\mathcal{C}_i = \{j, j, k, k, k, k, l, m\}$이며,
+여기서 원소 $j, k, l, m$의 중복도는
+각각 2, 4, 1, 1입니다.
 
-Now let's denote the multiplicity of element $j$ in
-multiset $\mathcal{C}_i$ as $x_{ij}$.
-This is the global co-occurrence count
-of word $w_j$ (as the context word)
-and word $w_i$ (as the center word)
-in the same context window
-in the entire corpus.
-Using such global corpus statistics,
-the loss function of the skip-gram model
-is equivalent to
+이제 다중집합 $\mathcal{C}_i$에서 원소 $j$의 중복도를
+$x_{ij}$로 표기합시다.
+이는 전체 말뭉치의
+같은 문맥 윈도우에서
+단어 $w_j$(문맥 단어로서)와
+단어 $w_i$(중심 단어로서)의
+전역 동시 출현 횟수입니다.
+이러한 전역 말뭉치 통계를 사용하면,
+스킵그램 모델의 손실 함수는
+다음과 동등합니다.
 
 $$-\sum_{i\in\mathcal{V}}\sum_{j\in\mathcal{V}} x_{ij} \log\,q_{ij}.$$
 :eqlabel:`eq_skipgram-x_ij`
 
-We further denote by
-$x_i$
-the number of all the context words
-in the context windows
-where $w_i$ occurs as their center word,
-which is equivalent to $|\mathcal{C}_i|$.
-Letting $p_{ij}$
-be the conditional probability
-$x_{ij}/x_i$ for generating
-context word $w_j$ given center word $w_i$,
-:eqref:`eq_skipgram-x_ij`
-can be rewritten as
+저희는 또한
+$w_i$가 그들의 중심 단어로 등장하는
+문맥 윈도우 내 모든 문맥 단어의 수를
+$x_i$로 표기하는데,
+이는 $|\mathcal{C}_i|$와 동등합니다.
+$p_{ij}$를
+중심 단어 $w_i$가 주어졌을 때
+문맥 단어 $w_j$를 생성할 조건부 확률
+$x_{ij}/x_i$라 하면,
+:eqref:`eq_skipgram-x_ij`은
+다음과 같이 다시 쓸 수 있습니다.
 
 $$-\sum_{i\in\mathcal{V}} x_i \sum_{j\in\mathcal{V}} p_{ij} \log\,q_{ij}.$$
 :eqlabel:`eq_skipgram-p_ij`
 
-In :eqref:`eq_skipgram-p_ij`, $-\sum_{j\in\mathcal{V}} p_{ij} \log\,q_{ij}$ calculates
-the cross-entropy
-of
-the conditional distribution $p_{ij}$
-of global corpus statistics
-and
-the
-conditional distribution $q_{ij}$
-of model predictions.
-This loss
-is also weighted by $x_i$ as explained above.
-Minimizing the loss function in
-:eqref:`eq_skipgram-p_ij`
-will allow
-the predicted conditional distribution
-to get close to
-the conditional distribution
-from the global corpus statistics.
+:eqref:`eq_skipgram-p_ij`에서, $-\sum_{j\in\mathcal{V}} p_{ij} \log\,q_{ij}$는
+전역 말뭉치 통계의
+조건부 분포 $p_{ij}$와
+모델 예측의
+조건부 분포 $q_{ij}$의
+교차 엔트로피를
+계산합니다.
+이 손실은
+위에서 설명한 대로 $x_i$로도 가중치가 적용됩니다.
+:eqref:`eq_skipgram-p_ij`의 손실 함수를 최소화하는 것은
+예측된 조건부 분포가
+전역 말뭉치 통계로부터의 조건부 분포에
+가까워지게 할 것입니다.
 
 
-Though being commonly used
-for measuring the distance
-between probability distributions,
-the cross-entropy loss function may not be a good choice here.
-On the one hand, as we mentioned in :numref:`sec_approx_train`,
-the cost of properly normalizing $q_{ij}$
-results in the sum over the entire vocabulary,
-which can be computationally expensive.
-On the other hand,
-a large number of rare
-events from a large corpus
-are often modeled by the cross-entropy loss
-to be assigned with
-too much weight.
+확률 분포 사이의 거리를 측정하는 데
+흔히 사용되지만,
+교차 엔트로피 손실 함수는 여기서 좋은 선택이 아닐 수 있습니다.
+한편으로는, :numref:`sec_approx_train`에서 언급했듯이,
+$q_{ij}$를 적절히 정규화하는 비용이
+전체 어휘에 대한 합을 초래하며,
+이는 계산적으로 비쌀 수 있습니다.
+다른 한편으로는,
+큰 말뭉치에서 나오는 다수의 드문 사건들이
+교차 엔트로피 손실에 의해
+과도한 가중치를 할당받도록
+모델링되는 경우가 많습니다.
 
-## The GloVe Model
+## GloVe 모델
 
-In view of this,
-the *GloVe* model makes three changes
-to the skip-gram model based on squared loss :cite:`Pennington.Socher.Manning.2014`:
+이를 고려하여,
+*GloVe* 모델은 제곱 손실에 기반하여 스킵그램 모델에 세 가지 변경을 가합니다 :cite:`Pennington.Socher.Manning.2014`.
 
-1. Use variables $p'_{ij}=x_{ij}$ and $q'_{ij}=\exp(\mathbf{u}_j^\top \mathbf{v}_i)$
-that are not probability distributions
-and take the logarithm of both, so the squared loss term is $\left(\log\,p'_{ij} - \log\,q'_{ij}\right)^2 = \left(\mathbf{u}_j^\top \mathbf{v}_i - \log\,x_{ij}\right)^2$.
-2. Add two scalar model parameters for each word $w_i$: the center word bias $b_i$ and the context word bias $c_i$.
-3. Replace the weight of each loss term with the weight function $h(x_{ij})$, where $h(x)$ is increasing in the interval of $[0, 1]$.
+1. 확률 분포가 아닌 변수 $p'_{ij}=x_{ij}$와 $q'_{ij}=\exp(\mathbf{u}_j^\top \mathbf{v}_i)$를 사용하고 둘 다 로그를 취하여, 제곱 손실 항은 $\left(\log\,p'_{ij} - \log\,q'_{ij}\right)^2 = \left(\mathbf{u}_j^\top \mathbf{v}_i - \log\,x_{ij}\right)^2$이 됩니다.
+2. 각 단어 $w_i$에 대해 두 개의 스칼라 모델 파라미터를 추가합니다. 중심 단어 편향 $b_i$와 문맥 단어 편향 $c_i$입니다.
+3. 각 손실 항의 가중치를 가중치 함수 $h(x_{ij})$로 대체하며, 여기서 $h(x)$는 $[0, 1]$ 구간에서 증가하는 함수입니다.
 
-Putting all things together, training GloVe is to minimize the following loss function:
+이 모든 것을 합쳐 GloVe를 학습하는 것은 다음 손실 함수를 최소화하는 것입니다.
 
 $$\sum_{i\in\mathcal{V}} \sum_{j\in\mathcal{V}} h(x_{ij}) \left(\mathbf{u}_j^\top \mathbf{v}_i + b_i + c_j - \log\,x_{ij}\right)^2.$$
 :eqlabel:`eq_glove-loss`
 
-For the weight function, a suggested choice is:
-$h(x) = (x/c) ^\alpha$ (e.g $\alpha = 0.75$) if $x < c$ (e.g., $c = 100$); otherwise $h(x) = 1$.
-In this case,
-because $h(0)=0$,
-the squared loss term for any $x_{ij}=0$ can be omitted
-for computational efficiency.
-For example,
-when using minibatch stochastic gradient descent for training,
-at each iteration
-we randomly sample a minibatch of *non-zero* $x_{ij}$
-to calculate gradients
-and update the model parameters.
-Note that these non-zero $x_{ij}$ are precomputed
-global corpus statistics;
-thus, the model is called GloVe
-for *Global Vectors*.
+가중치 함수에 대해 권장되는 선택은 다음과 같습니다.
+$x < c$ (예: $c = 100$)이면 $h(x) = (x/c) ^\alpha$ (예: $\alpha = 0.75$), 그렇지 않으면 $h(x) = 1$입니다.
+이 경우,
+$h(0)=0$이므로,
+$x_{ij}=0$인 임의의 경우에 대한 제곱 손실 항은
+계산 효율을 위해 생략할 수 있습니다.
+예를 들어,
+학습에 미니배치 확률적 경사 하강법을 사용할 때,
+각 반복에서
+저희는 경사를 계산하고 모델 파라미터를 업데이트하기 위해
+*0이 아닌* $x_{ij}$의 미니배치를 무작위로 샘플링합니다.
+이러한 0이 아닌 $x_{ij}$는 미리 계산된
+전역 말뭉치 통계임에 유의하십시오.
+따라서, 모델은 *전역 벡터(Global Vectors)* 라는 의미에서 GloVe로 불립니다.
 
-It should be emphasized that
-if word $w_i$ appears in the context window of
-word $w_j$, then *vice versa*.
-Therefore, $x_{ij}=x_{ji}$.
-Unlike word2vec
-that fits the asymmetric conditional probability
-$p_{ij}$,
-GloVe fits the symmetric $\log \, x_{ij}$.
-Therefore, the center word vector and
-the context word vector of any word are mathematically equivalent in the GloVe model.
-However in practice, owing to different initialization values,
-the same word may still get different values
-in these two vectors after training:
-GloVe sums them up as the output vector.
+다음을 강조해야 합니다.
+단어 $w_i$가 단어 $w_j$의 문맥 윈도우에 등장하면,
+*그 역도 마찬가지*입니다.
+따라서, $x_{ij}=x_{ji}$입니다.
+비대칭 조건부 확률 $p_{ij}$에 적합한 word2vec과 달리,
+GloVe는 대칭 $\log \, x_{ij}$에 적합합니다.
+따라서, GloVe 모델에서 임의 단어의 중심 단어 벡터와
+문맥 단어 벡터는 수학적으로 동등합니다.
+그러나 실제로는, 서로 다른 초기화 값으로 인해,
+같은 단어가 학습 후 이 두 벡터에서 여전히 서로 다른 값을 가질 수 있습니다.
+GloVe는 이들을 출력 벡터로 합산합니다.
 
 
 
-## Interpreting GloVe from the Ratio of Co-occurrence Probabilities
+## 동시 출현 확률의 비율로 GloVe 해석하기
 
 
-We can also interpret the GloVe model from another perspective.
-Using the same notation in
-:numref:`subsec_skipgram-global`,
-let $p_{ij} \stackrel{\textrm{def}}{=} P(w_j \mid w_i)$ be the conditional probability of generating the context word $w_j$ given $w_i$ as the center word in the corpus.
-:numref:`tab_glove`
-lists several co-occurrence probabilities
-given words "ice" and "steam"
-and their ratios based on  statistics from a large corpus.
+저희는 다른 관점에서 GloVe 모델을 해석할 수도 있습니다.
+:numref:`subsec_skipgram-global`의 같은 표기법을 사용해,
+$p_{ij} \stackrel{\textrm{def}}{=} P(w_j \mid w_i)$를 말뭉치에서 $w_i$를 중심 단어로 했을 때 문맥 단어 $w_j$를 생성할 조건부 확률이라 합시다.
+:numref:`tab_glove`는
+"ice"와 "steam"이라는 단어가 주어졌을 때
+큰 말뭉치의 통계에 기반한
+여러 동시 출현 확률과 그 비율을 나열합니다.
 
 
-:Word-word co-occurrence probabilities and their ratios from a large corpus (adapted from Table 1 in :citet:`Pennington.Socher.Manning.2014`)
+:큰 말뭉치로부터의 단어-단어 동시 출현 확률과 그 비율 (:citet:`Pennington.Socher.Manning.2014`의 표 1에서 차용)
 :label:`tab_glove`
 
 |$w_k$=|solid|gas|water|fashion|
@@ -209,77 +185,73 @@ and their ratios based on  statistics from a large corpus.
 
 
 
-We can observe the following from :numref:`tab_glove`:
+:numref:`tab_glove`에서 다음을 관찰할 수 있습니다.
 
-* For a word $w_k$ that is related to "ice" but unrelated to "steam", such as $w_k=\textrm{solid}$, we expect a larger ratio of co-occurence probabilities, such as 8.9.
-* For a word $w_k$ that is related to "steam" but unrelated to "ice", such as $w_k=\textrm{gas}$, we expect a smaller ratio of co-occurence probabilities, such as 0.085.
-* For a word $w_k$ that is related to both "ice" and "steam", such as $w_k=\textrm{water}$, we expect a ratio of co-occurence probabilities that is close to 1, such as 1.36.
-* For a word $w_k$ that is unrelated to both "ice" and "steam", such as $w_k=\textrm{fashion}$, we expect a ratio of co-occurence probabilities that is close to 1, such as 0.96.
-
-
+* "ice"와 관련 있지만 "steam"과 관련 없는 단어 $w_k$, 예를 들어 $w_k=\textrm{solid}$의 경우, 저희는 8.9와 같은 더 큰 동시 출현 확률의 비율을 기대합니다.
+* "steam"과 관련 있지만 "ice"와 관련 없는 단어 $w_k$, 예를 들어 $w_k=\textrm{gas}$의 경우, 저희는 0.085와 같은 더 작은 동시 출현 확률의 비율을 기대합니다.
+* "ice"와 "steam" 양쪽 모두와 관련 있는 단어 $w_k$, 예를 들어 $w_k=\textrm{water}$의 경우, 저희는 1.36과 같이 1에 가까운 동시 출현 확률의 비율을 기대합니다.
+* "ice"와 "steam" 양쪽 모두와 관련 없는 단어 $w_k$, 예를 들어 $w_k=\textrm{fashion}$의 경우, 저희는 0.96과 같이 1에 가까운 동시 출현 확률의 비율을 기대합니다.
 
 
-It can be seen that the ratio
-of co-occurrence probabilities
-can intuitively express
-the relationship between words.
-Thus, we can design a function
-of three word vectors
-to fit this ratio.
-For the ratio of co-occurrence probabilities
-${p_{ij}}/{p_{ik}}$
-with $w_i$ being the center word
-and $w_j$ and $w_k$ being the context words,
-we want to fit this ratio
-using some function $f$:
+
+
+동시 출현 확률의 비율이
+단어 간의 관계를
+직관적으로 표현할 수 있음을
+알 수 있습니다.
+따라서 저희는 이 비율에 적합한
+세 단어 벡터의 함수를 설계할 수 있습니다.
+$w_i$를 중심 단어로 하고
+$w_j$와 $w_k$를 문맥 단어로 하는
+동시 출현 확률의 비율
+${p_{ij}}/{p_{ik}}$에 대해,
+저희는 어떤 함수 $f$를 사용해
+이 비율에 적합하기를 원합니다.
 
 $$f(\mathbf{u}_j, \mathbf{u}_k, {\mathbf{v}}_i) \approx \frac{p_{ij}}{p_{ik}}.$$
 :eqlabel:`eq_glove-f`
 
-Among many possible designs for $f$,
-we only pick a reasonable choice in the following.
-Since the ratio of co-occurrence probabilities
-is a scalar,
-we require that
-$f$ be a scalar function, such as
-$f(\mathbf{u}_j, \mathbf{u}_k, {\mathbf{v}}_i) = f\left((\mathbf{u}_j - \mathbf{u}_k)^\top {\mathbf{v}}_i\right)$.
-Switching word indices
-$j$ and $k$ in :eqref:`eq_glove-f`,
-it must hold that
-$f(x)f(-x)=1$,
-so one possibility is $f(x)=\exp(x)$,
-i.e.,
+$f$에 대한 많은 가능한 설계 중에서,
+저희는 다음에서 합리적인 선택 하나만 고릅니다.
+동시 출현 확률의 비율이
+스칼라이므로,
+저희는 $f$가 스칼라 함수일 것을 요구합니다. 예를 들어
+$f(\mathbf{u}_j, \mathbf{u}_k, {\mathbf{v}}_i) = f\left((\mathbf{u}_j - \mathbf{u}_k)^\top {\mathbf{v}}_i\right)$입니다.
+:eqref:`eq_glove-f`에서
+단어 인덱스 $j$와 $k$를 바꾸면,
+$f(x)f(-x)=1$이 성립해야 하므로,
+한 가지 가능성은 $f(x)=\exp(x)$입니다.
+즉,
 
 $$f(\mathbf{u}_j, \mathbf{u}_k, {\mathbf{v}}_i) = \frac{\exp\left(\mathbf{u}_j^\top {\mathbf{v}}_i\right)}{\exp\left(\mathbf{u}_k^\top {\mathbf{v}}_i\right)} \approx \frac{p_{ij}}{p_{ik}}.$$
 
-Now let's pick
-$\exp\left(\mathbf{u}_j^\top {\mathbf{v}}_i\right) \approx \alpha p_{ij}$,
-where $\alpha$ is a constant.
-Since $p_{ij}=x_{ij}/x_i$, after taking the logarithm on both sides we get $\mathbf{u}_j^\top {\mathbf{v}}_i \approx \log\,\alpha + \log\,x_{ij} - \log\,x_i$.
-We may use additional bias terms to fit $- \log\, \alpha + \log\, x_i$, such as the center word bias $b_i$ and the context word bias $c_j$:
+이제
+$\exp\left(\mathbf{u}_j^\top {\mathbf{v}}_i\right) \approx \alpha p_{ij}$를 고릅시다.
+여기서 $\alpha$는 상수입니다.
+$p_{ij}=x_{ij}/x_i$이므로, 양변에 로그를 취하면 $\mathbf{u}_j^\top {\mathbf{v}}_i \approx \log\,\alpha + \log\,x_{ij} - \log\,x_i$을 얻습니다.
+$- \log\, \alpha + \log\, x_i$에 적합하기 위해 추가 편향 항을 사용할 수 있습니다. 예를 들어 중심 단어 편향 $b_i$와 문맥 단어 편향 $c_j$입니다.
 
 $$\mathbf{u}_j^\top \mathbf{v}_i + b_i + c_j \approx \log\, x_{ij}.$$
 :eqlabel:`eq_glove-square`
 
-Measuring the squared error of
-:eqref:`eq_glove-square` with weights,
-the GloVe loss function in
-:eqref:`eq_glove-loss` is obtained.
+가중치를 적용한 :eqref:`eq_glove-square`의
+제곱 오차를 측정하면,
+:eqref:`eq_glove-loss`의 GloVe 손실 함수를 얻습니다.
 
 
 
-## Summary
+## 요약
 
-* The skip-gram model can be interpreted using global corpus statistics such as word-word co-occurrence counts.
-* The cross-entropy loss may not be a good choice for measuring the difference of two probability distributions, especially for a large corpus. GloVe uses squared loss to fit precomputed global corpus statistics.
-* The center word vector and the context word vector are mathematically equivalent for any word in GloVe.
-* GloVe can be interpreted from the ratio of word-word co-occurrence probabilities.
+* 스킵그램 모델은 단어-단어 동시 출현 횟수 같은 전역 말뭉치 통계를 사용하여 해석할 수 있습니다.
+* 교차 엔트로피 손실은 두 확률 분포의 차이를 측정하는 데 좋은 선택이 아닐 수 있습니다. 특히 큰 말뭉치의 경우에 그렇습니다. GloVe는 미리 계산된 전역 말뭉치 통계에 적합하기 위해 제곱 손실을 사용합니다.
+* GloVe에서 임의 단어에 대해 중심 단어 벡터와 문맥 단어 벡터는 수학적으로 동등합니다.
+* GloVe는 단어-단어 동시 출현 확률의 비율로부터 해석할 수 있습니다.
 
 
-## Exercises
+## 연습문제
 
-1. If words $w_i$ and $w_j$ co-occur in the same context window, how can we use their   distance in the text sequence to redesign the method for  calculating the conditional probability $p_{ij}$? Hint: see Section 4.2 of the GloVe paper :cite:`Pennington.Socher.Manning.2014`.
-1. For any word, are its center word bias  and context word bias mathematically equivalent in GloVe? Why?
+1. 단어 $w_i$와 $w_j$가 같은 문맥 윈도우에서 동시 출현한다면, 텍스트 시퀀스에서 그들의 거리를 사용해 조건부 확률 $p_{ij}$를 계산하는 방법을 어떻게 재설계할 수 있습니까? 힌트: GloVe 논문 :cite:`Pennington.Socher.Manning.2014`의 4.2절을 참조하십시오.
+1. 임의의 단어에 대해, GloVe에서 그 중심 단어 편향과 문맥 단어 편향은 수학적으로 동등합니까? 왜 그렇습니까?
 
 
 [Discussions](https://discuss.d2l.ai/t/385)

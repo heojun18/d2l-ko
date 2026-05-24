@@ -1,98 +1,88 @@
-# Working with Sequences
+# 시퀀스 다루기
 :label:`sec_sequence`
 
-Up until now, we have focused on models whose inputs
-consisted of a single feature vector $\mathbf{x} \in \mathbb{R}^d$.
-The main change of perspective when developing models
-capable of processing sequences is that we now
-focus on inputs that consist of an ordered list
-of feature vectors $\mathbf{x}_1, \dots, \mathbf{x}_T$,
-where each feature vector $\mathbf{x}_t$ is
-indexed by a time step $t \in \mathbb{Z}^+$
-lying in $\mathbb{R}^d$.
+지금까지 저희는 입력이 단일 특징 벡터 $\mathbf{x} \in \mathbb{R}^d$로
+구성된 모델에 초점을 맞추어 왔습니다.
+시퀀스를 처리할 수 있는 모델을 개발할 때 관점의 가장 큰 변화는,
+이제 저희가 특징 벡터들의 순서 있는 목록
+$\mathbf{x}_1, \dots, \mathbf{x}_T$로 이루어진 입력에 초점을 맞춘다는 점입니다.
+여기서 각 특징 벡터 $\mathbf{x}_t$는
+$\mathbb{R}^d$에 속하며
+타임스텝 $t \in \mathbb{Z}^+$로 인덱싱됩니다.
 
-Some datasets consist of a single massive sequence.
-Consider, for example, the extremely long streams
-of sensor readings that might be available to climate scientists.
-In such cases, we might create training datasets
-by randomly sampling subsequences of some predetermined length.
-More often, our data arrives as a collection of sequences.
-Consider the following examples:
-(i) a collection of documents,
-each represented as its own sequence of words,
-and each having its own length $T_i$;
-(ii) sequence representation of
-patient stays in the hospital,
-where each stay consists of a number of events
-and the sequence length depends roughly
-on the length of the stay.
+일부 데이터셋은 거대한 단일 시퀀스로 구성됩니다.
+예를 들어, 기후 과학자들에게 제공될 수 있는
+극도로 긴 센서 측정값 스트림을 생각해 보세요.
+이러한 경우, 저희는 미리 정해진 길이의 부분 시퀀스를
+무작위로 샘플링하여 학습 데이터셋을 만들 수 있습니다.
+더 흔하게는, 저희의 데이터가 시퀀스들의 모음으로 도착합니다.
+다음 예시들을 생각해 봅시다.
+(i) 문서들의 모음. 각 문서는 자신만의 단어 시퀀스로 표현되고,
+각각 자신만의 길이 $T_i$를 가집니다.
+(ii) 병원 입원 환자들의 시퀀스 표현.
+여기서 각 입원은 여러 사건으로 구성되며,
+시퀀스 길이는 대략 입원 기간에 따라 달라집니다.
 
 
-Previously, when dealing with individual inputs,
-we assumed that they were sampled independently
-from the same underlying distribution $P(X)$.
-While we still assume that entire sequences
-(e.g., entire documents or patient trajectories)
-are sampled independently,
-we cannot assume that the data arriving
-at each time step are independent of each other.
-For example, the words that likely to appear later in a document
-depend heavily on words occurring earlier in the document.
-The medicine a patient is likely to receive
-on the 10th day of a hospital visit
-depends heavily on what transpired
-in the previous nine days.
+이전에 개별 입력을 다룰 때, 저희는
+그 입력들이 동일한 기저 분포 $P(X)$에서
+독립적으로 샘플링된다고 가정했습니다.
+저희는 여전히 전체 시퀀스
+(예: 전체 문서나 환자 궤적)가 독립적으로 샘플링된다고
+가정하지만,
+각 타임스텝에서 도착하는 데이터들이
+서로 독립적이라고는 가정할 수 없습니다.
+예를 들어, 문서 뒷부분에 등장할 가능성이 있는 단어는
+그 문서 앞부분에 등장한 단어에 크게 좌우됩니다.
+환자가 병원 방문 10일째에 받을 가능성이 있는 약은
+이전 9일 동안 일어난 일에 크게 좌우됩니다.
 
-This should come as no surprise.
-If we did not believe that the elements in a sequence were related,
-we would not have bothered to model them as a sequence in the first place.
-Consider the usefulness of the auto-fill features
-that are popular on search tools and modern email clients.
-They are useful precisely because it is often possible
-to predict (imperfectly, but better than random guessing)
-what the likely continuations of a sequence might be,
-given some initial prefix.
-For most sequence models,
-we do not require independence,
-or even stationarity, of our sequences.
-Instead, we require only that
-the sequences themselves are sampled
-from some fixed underlying distribution
-over entire sequences.
+이는 놀라운 일이 아닐 것입니다.
+시퀀스의 요소들이 관련되어 있다고 믿지 않았다면,
+애초에 그것들을 시퀀스로 모델링할 이유가 없었을 것입니다.
+검색 도구나 현대 이메일 클라이언트에서 인기 있는
+자동 완성 기능의 유용성을 생각해 보세요.
+이것들이 유용한 이유는 정확히, 어떤 초기 접두사가 주어졌을 때
+시퀀스가 어떻게 이어질지를 예측하는 것이
+(불완전하지만, 무작위 추측보다는 더 잘) 종종 가능하기 때문입니다.
+대부분의 시퀀스 모델에서,
+저희는 시퀀스의 독립성이나
+정상성(stationarity)조차도 요구하지 않습니다.
+대신, 저희가 요구하는 것은 오직
+시퀀스 자체가 전체 시퀀스에 대한
+어떤 고정된 기저 분포에서 샘플링된다는 점뿐입니다.
 
-This flexible approach allows for such phenomena
-as (i) documents looking significantly different
-at the beginning than at the end;
-or (ii) patient status evolving either
-towards recovery or towards death
-over the course of a hospital stay;
-or (iii) customer taste evolving in predictable ways
-over the course of continued interaction with a recommender system.
+이 유연한 접근 방식은 다음과 같은 현상을 허용합니다.
+(i) 문서가 처음과 끝에서 상당히 다르게 보이는 경우,
+(ii) 환자 상태가 입원 기간 동안
+회복 또는 사망 쪽으로 진행되는 경우,
+(iii) 추천 시스템과의 지속적인 상호작용 과정에서
+고객의 취향이 예측 가능한 방식으로 변화하는 경우입니다.
 
 
-We sometimes wish to predict a fixed target $y$
-given sequentially structured input
-(e.g., sentiment classification based on a movie review).
-At other times, we wish to predict a sequentially structured target
-($y_1, \ldots, y_T$)
-given a fixed input (e.g., image captioning).
-Still other times, our goal is to predict sequentially structured targets
-based on sequentially structured inputs
-(e.g., machine translation or video captioning).
-Such sequence-to-sequence tasks take two forms:
-(i) *aligned*: where the input at each time step
-aligns with a corresponding target (e.g., part of speech tagging);
-(ii) *unaligned*: where the input and target
-do not necessarily exhibit a step-for-step correspondence
-(e.g., machine translation).
+때때로 저희는 순차적으로 구조화된 입력이 주어졌을 때
+고정된 타깃 $y$를 예측하고자 합니다
+(예: 영화 리뷰를 바탕으로 한 감성 분류).
+또 다른 경우에는, 고정된 입력이 주어졌을 때
+순차적으로 구조화된 타깃 ($y_1, \ldots, y_T$)을
+예측하고자 합니다 (예: 이미지 캡셔닝).
+또 다른 경우에는, 순차적으로 구조화된 입력을 바탕으로
+순차적으로 구조화된 타깃을 예측하는 것이 목표입니다
+(예: 기계 번역 또는 비디오 캡셔닝).
+이러한 시퀀스 대 시퀀스 과제는 두 가지 형태를 띕니다.
+(i) *정렬됨(aligned)*: 각 타임스텝에서의 입력이
+해당하는 타깃과 정렬되는 경우 (예: 품사 태깅).
+(ii) *비정렬됨(unaligned)*: 입력과 타깃이
+반드시 한 스텝 한 스텝 대응을 보이지는 않는 경우
+(예: 기계 번역).
 
-Before we worry about handling targets of any kind,
-we can tackle the most straightforward problem:
-unsupervised density modeling (also called *sequence modeling*).
-Here, given a collection of sequences,
-our goal is to estimate the probability mass function
-that tells us how likely we are to see any given sequence,
-i.e., $p(\mathbf{x}_1, \ldots, \mathbf{x}_T)$.
+어떤 종류의 타깃을 다루는 것을 걱정하기 전에,
+가장 단순한 문제부터 다룰 수 있습니다.
+바로 비지도 밀도 모델링(*시퀀스 모델링*이라고도 합니다)입니다.
+여기서 시퀀스들의 모음이 주어졌을 때,
+저희의 목표는 어떤 주어진 시퀀스를 볼 확률이 얼마인지,
+즉 $p(\mathbf{x}_1, \ldots, \mathbf{x}_T)$를 알려주는
+확률 질량 함수를 추정하는 것입니다.
 
 ```{.python .input  n=6}
 %load_ext d2lbook.tab
@@ -132,273 +122,253 @@ from jax import numpy as jnp
 import numpy as np
 ```
 
-## Autoregressive Models
+## 자기회귀 모델 (Autoregressive Models)
 
 
-Before introducing specialized neural networks
-designed to handle sequentially structured data,
-let's take a look at some actual sequence data
-and build up some basic intuitions and statistical tools.
-In particular, we will focus on stock price data
-from the FTSE 100 index (:numref:`fig_ftse100`).
-At each *time step* $t \in \mathbb{Z}^+$, we observe
-the price, $x_t$, of the index at that time.
+순차적으로 구조화된 데이터를 다루도록 설계된
+전문 신경망을 소개하기 전에,
+실제 시퀀스 데이터를 살펴보고
+기본적인 직관과 통계 도구를 쌓아 봅시다.
+특히 저희는 FTSE 100 지수의 주가 데이터에
+초점을 맞출 것입니다 (:numref:`fig_ftse100`).
+각 *타임스텝* $t \in \mathbb{Z}^+$에서,
+저희는 그 시점의 지수 가격 $x_t$를 관측합니다.
 
 
-![FTSE 100 index over about 30 years.](../img/ftse100.png)
+![약 30년에 걸친 FTSE 100 지수.](../img/ftse100.png)
 :width:`400px`
 :label:`fig_ftse100`
 
 
-Now suppose that a trader would like to make short-term trades,
-strategically getting into or out of the index,
-depending on whether they believe
-that it will rise or decline
-in the subsequent time step.
-Absent any other features
-(news, financial reporting data, etc.),
-the only available signal for predicting
-the subsequent value is the history of prices to date.
-The trader is thus interested in knowing
-the probability distribution
+이제 한 트레이더가 단기 매매를 하고 싶어 한다고 가정해 봅시다.
+지수가 다음 타임스텝에 상승할지 하락할지에 대한
+자신의 판단에 따라
+전략적으로 지수에 들어가거나 빠져나오려고 합니다.
+다른 어떤 특징
+(뉴스, 재무 보고 데이터 등)도 없을 때,
+다음 값을 예측하는 데 사용할 수 있는 유일한 신호는
+지금까지의 가격 이력입니다.
+따라서 트레이더는 다음 타임스텝에 지수가 가질 수 있는
+가격에 대한 확률 분포
 
 $$P(x_t \mid x_{t-1}, \ldots, x_1)$$
 
-over prices that the index might take
-in the subsequent time step.
-While estimating the entire distribution
-over a continuously valued random variable
-can be difficult, the trader would be happy
-to focus on a few key statistics of the distribution,
-particularly the expected value and the variance.
-One simple strategy for estimating the conditional expectation
+를 알고 싶어 합니다.
+연속값을 가지는 확률 변수에 대한
+전체 분포를 추정하는 것은 어려울 수 있지만,
+트레이더는 분포의 몇 가지 핵심 통계량,
+특히 기댓값과 분산에 초점을 맞추는 것으로 만족할 것입니다.
+조건부 기댓값
 
 $$\mathbb{E}[(x_t \mid x_{t-1}, \ldots, x_1)],$$
 
-would be to apply a linear regression model
-(recall :numref:`sec_linear_regression`).
-Such models that regress the value of a signal
-on the previous values of that same signal
-are naturally called *autoregressive models*.
-There is just one major problem: the number of inputs,
-$x_{t-1}, \ldots, x_1$ varies, depending on $t$.
-In other words, the number of inputs increases
-with the amount of data that we encounter.
-Thus if we want to treat our historical data
-as a training set, we are left with the problem
-that each example has a different number of features.
-Much of what follows in this chapter
-will revolve around techniques
-for overcoming these challenges
-when engaging in such *autoregressive* modeling problems
-where the object of interest is
-$P(x_t \mid x_{t-1}, \ldots, x_1)$
-or some statistic(s) of this distribution.
+을 추정하는 한 가지 간단한 전략은
+선형 회귀 모델을 적용하는 것입니다
+(:numref:`sec_linear_regression`을 떠올려 보세요).
+한 신호의 값을 그 같은 신호의 이전 값들로 회귀하는
+이러한 모델은 자연스럽게 *자기회귀 모델(autoregressive models)* 이라고 불립니다.
+한 가지 큰 문제가 있습니다. 입력의 개수
+$x_{t-1}, \ldots, x_1$이 $t$에 따라 달라진다는 것입니다.
+다시 말해, 입력의 개수는 저희가 마주치는
+데이터의 양에 따라 증가합니다.
+따라서 과거 데이터를 학습 세트로 다루고자 한다면,
+각 예시가 서로 다른 개수의 특징을 가진다는
+문제에 부딪힙니다.
+이 장에서 이어지는 내용의 상당 부분은,
+관심 대상이 $P(x_t \mid x_{t-1}, \ldots, x_1)$
+또는 이 분포의 어떤 통계량인
+이러한 *자기회귀* 모델링 문제에 임할 때
+이러한 어려움을 극복하기 위한 기법들에 관한 것입니다.
 
-A few strategies recur frequently.
-First of all,
-we might believe that although long sequences
-$x_{t-1}, \ldots, x_1$ are available,
-it may not be necessary
-to look back so far in the history
-when predicting the near future.
-In this case we might content ourselves
-to condition on some window of length $\tau$
-and only use $x_{t-1}, \ldots, x_{t-\tau}$ observations.
-The immediate benefit is that now the number of arguments
-is always the same, at least for $t > \tau$.
-This allows us to train any linear model or deep network
-that requires fixed-length vectors as inputs.
-Second, we might develop models that maintain
-some summary $h_t$ of the past observations
-(see :numref:`fig_sequence-model`)
-and at the same time update $h_t$
-in addition to the prediction $\hat{x}_t$.
-This leads to models that estimate not only $x_t$
-with $\hat{x}_t = P(x_t \mid h_{t})$
-but also updates of the form
-$h_t = g(h_{t-1}, x_{t-1})$.
-Since $h_t$ is never observed,
-these models are also called
-*latent autoregressive models*.
+몇 가지 전략이 자주 반복됩니다.
+우선, 긴 시퀀스
+$x_{t-1}, \ldots, x_1$이 사용 가능하다고 하더라도,
+가까운 미래를 예측할 때
+이력을 그렇게 멀리까지 거슬러 살펴볼
+필요는 없다고 믿을 수도 있습니다.
+이 경우에는 길이 $\tau$의 어떤 윈도우로 조건화하고
+$x_{t-1}, \ldots, x_{t-\tau}$ 관측값만 사용하는 것에
+만족할 수 있습니다.
+즉각적인 이점은 이제 인수의 개수가
+적어도 $t > \tau$에 대해서는 항상 같다는 점입니다.
+이를 통해 저희는 입력으로 고정 길이 벡터가 필요한
+어떤 선형 모델이나 심층 신경망도 학습할 수 있습니다.
+둘째, 과거 관측값의 어떤 요약 $h_t$를 유지하고
+(:numref:`fig_sequence-model` 참고)
+동시에 예측 $\hat{x}_t$와 더불어
+$h_t$를 업데이트하는 모델을 개발할 수도 있습니다.
+이로 인해 $\hat{x}_t = P(x_t \mid h_{t})$로 $x_t$를 추정할 뿐만 아니라
+$h_t = g(h_{t-1}, x_{t-1})$ 형태의 업데이트도 함께 하는
+모델이 만들어집니다.
+$h_t$가 결코 관측되지 않기 때문에,
+이러한 모델은 *잠재 자기회귀 모델(latent autoregressive models)* 이라고도 불립니다.
 
-![A latent autoregressive model.](../img/sequence-model.svg)
+![잠재 자기회귀 모델.](../img/sequence-model.svg)
 :label:`fig_sequence-model`
 
-To construct training data from historical data, one
-typically creates examples by sampling windows randomly.
-In general, we do not expect time to stand still.
-However, we often assume that while
-the specific values of $x_t$ might change,
-the dynamics according to which each subsequent
-observation is generated given the previous observations do not.
-Statisticians call dynamics that do not change *stationary*.
+과거 데이터로부터 학습 데이터를 구성하기 위해,
+일반적으로 윈도우를 무작위로 샘플링하여 예시를 만듭니다.
+일반적으로 저희는 시간이 멈춰 있을 것이라고는 기대하지 않습니다.
+그러나 $x_t$의 구체적인 값은 변할 수 있어도,
+이전 관측값이 주어졌을 때 각 후속 관측값을 생성하는
+동역학은 변하지 않는다고 종종 가정합니다.
+통계학자들은 변하지 않는 동역학을 *정상(stationary)* 이라고 부릅니다.
 
 
 
-## Sequence Models
+## 시퀀스 모델 (Sequence Models)
 
-Sometimes, especially when working with language,
-we wish to estimate the joint probability
-of an entire sequence.
-This is a common task when working with sequences
-composed of discrete *tokens*, such as words.
-Generally, these estimated functions are called *sequence models*
-and for natural language data, they are called *language models*.
-The field of sequence modeling has been driven so much by natural language processing,
-that we often describe sequence models as "language models",
-even when dealing with non-language data.
-Language models prove useful for all sorts of reasons.
-Sometimes we want to evaluate the likelihood of sentences.
-For example, we might wish to compare
-the naturalness of two candidate outputs
-generated by a machine translation system
-or by a speech recognition system.
-But language modeling gives us not only
-the capacity to *evaluate* likelihood,
-but the ability to *sample* sequences,
-and even to optimize for the most likely sequences.
+때때로, 특히 언어를 다룰 때,
+저희는 전체 시퀀스의 결합 확률을
+추정하고자 합니다.
+이는 단어와 같은 이산 *토큰*으로 구성된
+시퀀스를 다룰 때 흔한 과제입니다.
+일반적으로 이렇게 추정된 함수를 *시퀀스 모델(sequence models)* 이라고 부르며,
+자연어 데이터에 대해서는 *언어 모델(language models)* 이라고 부릅니다.
+시퀀스 모델링 분야가 자연어 처리에 의해 매우 강하게 이끌려 와서,
+저희는 비언어 데이터를 다루는 경우에도
+종종 시퀀스 모델을 "언어 모델"이라고 부릅니다.
+언어 모델은 온갖 이유로 유용함이 입증되어 있습니다.
+때때로 저희는 문장의 가능도를 평가하고 싶어 합니다.
+예를 들어, 기계 번역 시스템이나 음성 인식 시스템이
+생성한 두 후보 출력의 자연스러움을 비교하고
+싶을 수도 있습니다.
+그러나 언어 모델링은 가능도를 *평가*하는 능력뿐만 아니라,
+시퀀스를 *샘플링*하는 능력,
+나아가 가장 가능도가 높은 시퀀스를 위한 최적화 능력까지
+저희에게 제공합니다.
 
-While language modeling might not, at first glance, look
-like an autoregressive problem,
-we can reduce language modeling to autoregressive prediction
-by decomposing the joint density  of a sequence $p(x_1, \ldots, x_T)$
-into the product of conditional densities
-in a left-to-right fashion
-by applying the chain rule of probability:
+언어 모델링이 언뜻 보기에는 자기회귀 문제처럼
+보이지 않을 수 있지만,
+시퀀스의 결합 밀도 $p(x_1, \ldots, x_T)$를
+확률의 연쇄 법칙을 적용하여
+좌에서 우 방향으로 조건부 밀도의 곱으로 분해함으로써
+언어 모델링을 자기회귀 예측으로 환원할 수 있습니다.
 
 $$P(x_1, \ldots, x_T) = P(x_1) \prod_{t=2}^T P(x_t \mid x_{t-1}, \ldots, x_1).$$
 
-Note that if we are working with discrete signals such as words,
-then the autoregressive model must be a probabilistic classifier,
-outputting a full probability distribution
-over the vocabulary for whatever word will come next,
-given the leftwards context.
+단어와 같은 이산 신호를 다루는 경우,
+자기회귀 모델은 확률적 분류기여야 하며,
+주어진 좌측 문맥에서 다음에 올 단어가 무엇이든 그에 대해
+어휘 전체에 걸친 완전한 확률 분포를
+출력해야 한다는 점에 유의하세요.
 
 
 
-### Markov Models
+### 마르코프 모델 (Markov Models)
 :label:`subsec_markov-models`
 
 
-Now suppose that we wish to employ the strategy mentioned above,
-where we condition only on the $\tau$ previous time steps,
-i.e., $x_{t-1}, \ldots, x_{t-\tau}$, rather than
-the entire sequence history $x_{t-1}, \ldots, x_1$.
-Whenever we can throw away the history
-beyond the previous $\tau$ steps
-without any loss in predictive power,
-we say that the sequence satisfies a *Markov condition*,
-i.e., *that the future is conditionally independent of the past,
-given the recent history*.
-When $\tau = 1$, we say that the data is characterized
-by a *first-order Markov model*,
-and when $\tau = k$, we say that the data is characterized
-by a $k^{\textrm{th}}$-order Markov model.
-For when the first-order Markov condition holds ($\tau = 1$)
-the factorization of our joint probability becomes a product
-of probabilities of each word given the previous *word*:
+이제 위에서 언급한 전략, 즉 전체 시퀀스 이력
+$x_{t-1}, \ldots, x_1$ 대신
+이전 $\tau$개의 타임스텝
+$x_{t-1}, \ldots, x_{t-\tau}$만으로 조건화하는 전략을
+사용하고 싶다고 가정해 봅시다.
+이전 $\tau$ 스텝 너머의 이력을 예측력의 손실 없이
+버릴 수 있을 때마다,
+저희는 그 시퀀스가 *마르코프 조건(Markov condition)* 을 만족한다고 말합니다.
+즉, *최근 이력이 주어졌을 때 미래가 과거에 대해 조건부 독립* 이라는 의미입니다.
+$\tau = 1$일 때, 저희는 데이터가
+*1차 마르코프 모델(first-order Markov model)* 로 특징지어진다고 말하며,
+$\tau = k$일 때, 데이터가
+$k^{\textrm{th}}$차 마르코프 모델로 특징지어진다고 말합니다.
+1차 마르코프 조건이 성립할 때 ($\tau = 1$),
+저희 결합 확률의 인수분해는 이전 *단어*가 주어졌을 때
+각 단어의 확률들의 곱이 됩니다.
 
 $$P(x_1, \ldots, x_T) = P(x_1) \prod_{t=2}^T P(x_t \mid x_{t-1}).$$
 
-We often find it useful to work with models that proceed
-as though a Markov condition were satisfied,
-even when we know that this is only *approximately* true.
-With real text documents we continue to gain information
-as we include more and more leftwards context.
-But these gains diminish rapidly.
-Thus, sometimes we compromise, obviating computational and statistical difficulties
-by training models whose validity depends
-on a $k^{\textrm{th}}$-order Markov condition.
-Even today's massive RNN- and Transformer-based language models
-seldom incorporate more than thousands of words of context.
+저희는 마르코프 조건이 *근사적으로만* 참임을 알 때조차도,
+그것이 만족되는 것처럼 진행되는 모델을 가지고 작업하는 것이
+유용하다고 자주 느낍니다.
+실제 텍스트 문서에서는 더 많은 좌측 문맥을 포함할수록
+저희는 계속해서 정보를 얻습니다.
+그러나 이러한 이득은 빠르게 줄어듭니다.
+따라서 때때로 저희는 $k^{\textrm{th}}$차 마르코프 조건에
+유효성이 의존하는 모델을 학습하여,
+계산상 및 통계상의 어려움을 회피하면서 타협합니다.
+오늘날의 거대한 RNN 및 Transformer 기반 언어 모델조차도
+수천 단어를 넘는 문맥을 포함하는 경우는 드뭅니다.
 
 
-With discrete data, a true Markov model
-simply counts the number of times
-that each word has occurred in each context, producing
-the relative frequency estimate of $P(x_t \mid x_{t-1})$.
-Whenever the data assumes only discrete values
-(as in language),
-the most likely sequence of words can be computed efficiently
-using dynamic programming.
+이산 데이터에서 진정한 마르코프 모델은
+단순히 각 단어가 각 문맥에서 발생한 횟수를 세어,
+$P(x_t \mid x_{t-1})$의 상대 빈도 추정값을 만들어 냅니다.
+(언어에서처럼) 데이터가 이산값만을 갖는 경우에는 언제든,
+가장 가능도 높은 단어 시퀀스를 동적 계획법을 사용하여
+효율적으로 계산할 수 있습니다.
 
 
-### The Order of Decoding
+### 디코딩의 순서
 
-You may be wondering why we represented
-the factorization of a text sequence $P(x_1, \ldots, x_T)$
-as a left-to-right chain of conditional probabilities.
-Why not right-to-left or some other, seemingly random order?
-In principle, there is nothing wrong with unfolding
-$P(x_1, \ldots, x_T)$ in reverse order.
-The result is a valid factorization:
+저희가 왜 텍스트 시퀀스의 인수분해 $P(x_1, \ldots, x_T)$를
+좌에서 우로 진행하는 조건부 확률의 사슬로 표현했는지
+궁금하실 수 있습니다.
+왜 우에서 좌나 어떤 다른, 겉보기에 무작위인 순서는 아닌가요?
+원칙적으로 $P(x_1, \ldots, x_T)$를 역순으로
+펼치는 데 잘못된 점은 없습니다.
+그 결과는 유효한 인수분해입니다.
 
 $$P(x_1, \ldots, x_T) = P(x_T) \prod_{t=T-1}^1 P(x_t \mid x_{t+1}, \ldots, x_T).$$
 
 
-However, there are many reasons why factorizing text
-in the same direction in which we read it
-(left-to-right for most languages,
-but right-to-left for Arabic and Hebrew)
-is preferred for the task of language modeling.
-First, this is just a more natural direction for us to think about.
-After all we all read text every day,
-and this process is guided by our ability
-to anticipate which words and phrases
-are likely to come next.
-Just think of how many times you have completed
-someone else's sentence.
-Thus, even if we had no other reason to prefer such in-order decodings,
-they would be useful if only because we have better intuitions
-for what should be likely when predicting in this order.
+그러나 언어 모델링 과제에서는 텍스트를
+저희가 읽는 방향
+(대부분의 언어에서 좌에서 우, 그러나 아랍어와 히브리어에서는 우에서 좌)과
+같은 방향으로 인수분해하는 것이 선호되는 데에는 많은 이유가 있습니다.
+첫째, 이는 단순히 저희가 생각하기에 더 자연스러운 방향이기 때문입니다.
+결국 저희 모두 매일 텍스트를 읽고,
+이 과정은 어떤 단어와 구가 다음에 올 가능성이 있는지
+예측하는 능력에 의해 이끌어집니다.
+다른 사람의 문장을 얼마나 많이 완성해 보셨는지 생각해 보세요.
+따라서 그러한 순방향 디코딩을 선호할 다른 이유가 없다고 하더라도,
+저희가 이 순서로 예측할 때 무엇이 가능성 있는지에 대한
+더 나은 직관을 가지고 있다는 점만으로도 그것들은 유용할 것입니다.
 
-Second, by factorizing in order,
-we can assign probabilities to arbitrarily long sequences
-using the same language model.
-To convert a probability over steps $1$ through $t$
-into one that extends to word $t+1$ we simply
-multiply by the conditional probability
-of the additional token given the previous ones:
+둘째, 순서대로 인수분해함으로써,
+저희는 동일한 언어 모델을 사용하여
+임의로 긴 시퀀스에 확률을 할당할 수 있습니다.
+스텝 $1$부터 $t$에 대한 확률을 단어 $t+1$까지 확장된 확률로
+변환하기 위해, 저희는 단순히 이전 토큰들이 주어졌을 때
+추가 토큰의 조건부 확률을 곱합니다.
 $P(x_{t+1}, \ldots, x_1) = P(x_{t}, \ldots, x_1) \cdot P(x_{t+1} \mid x_{t}, \ldots, x_1)$.
 
-Third, we have stronger predictive models
-for predicting adjacent words than
-words at arbitrary other locations.
-While all orders of factorization are valid,
-they do not necessarily all represent equally easy
-predictive modeling problems.
-This is true not only for language,
-but for other kinds of data as well,
-e.g., when the data is causally structured.
-For example, we believe that future events cannot influence the past.
-Hence, if we change $x_t$, we may be able to influence
-what happens for $x_{t+1}$ going forward but not the converse.
-That is, if we change $x_t$, the distribution over past events will not change.
-In some contexts, this makes it easier to predict $P(x_{t+1} \mid x_t)$
-than to predict $P(x_t \mid x_{t+1})$.
-For instance, in some cases, we can find $x_{t+1} = f(x_t) + \epsilon$
-for some additive noise $\epsilon$,
-whereas the converse is not true :cite:`Hoyer.Janzing.Mooij.ea.2009`.
-This is great news, since it is typically the forward direction
-that we are interested in estimating.
-The book by :citet:`Peters.Janzing.Scholkopf.2017` contains more on this topic.
-We barely scratch the surface of it.
+셋째, 저희는 임의의 다른 위치에 있는 단어를 예측하는 것보다
+인접한 단어를 예측하기 위한 더 강력한 예측 모델을 가지고 있습니다.
+인수분해의 모든 순서가 유효하지만,
+그것들이 반드시 모두 동일하게 쉬운
+예측 모델링 문제를 나타내는 것은 아닙니다.
+이는 언어뿐만 아니라 다른 종류의 데이터에서도 참인데,
+예를 들어 데이터가 인과적으로 구조화되어 있을 때 그렇습니다.
+예를 들어 저희는 미래의 사건이 과거에 영향을 줄 수 없다고 믿습니다.
+따라서 $x_t$를 바꾼다면, 저희는 앞으로 $x_{t+1}$에 일어나는 일에는
+영향을 줄 수 있지만 그 반대는 아닙니다.
+즉, $x_t$를 바꾼다면, 과거 사건에 대한 분포는 변하지 않을 것입니다.
+어떤 맥락에서는, 이것이 $P(x_t \mid x_{t+1})$을 예측하는 것보다
+$P(x_{t+1} \mid x_t)$을 예측하기를 더 쉽게 만듭니다.
+예를 들어, 어떤 경우에는 어떤 가산 잡음 $\epsilon$에 대해
+$x_{t+1} = f(x_t) + \epsilon$임을 찾을 수 있는 반면,
+그 반대는 참이 아닙니다 :cite:`Hoyer.Janzing.Mooij.ea.2009`.
+이는 좋은 소식인데, 일반적으로 저희가 추정에 관심을 두는 것이
+바로 순방향이기 때문입니다.
+:citet:`Peters.Janzing.Scholkopf.2017`의 책에 이 주제에 관한
+더 많은 내용이 담겨 있습니다.
+저희는 이 주제의 표면만 겨우 긁었을 뿐입니다.
 
 
-## Training
+## 학습
 
-Before we focus our attention on text data,
-let's first try this out with some
-continuous-valued synthetic data.
+저희의 관심을 텍스트 데이터에 집중시키기 전에,
+먼저 연속값을 가지는 합성 데이터를 가지고
+이를 시험해 봅시다.
 
-(**Here, our 1000 synthetic data will follow
-the trigonometric `sin` function,
-applied to 0.01 times the time step.
-To make the problem a little more interesting,
-we corrupt each sample with additive noise.**)
-From this sequence we extract training examples,
-each consisting of features and a label.
+(**여기서 저희의 1000개 합성 데이터는
+타임스텝의 0.01배에 적용된
+삼각함수 `sin` 함수를 따를 것입니다.
+문제를 조금 더 흥미롭게 만들기 위해,
+저희는 각 샘플을 가산 잡음으로 오염시킵니다.**)
+이 시퀀스로부터 저희는 학습 예시를 추출하며,
+각각은 특징과 레이블로 구성됩니다.
 
 ```{.python .input  n=10}
 %%tab all
@@ -422,21 +392,20 @@ data = Data()
 d2l.plot(data.time, data.x, 'time', 'x', xlim=[1, 1000], figsize=(6, 3))
 ```
 
-To begin, we try a model that acts as if
-the data satisfied a $\tau^{\textrm{th}}$-order Markov condition,
-and thus predicts $x_t$ using only the past $\tau$ observations.
-[**Thus for each time step we have an example
-with label $y  = x_t$ and features
-$\mathbf{x}_t = [x_{t-\tau}, \ldots, x_{t-1}]$.**]
-The astute reader might have noticed that
-this results in $1000-\tau$ examples,
-since we lack sufficient history for $y_1, \ldots, y_\tau$.
-While we could pad the first $\tau$ sequences with zeros,
-to keep things simple, we drop them for now.
-The resulting dataset contains $T - \tau$ examples,
-where each input to the model has sequence length $\tau$.
-We (**create a data iterator on the first 600 examples**),
-covering a period of the sin function.
+먼저, 데이터가 $\tau^{\textrm{th}}$차 마르코프 조건을 만족하는 것처럼 동작하는,
+따라서 과거 $\tau$개의 관측값만을 사용하여 $x_t$를 예측하는
+모델을 시도해 봅시다.
+[**따라서 각 타임스텝마다 저희는 레이블 $y = x_t$와 특징
+$\mathbf{x}_t = [x_{t-\tau}, \ldots, x_{t-1}]$을 가지는 예시를 갖습니다.**]
+예리한 독자라면 이로 인해 $1000-\tau$개의 예시가 생긴다는 점을
+알아채셨을 수도 있습니다. 왜냐하면 $y_1, \ldots, y_\tau$에 대해서는
+충분한 이력이 부족하기 때문입니다.
+첫 $\tau$개의 시퀀스를 0으로 패딩할 수도 있지만,
+일을 간단하게 유지하기 위해 지금은 그것들을 버리겠습니다.
+결과 데이터셋은 $T - \tau$개의 예시를 포함하며,
+각 모델 입력의 시퀀스 길이는 $\tau$입니다.
+저희는 sin 함수의 한 주기를 다루는
+(**첫 600개의 예시에 대한 데이터 이터레이터를 만듭니다**).
 
 ```{.python .input}
 %%tab all
@@ -449,7 +418,7 @@ def get_dataloader(self, train):
     return self.get_tensorloader([self.features, self.labels], train, i)
 ```
 
-In this example our model will be a standard linear regression.
+이 예제에서 저희 모델은 표준 선형 회귀가 될 것입니다.
 
 ```{.python .input}
 %%tab all
@@ -458,10 +427,10 @@ trainer = d2l.Trainer(max_epochs=5)
 trainer.fit(model, data)
 ```
 
-## Prediction
+## 예측
 
-[**To evaluate our model, we first check
-how well it performs at one-step-ahead prediction**].
+[**저희 모델을 평가하기 위해, 먼저 모델이
+1스텝-앞 예측에서 얼마나 잘 동작하는지 확인합니다**].
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -477,22 +446,20 @@ d2l.plot(data.time[data.tau:], [data.labels, onestep_preds], 'time', 'x',
          legend=['labels', '1-step preds'], figsize=(6, 3))
 ```
 
-These predictions look good,
-even near the end at $t=1000$.
+이러한 예측은 $t=1000$ 근처의 끝부분에서조차
+좋아 보입니다.
 
-But what if we only observed sequence data
-up until time step 604 (`n_train + tau`)
-and wished to make predictions several steps
-into the future?
-Unfortunately, we cannot directly compute
-the one-step-ahead prediction for time step 609,
-because we do not know the corresponding inputs,
-having seen only up to $x_{604}$.
-We can address this problem by plugging in
-our earlier predictions as inputs to our model
-for making subsequent predictions,
-projecting forward, one step at a time,
-until reaching the desired time step:
+그러나 저희가 타임스텝 604 (`n_train + tau`)까지만
+시퀀스 데이터를 관측했고 여러 스텝 미래로
+예측을 하고자 한다면 어떻게 될까요?
+안타깝게도 저희는 타임스텝 609에 대한
+1스텝-앞 예측을 직접 계산할 수 없습니다.
+왜냐하면 $x_{604}$까지만 본 상태에서,
+해당하는 입력을 알지 못하기 때문입니다.
+저희는 이 문제를 이전의 예측을 후속 예측을 위한
+모델의 입력으로 대입하여 다룰 수 있는데,
+원하는 타임스텝에 도달할 때까지 한 번에 한 스텝씩
+앞으로 투영해 나갑니다.
 
 $$\begin{aligned}
 \hat{x}_{605} &= f(x_{601}, x_{602}, x_{603}, x_{604}), \\
@@ -502,15 +469,14 @@ $$\begin{aligned}
 \hat{x}_{609} &= f(\hat{x}_{605}, \hat{x}_{606}, \hat{x}_{607}, \hat{x}_{608}),\\
 &\vdots\end{aligned}$$
 
-Generally, for an observed sequence $x_1, \ldots, x_t$,
-its predicted output $\hat{x}_{t+k}$ at time step $t+k$
-is called the $k$*-step-ahead prediction*.
-Since we have observed up to $x_{604}$,
-its $k$-step-ahead prediction is $\hat{x}_{604+k}$.
-In other words, we will have to
-keep on using our own predictions
-to make multistep-ahead predictions.
-Let's see how well this goes.
+일반적으로, 관측된 시퀀스 $x_1, \ldots, x_t$에 대해,
+타임스텝 $t+k$에서의 예측된 출력 $\hat{x}_{t+k}$를
+$k$*-스텝-앞 예측($k$-step-ahead prediction)* 이라고 합니다.
+$x_{604}$까지 관측했으므로,
+그것의 $k$-스텝-앞 예측은 $\hat{x}_{604+k}$입니다.
+다시 말해, 저희는 다중 스텝 앞 예측을 하기 위해
+저희 자신의 예측을 계속 사용해야 할 것입니다.
+이것이 얼마나 잘 되는지 봅시다.
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -548,30 +514,28 @@ d2l.plot([data.time[data.tau:], data.time[data.num_train+data.tau:]],
          'x', legend=['1-step preds', 'multistep preds'], figsize=(6, 3))
 ```
 
-Unfortunately, in this case we fail spectacularly.
-The predictions decay to a constant
-pretty quickly after a few steps.
-Why did the algorithm perform so much worse
-when predicting further into the future?
-Ultimately, this is down to the fact
-that errors build up.
-Let's say that after step 1 we have some error $\epsilon_1 = \bar\epsilon$.
-Now the *input* for step 2 is perturbed by $\epsilon_1$,
-hence we suffer some error in the order of
-$\epsilon_2 = \bar\epsilon + c \epsilon_1$
-for some constant $c$, and so on.
-The predictions can diverge rapidly
-from the true observations.
-You may already be familiar
-with this common phenomenon.
-For instance, weather forecasts for the next 24 hours
-tend to be pretty accurate but beyond that,
-accuracy declines rapidly.
-We will discuss methods for improving this
-throughout this chapter and beyond.
+안타깝게도, 이 경우 저희는 보기 좋게 실패합니다.
+예측은 몇 스텝이 지난 후 꽤 빠르게
+상수로 감쇠합니다.
+왜 알고리즘이 미래로 더 멀리 예측할 때
+훨씬 더 나쁘게 동작했을까요?
+궁극적으로, 이는 오차가 누적된다는
+사실로 귀결됩니다.
+스텝 1 이후에 어떤 오차 $\epsilon_1 = \bar\epsilon$이 있다고 해 봅시다.
+이제 스텝 2의 *입력*이 $\epsilon_1$만큼 교란되고,
+따라서 어떤 상수 $c$에 대해
+$\epsilon_2 = \bar\epsilon + c \epsilon_1$ 정도의 오차를 겪고,
+이런 식으로 계속됩니다.
+예측은 실제 관측값으로부터 빠르게 발산할 수 있습니다.
+이 흔한 현상이 이미 익숙하실 수도 있습니다.
+예를 들어 다음 24시간 동안의 일기 예보는
+꽤 정확한 편이지만 그 이후로는
+정확도가 빠르게 떨어집니다.
+저희는 이 장 전체와 그 이후에서
+이를 개선하기 위한 방법을 논의할 것입니다.
 
-Let's [**take a closer look at the difficulties in $k$-step-ahead predictions**]
-by computing predictions on the entire sequence for $k = 1, 4, 16, 64$.
+$k = 1, 4, 16, 64$에 대해 전체 시퀀스에 대한 예측을 계산하여
+[**$k$-스텝-앞 예측의 어려움을 좀 더 자세히 살펴봅시다**].
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -609,45 +573,45 @@ d2l.plot(data.time[data.tau+steps[-1]-1:],
          legend=[f'{k}-step preds' for k in steps], figsize=(6, 3))
 ```
 
-This clearly illustrates how the quality of the prediction changes
-as we try to predict further into the future.
-While the 4-step-ahead predictions still look good,
-anything beyond that is almost useless.
+이는 저희가 미래로 더 멀리 예측하려고 할 때
+예측의 품질이 어떻게 변하는지를 명확하게 보여줍니다.
+4-스텝-앞 예측은 여전히 좋아 보이지만,
+그 너머는 거의 쓸모가 없습니다.
 
-## Summary
+## 요약
 
-There is quite a difference in difficulty
-between interpolation and extrapolation.
-Consequently, if you have a sequence, always respect
-the temporal order of the data when training,
-i.e., never train on future data.
-Given this kind of data,
-sequence models require specialized statistical tools for estimation.
-Two popular choices are autoregressive models
-and latent-variable autoregressive models.
-For causal models (e.g., time going forward),
-estimating the forward direction is typically
-a lot easier than the reverse direction.
-For an observed sequence up to time step $t$,
-its predicted output at time step $t+k$
-is the $k$*-step-ahead prediction*.
-As we predict further in time by increasing $k$,
-the errors accumulate and the quality of the prediction degrades,
-often dramatically.
+내삽(interpolation)과 외삽(extrapolation) 사이에는
+어려움에 있어서 상당한 차이가 있습니다.
+따라서 시퀀스를 가지고 있다면, 학습할 때
+데이터의 시간 순서를 항상 존중하세요.
+즉, 미래 데이터로는 결코 학습하지 마세요.
+이러한 종류의 데이터가 주어졌을 때,
+시퀀스 모델은 추정을 위해 전문화된 통계 도구를 필요로 합니다.
+인기 있는 두 가지 선택지는 자기회귀 모델과
+잠재 변수 자기회귀 모델입니다.
+인과적 모델(예: 시간이 앞으로 흐르는 경우)에서는,
+순방향을 추정하는 것이 일반적으로
+역방향보다 훨씬 더 쉽습니다.
+타임스텝 $t$까지 관측된 시퀀스에 대해,
+타임스텝 $t+k$에서의 예측된 출력은
+$k$*-스텝-앞 예측* 입니다.
+$k$를 증가시켜 시간상 더 멀리 예측할수록,
+오차가 누적되고 예측의 품질이 저하되며,
+종종 극적으로 그렇게 됩니다.
 
-## Exercises
+## 연습문제
 
-1. Improve the model in the experiment of this section.
-    1. Incorporate more than the past four observations? How many do you really need?
-    1. How many past observations would you need if there was no noise? Hint: you can write $\sin$ and $\cos$ as a differential equation.
-    1. Can you incorporate older observations while keeping the total number of features constant? Does this improve accuracy? Why?
-    1. Change the neural network architecture and evaluate the performance. You may train the new model with more epochs. What do you observe?
-1. An investor wants to find a good security to buy.
-   They look at past returns to decide which one is likely to do well.
-   What could possibly go wrong with this strategy?
-1. Does causality also apply to text? To which extent?
-1. Give an example for when a latent autoregressive model
-   might be needed to capture the dynamic of the data.
+1. 이 절의 실험에 있는 모델을 개선하세요.
+    1. 과거 네 개를 초과하는 관측값을 포함시켜 보세요. 실제로는 얼마나 많이 필요한가요?
+    1. 만약 잡음이 없었다면 얼마나 많은 과거 관측값이 필요할까요? 힌트: $\sin$과 $\cos$를 미분 방정식으로 쓸 수 있습니다.
+    1. 총 특징의 개수를 일정하게 유지하면서 더 오래된 관측값을 포함시킬 수 있나요? 이것이 정확도를 향상시키나요? 왜 그런가요?
+    1. 신경망 구조를 바꾸고 성능을 평가하세요. 새 모델을 더 많은 에포크로 학습할 수도 있습니다. 무엇을 관찰하나요?
+1. 한 투자자가 매수할 좋은 증권을 찾고자 합니다.
+   그들은 어떤 것이 잘 될 가능성이 있는지 결정하기 위해 과거 수익률을 봅니다.
+   이 전략에서 무엇이 잘못될 수 있을까요?
+1. 인과성이 텍스트에도 적용되나요? 어느 정도까지 그런가요?
+1. 데이터의 동역학을 포착하기 위해 잠재 자기회귀 모델이
+   필요할 수 있는 경우의 예를 들어 보세요.
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/113)

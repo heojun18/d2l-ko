@@ -1,67 +1,14 @@
-# Modern Recurrent Neural Networks
+# 현대 순환 신경망 (Modern Recurrent Neural Networks)
 :label:`chap_modern_rnn`
 
-The previous chapter introduced the key ideas 
-behind recurrent neural networks (RNNs). 
-However, just as with convolutional neural networks,
-there has been a tremendous amount of innovation
-in RNN architectures, culminating in several complex
-designs that have proven successful in practice. 
-In particular, the most popular designs 
-feature mechanisms for mitigating the notorious
-numerical instability faced by RNNs,
-as typified by vanishing and exploding gradients.
-Recall that in :numref:`chap_rnn` we dealt 
-with exploding gradients by applying a blunt
-gradient clipping heuristic. 
-Despite the efficacy of this hack,
-it leaves open the problem of vanishing gradients. 
+이전 장에서는 순환 신경망(RNN)의 핵심 아이디어를 소개했습니다. 그러나 합성곱 신경망과 마찬가지로, RNN 아키텍처에서도 엄청난 혁신이 이루어졌으며, 그 결과 실제로 성공적임이 입증된 여러 복잡한 설계들이 등장했습니다. 특히 가장 인기 있는 설계들은 RNN이 직면하는 악명 높은 수치적 불안정성, 대표적으로 기울기 소실(vanishing gradient)과 기울기 폭주(exploding gradient) 문제를 완화하기 위한 메커니즘을 특징으로 합니다. :numref:`chap_rnn`에서 저희는 기울기 폭주 문제를 무딘 기울기 클리핑(gradient clipping) 휴리스틱을 적용하여 다루었음을 떠올려 보십시오. 이러한 트릭의 효과에도 불구하고, 기울기 소실 문제는 여전히 남아 있습니다.
 
-In this chapter, we introduce the key ideas behind 
-the most successful RNN architectures for sequences,
-which stem from two papers.
-The first, *Long Short-Term Memory* :cite:`Hochreiter.Schmidhuber.1997`,
-introduces the *memory cell*, a unit of computation that replaces 
-traditional nodes in the hidden layer of a network.
-With these memory cells, networks are able 
-to overcome difficulties with training 
-encountered by earlier recurrent networks.
-Intuitively, the memory cell avoids 
-the vanishing gradient problem
-by keeping values in each memory cell's internal state
-cascading along a recurrent edge with weight 1 
-across many successive time steps. 
-A set of multiplicative gates help the network
-to determine not only the inputs to allow 
-into the memory state, 
-but when the content of the memory state 
-should influence the model's output. 
+이 장에서는 두 편의 논문에서 비롯된, 시퀀스를 위한 가장 성공적인 RNN 아키텍처의 핵심 아이디어들을 소개합니다. 첫 번째 논문, *장단기 메모리(Long Short-Term Memory)* :cite:`Hochreiter.Schmidhuber.1997`는 신경망의 은닉층에 있는 전통적인 노드를 대체하는 계산 단위인 *메모리 셀(memory cell)*을 도입합니다. 이러한 메모리 셀을 사용하면 신경망은 이전의 순환 신경망에서 직면했던 훈련상의 어려움을 극복할 수 있습니다. 직관적으로, 메모리 셀은 각 메모리 셀의 내부 상태에 있는 값을 가중치가 1인 순환 에지를 따라 여러 연속된 시간 단계에 걸쳐 전달함으로써 기울기 소실 문제를 회피합니다. 곱셈 게이트의 집합은 신경망이 메모리 상태로 들여보낼 입력을 결정할 뿐만 아니라, 메모리 상태의 내용이 언제 모델의 출력에 영향을 미쳐야 할지를 결정하는 데 도움을 줍니다.
 
-The second paper, *Bidirectional Recurrent Neural Networks* :cite:`Schuster.Paliwal.1997`,
-introduces an architecture in which information 
-from both the future (subsequent time steps) 
-and the past (preceding time steps)
-are used to determine the output 
-at any point in the sequence.
-This is in contrast to previous networks, 
-in which only past input can affect the output.
-Bidirectional RNNs have become a mainstay 
-for sequence labeling tasks in natural language processing,
-among a myriad of other tasks. 
-Fortunately, the two innovations are not mutually exclusive, 
-and have been successfully combined for phoneme classification
-:cite:`Graves.Schmidhuber.2005` and handwriting recognition :cite:`graves2008novel`.
+두 번째 논문, *양방향 순환 신경망(Bidirectional Recurrent Neural Networks)* :cite:`Schuster.Paliwal.1997`은 시퀀스의 어떤 지점에서든 출력을 결정하기 위해 미래(이후 시간 단계)와 과거(이전 시간 단계) 양쪽으로부터의 정보가 모두 사용되는 아키텍처를 소개합니다. 이는 과거 입력만이 출력에 영향을 미칠 수 있었던 이전 신경망들과는 대조적입니다. 양방향 RNN은 무수히 많은 다른 과제들 중에서도 자연어 처리에서의 시퀀스 라벨링 과제를 위한 주력 아키텍처가 되었습니다. 다행히도 이 두 가지 혁신은 서로 배타적이지 않으며, 음소 분류 :cite:`Graves.Schmidhuber.2005`와 필기체 인식 :cite:`graves2008novel`에 성공적으로 결합되어 사용되어 왔습니다.
 
 
-The first sections in this chapter will explain the LSTM architecture,
-a lighter-weight version called the gated recurrent unit (GRU),
-the key ideas behind bidirectional RNNs 
-and a brief explanation of how RNN layers 
-are stacked together to form deep RNNs. 
-Subsequently, we will explore the application of RNNs
-in sequence-to-sequence tasks, 
-introducing machine translation
-along with key ideas such as *encoder--decoder* architectures and *beam search*.
+이 장의 첫 번째 절들에서는 LSTM 아키텍처, 그것의 더 가벼운 버전인 게이트 순환 유닛(GRU), 양방향 RNN의 핵심 아이디어, 그리고 RNN 레이어들이 어떻게 쌓여서 심층 RNN을 형성하는지에 대한 간략한 설명을 다룰 것입니다. 이어서, 저희는 시퀀스 대 시퀀스(sequence-to-sequence) 과제에서 RNN의 응용을 탐구할 것이며, *인코더-디코더(encoder-decoder)* 아키텍처와 *빔 서치(beam search)*와 같은 핵심 아이디어들과 함께 기계 번역을 소개할 것입니다.
 
 ```toc
 :maxdepth: 2

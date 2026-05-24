@@ -1,11 +1,11 @@
-# Asynchronous Computation
+# 비동기 계산
 :label:`sec_async`
 
-Today's computers are highly parallel systems, consisting of multiple CPU cores (often multiple threads per core), multiple processing elements per GPU, and often multiple GPUs per device. In short, we can process many different things at the same time, often on different devices. Unfortunately Python is not a great way of writing parallel and asynchronous code, at least not without some extra help. After all, Python is single-threaded and this is unlikely to change in the future. Deep learning frameworks such as MXNet and TensorFlow adopt an *asynchronous programming* model to improve performance,
-while PyTorch uses Python's own scheduler leading to a different performance trade-off.
-For PyTorch, by default, GPU operations are asynchronous. When you call a function that uses the GPU, the operations are enqueued to the particular device, but not necessarily executed until later. This allows us to execute more computations in parallel, including operations on the CPU or other GPUs.
+오늘날의 컴퓨터는 고도로 병렬화된 시스템으로, 여러 개의 CPU 코어(보통 코어당 여러 스레드), GPU당 여러 처리 요소, 그리고 종종 디바이스당 여러 개의 GPU로 구성되어 있습니다. 요컨대, 저희는 많은 서로 다른 작업을 동시에, 종종 서로 다른 디바이스에서 처리할 수 있습니다. 불행히도 Python은 적어도 어느 정도의 추가적인 도움 없이는 병렬 및 비동기 코드를 작성하기에 좋은 방법이 아닙니다. 결국 Python은 단일 스레드이며, 이는 앞으로도 바뀔 가능성이 낮습니다. MXNet과 TensorFlow 같은 딥러닝 프레임워크는 성능을 향상시키기 위해 *비동기 프로그래밍* 모델을 채택하는 반면,
+PyTorch는 Python 자체의 스케줄러를 사용하여 다른 성능 트레이드오프를 가집니다.
+PyTorch에서는 기본적으로 GPU 연산이 비동기로 동작합니다. GPU를 사용하는 함수를 호출하면, 연산은 특정 디바이스의 큐에 들어가지만 반드시 즉시 실행되는 것은 아닙니다. 이를 통해 저희는 CPU나 다른 GPU에서의 연산을 포함하여 더 많은 계산을 병렬로 실행할 수 있습니다.
 
-Hence, understanding how asynchronous programming works helps us to develop more efficient programs, by proactively reducing computational requirements and mutual dependencies. This allows us to reduce memory overhead and increase processor utilization.
+따라서, 비동기 프로그래밍이 어떻게 동작하는지 이해하면 계산 요구 사항과 상호 의존성을 사전에 줄임으로써 더 효율적인 프로그램을 개발하는 데 도움이 됩니다. 이를 통해 메모리 오버헤드를 줄이고 프로세서 활용도를 높일 수 있습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -24,15 +24,15 @@ import torch
 from torch import nn
 ```
 
-## Asynchrony via Backend
+## 백엔드를 통한 비동기성
 
 :begin_tab:`mxnet`
-For a warmup consider the following toy problem: we want to generate a random matrix and multiply it. Let's do that both in NumPy and in `mxnet.np` to see the difference.
+워밍업으로 다음의 간단한 예제를 살펴보겠습니다. 저희는 랜덤 행렬을 생성한 뒤 이를 곱하고자 합니다. 차이를 보기 위해 NumPy와 `mxnet.np`로 각각 수행해 보겠습니다.
 :end_tab:
 
 :begin_tab:`pytorch`
-For a warmup consider the following toy problem: we want to generate a random matrix and multiply it. Let's do that both in NumPy and in PyTorch tensor to see the difference.
-Note that PyTorch `tensor` is defined on a GPU.
+워밍업으로 다음의 간단한 예제를 살펴보겠습니다. 저희는 랜덤 행렬을 생성한 뒤 이를 곱하고자 합니다. 차이를 보기 위해 NumPy와 PyTorch tensor로 각각 수행해 보겠습니다.
+PyTorch `tensor`는 GPU상에 정의되어 있다는 점에 유의하십시오.
 :end_tab:
 
 ```{.python .input}
@@ -67,20 +67,20 @@ with d2l.Benchmark('torch'):
 ```
 
 :begin_tab:`mxnet`
-The benchmark output via MXNet is orders of magnitude faster. Since both are executed on the same processor something else must be going on.
-Forcing MXNet to finish all the backend computation prior to returning shows what happened previously: computation is executed by the backend while the frontend returns control to Python.
+MXNet을 통한 벤치마크 출력은 수십 배 이상 더 빠릅니다. 둘 다 같은 프로세서에서 실행되므로 무언가 다른 일이 벌어지고 있는 것이 분명합니다.
+MXNet이 반환되기 전에 백엔드의 모든 계산을 강제로 끝내도록 하면 앞서 일어난 일이 드러납니다. 계산은 백엔드에서 수행되는 동안 프론트엔드는 Python에 제어권을 반환합니다.
 :end_tab:
 
 :begin_tab:`pytorch`
-The benchmark output via PyTorch is orders of magnitude faster.
-NumPy dot product is executed on the CPU processor while
-PyTorch matrix multiplication is executed on GPU and hence the latter
-is expected to be much faster. But the huge time difference suggests something
-else must be going on.
-By default, GPU operations are asynchronous in PyTorch.
-Forcing PyTorch to finish all computation prior to returning shows
-what happened previously: computation is being executed by the backend
-while the frontend returns control to Python.
+PyTorch를 통한 벤치마크 출력은 수십 배 이상 더 빠릅니다.
+NumPy의 내적은 CPU 프로세서에서 실행되는 반면
+PyTorch의 행렬 곱셈은 GPU에서 실행되므로 후자가
+훨씬 빠를 것으로 예상됩니다. 그러나 시간 차이가 워낙 크다는 점은 무언가
+다른 일이 벌어지고 있음을 시사합니다.
+PyTorch에서는 기본적으로 GPU 연산이 비동기로 동작합니다.
+PyTorch가 반환되기 전에 모든 계산을 강제로 끝내도록 하면
+앞서 일어난 일이 드러납니다. 계산은 백엔드에서 수행되는 동안
+프론트엔드는 Python에 제어권을 반환합니다.
 :end_tab:
 
 ```{.python .input}
@@ -102,25 +102,25 @@ with d2l.Benchmark():
 ```
 
 :begin_tab:`mxnet`
-Broadly speaking, MXNet has a frontend for direct interactions with users, e.g., via Python, as well as a backend used by the system to perform the computation. 
-As shown in :numref:`fig_frontends`, users can write MXNet programs in various frontend languages, such as Python, R, Scala, and C++. Regardless of the frontend programming language used, the execution of MXNet programs occurs primarily in the backend of C++ implementations. Operations issued by the frontend language are passed on to the backend for execution. 
-The backend manages its own threads that continuously collect and execute queued tasks. Note that for this to work the backend must be able to keep track of the dependencies between various steps in the computational graph. Hence, it is not possible to parallelize operations that depend on each other.
+대체로 MXNet은 예를 들어 Python을 통한 사용자와의 직접적인 상호작용을 위한 프론트엔드와, 시스템이 계산을 수행하기 위해 사용하는 백엔드를 가지고 있습니다. 
+:numref:`fig_frontends`에 나타난 것처럼, 사용자는 Python, R, Scala, C++ 같은 다양한 프론트엔드 언어로 MXNet 프로그램을 작성할 수 있습니다. 사용된 프론트엔드 프로그래밍 언어가 무엇이든, MXNet 프로그램의 실행은 주로 C++ 구현의 백엔드에서 일어납니다. 프론트엔드 언어에서 발행된 연산은 실행을 위해 백엔드로 전달됩니다. 
+백엔드는 큐에 쌓인 작업을 지속적으로 수집하고 실행하는 자체 스레드를 관리합니다. 이것이 동작하려면 백엔드가 계산 그래프 내 다양한 단계 사이의 의존성을 추적할 수 있어야 한다는 점에 유의하십시오. 따라서 서로 의존하는 연산은 병렬화할 수 없습니다.
 :end_tab:
 
 :begin_tab:`pytorch`
-Broadly speaking, PyTorch has a frontend for direct interaction with the users, e.g., via Python, as well as a backend used by the system to perform the computation. 
-As shown in :numref:`fig_frontends`, users can write PyTorch programs in various frontend languages, such as Python and C++. Regardless of the frontend programming language used, the execution of PyTorch programs occurs primarily in the backend of C++ implementations. Operations issued by the frontend language are passed on to the backend for execution.
-The backend manages its own threads that continuously collect and execute queued tasks.
-Note that for this to work the backend must be able to keep track of the
-dependencies between various steps in the computational graph.
-Hence, it is not possible to parallelize operations that depend on each other.
+대체로 PyTorch는 예를 들어 Python을 통한 사용자와의 직접적인 상호작용을 위한 프론트엔드와, 시스템이 계산을 수행하기 위해 사용하는 백엔드를 가지고 있습니다. 
+:numref:`fig_frontends`에 나타난 것처럼, 사용자는 Python과 C++ 같은 다양한 프론트엔드 언어로 PyTorch 프로그램을 작성할 수 있습니다. 사용된 프론트엔드 프로그래밍 언어가 무엇이든, PyTorch 프로그램의 실행은 주로 C++ 구현의 백엔드에서 일어납니다. 프론트엔드 언어에서 발행된 연산은 실행을 위해 백엔드로 전달됩니다.
+백엔드는 큐에 쌓인 작업을 지속적으로 수집하고 실행하는 자체 스레드를 관리합니다.
+이것이 동작하려면 백엔드가 계산 그래프 내
+다양한 단계 사이의 의존성을 추적할 수 있어야 한다는 점에 유의하십시오.
+따라서 서로 의존하는 연산은 병렬화할 수 없습니다.
 :end_tab:
 
-![Programming language frontends and deep learning framework backends.](../img/frontends.png)
+![프로그래밍 언어 프론트엔드와 딥러닝 프레임워크 백엔드.](../img/frontends.png)
 :width:`300px`
 :label:`fig_frontends`
 
-Let's look at another toy example to understand the dependency graph a bit better.
+의존성 그래프를 좀 더 잘 이해하기 위해 또 다른 간단한 예제를 살펴보겠습니다.
 
 ```{.python .input}
 #@tab mxnet
@@ -138,29 +138,29 @@ z = x * y + 2
 z
 ```
 
-![The backend tracks dependencies between various steps in the computational graph.](../img/asyncgraph.svg)
+![백엔드는 계산 그래프 내 다양한 단계 사이의 의존성을 추적합니다.](../img/asyncgraph.svg)
 :label:`fig_asyncgraph`
 
 
 
-The code snippet above is also illustrated in :numref:`fig_asyncgraph`.
-Whenever the Python frontend thread executes one of the first three statements, it simply returns the task to the backend queue. When the last statement's results need to be *printed*, the Python frontend thread will wait for the C++ backend thread to finish computing the result of the variable `z`. One benefit of this design is that the Python frontend thread does not need to perform actual computations. Thus, there is little impact on the program's overall performance, regardless of Python's performance. :numref:`fig_threading` illustrates how frontend and backend interact.
+위 코드 스니펫은 :numref:`fig_asyncgraph`에도 나타나 있습니다.
+Python 프론트엔드 스레드가 처음 세 문장 중 하나를 실행할 때마다, 단지 작업을 백엔드 큐로 반환할 뿐입니다. 마지막 문장의 결과를 *출력*해야 할 때, Python 프론트엔드 스레드는 C++ 백엔드 스레드가 변수 `z`의 결과를 계산하는 것을 완료할 때까지 기다립니다. 이 설계의 한 가지 장점은 Python 프론트엔드 스레드가 실제 계산을 수행할 필요가 없다는 점입니다. 따라서 Python의 성능과 무관하게 프로그램 전체 성능에는 거의 영향이 없습니다. :numref:`fig_threading`은 프론트엔드와 백엔드가 어떻게 상호작용하는지를 보여줍니다.
 
-![Interactions of the frontend and backend.](../img/threading.svg)
+![프론트엔드와 백엔드의 상호작용.](../img/threading.svg)
 :label:`fig_threading`
 
 
 
 
-## Barriers and Blockers
+## 배리어와 블로커
 
 :begin_tab:`mxnet`
-There are a number of operations that will force Python to wait for completion:
+Python을 강제로 완료될 때까지 대기시키는 여러 연산이 있습니다.
 
-* Most obviously `npx.waitall()` waits until all computation has completed, regardless of when the compute instructions were issued. In practice it is a bad idea to use this operator unless absolutely necessary since it can lead to poor performance.
-* If we just want to wait until a specific variable is available we can call `z.wait_to_read()`. In this case MXNet blocks return to Python until the variable `z` has been computed. Other computation may well continue afterwards.
+* 가장 명백하게 `npx.waitall()`은 계산 명령이 언제 발행되었는지에 상관없이 모든 계산이 완료될 때까지 기다립니다. 실제로는 이 연산자는 성능 저하로 이어질 수 있으므로 반드시 필요한 경우가 아니면 사용하지 않는 것이 좋습니다.
+* 특정 변수가 사용 가능해질 때까지만 기다리고 싶다면 `z.wait_to_read()`를 호출할 수 있습니다. 이 경우 MXNet은 변수 `z`가 계산될 때까지 Python으로의 반환을 차단합니다. 그 외의 계산은 그 후에도 계속될 수 있습니다.
 
-Let's see how this works in practice.
+실제로 이것이 어떻게 동작하는지 살펴보겠습니다.
 :end_tab:
 
 ```{.python .input}
@@ -175,9 +175,9 @@ with d2l.Benchmark('wait_to_read'):
 ```
 
 :begin_tab:`mxnet`
-Both operations take approximately the same time to complete. Besides the obvious blocking operations we recommend that you are aware of *implicit* blockers. Printing a variable clearly requires the variable to be available and is thus a blocker. Last, conversions to NumPy via `z.asnumpy()` and conversions to scalars via `z.item()` are blocking, since NumPy has no notion of asynchrony. It needs access to the values just like the `print` function. 
+두 연산 모두 완료하는 데 거의 같은 시간이 걸립니다. 명백한 차단 연산 외에도 *암묵적* 블로커를 인지하는 것을 권장합니다. 변수를 출력하려면 변수가 사용 가능해야 함이 분명하므로 이는 블로커입니다. 마지막으로, `z.asnumpy()`를 통한 NumPy로의 변환과 `z.item()`을 통한 스칼라로의 변환은 NumPy에 비동기성의 개념이 없기 때문에 차단됩니다. 이는 `print` 함수와 마찬가지로 값에 접근해야 합니다. 
 
-Copying small amounts of data frequently from MXNet's scope to NumPy and back can destroy performance of an otherwise efficient code, since each such operation requires the computational graph to evaluate all intermediate results needed to get the relevant term *before* anything else can be done.
+MXNet의 스코프에서 NumPy로 그리고 그 반대로 적은 양의 데이터를 자주 복사하면, 이러한 각 연산은 다른 어떤 작업도 수행되기 *전에* 관련 항을 얻기 위해 필요한 모든 중간 결과를 계산 그래프가 평가하도록 요구하기 때문에, 그렇지 않으면 효율적인 코드의 성능을 망칠 수 있습니다.
 :end_tab:
 
 ```{.python .input}
@@ -191,10 +191,10 @@ with d2l.Benchmark('scalar conversion'):
     b.sum().item()
 ```
 
-## Improving Computation
+## 계산 개선하기
 
 :begin_tab:`mxnet`
-On a heavily multithreaded system (even regular laptops have 4 threads or more and on multi-socket servers this number can exceed 256) the overhead of scheduling operations can become significant. This is why it is highly desirable to have computation and scheduling occur asynchronously and in parallel. To illustrate the benefit of doing so let's see what happens if we increment a variable by 1 multiple times, both in sequence or asynchronously. We simulate synchronous execution by inserting a `wait_to_read` barrier in between each addition.
+멀티 스레드 부하가 큰 시스템에서는(일반적인 노트북도 4개 이상의 스레드를 가지며 멀티 소켓 서버에서는 이 수가 256개를 넘을 수 있습니다) 연산 스케줄링의 오버헤드가 상당히 커질 수 있습니다. 그래서 계산과 스케줄링이 비동기적이고 병렬로 일어나는 것이 매우 바람직합니다. 그렇게 하는 것의 이점을 보여주기 위해, 변수를 1만큼 여러 번 증가시킬 때 순차적으로 혹은 비동기적으로 수행하면 무슨 일이 일어나는지 살펴보겠습니다. 저희는 각 덧셈 사이에 `wait_to_read` 배리어를 삽입함으로써 동기 실행을 시뮬레이션합니다.
 :end_tab:
 
 ```{.python .input}
@@ -211,41 +211,41 @@ with d2l.Benchmark('asynchronous'):
 ```
 
 :begin_tab:`mxnet`
-A slightly simplified interaction between the Python frontend thread and the C++ backend thread can be summarized as follows:
-1. The frontend orders the backend to insert the computation task `y = x + 1` into the queue.
-1. The backend then receives the computation tasks from the queue and performs the actual computations.
-1. The backend then returns the computation results to the frontend.
-Assume that the durations of these three stages are $t_1, t_2$ and $t_3$, respectively. If we do not use asynchronous programming, the total time taken to perform 10000 computations is approximately $10000 (t_1+ t_2 + t_3)$. If asynchronous programming is used, the total time taken to perform 10000 computations can be reduced to $t_1 + 10000 t_2 + t_3$ (assuming $10000 t_2 > 9999t_1$), since the frontend does not have to wait for the backend to return computation results for each loop.
+Python 프론트엔드 스레드와 C++ 백엔드 스레드 사이의 다소 단순화된 상호작용은 다음과 같이 요약할 수 있습니다.
+1. 프론트엔드는 백엔드에게 계산 작업 `y = x + 1`을 큐에 넣도록 명령합니다.
+1. 그 다음 백엔드는 큐에서 계산 작업을 받아 실제 계산을 수행합니다.
+1. 그런 다음 백엔드는 계산 결과를 프론트엔드로 반환합니다.
+이 세 단계의 소요 시간을 각각 $t_1, t_2$, $t_3$이라고 가정해 봅시다. 비동기 프로그래밍을 사용하지 않는다면, 10000번의 계산을 수행하는 데 걸리는 총 시간은 대략 $10000 (t_1+ t_2 + t_3)$입니다. 비동기 프로그래밍을 사용하면, 프론트엔드가 각 루프마다 백엔드가 계산 결과를 반환할 때까지 기다릴 필요가 없기 때문에, 10000번의 계산을 수행하는 데 걸리는 총 시간을 $t_1 + 10000 t_2 + t_3$($10000 t_2 > 9999t_1$이라고 가정)로 줄일 수 있습니다.
 :end_tab:
 
 
-## Summary
+## 요약
 
 
-* Deep learning frameworks may decouple the Python frontend from an execution backend. This allows for fast asynchronous insertion of commands into the backend and associated parallelism.
-* Asynchrony leads to a rather responsive frontend. However, use caution not to overfill the task queue since it may lead to excessive memory consumption. It is recommended to synchronize for each minibatch to keep frontend and backend approximately synchronized.
-* Chip vendors offer sophisticated performance analysis tools to obtain a much more fine-grained insight into the efficiency of deep learning.
+* 딥러닝 프레임워크는 Python 프론트엔드를 실행 백엔드로부터 분리할 수 있습니다. 이를 통해 백엔드로 명령을 빠르게 비동기로 삽입할 수 있고 그에 따른 병렬성을 얻을 수 있습니다.
+* 비동기성은 상당히 반응성이 좋은 프론트엔드로 이어집니다. 그러나 작업 큐가 과도하게 채워지면 메모리 소비가 과도해질 수 있으므로 주의하십시오. 프론트엔드와 백엔드를 대략 동기화된 상태로 유지하기 위해 각 미니배치마다 동기화하는 것이 권장됩니다.
+* 칩 벤더는 딥러닝의 효율성에 대한 훨씬 더 세분화된 통찰을 얻기 위한 정교한 성능 분석 도구를 제공합니다.
 
 :begin_tab:`mxnet`
-* Be aware of the fact that conversions from MXNet's memory management to Python will force the backend to wait until  the specific variable is ready. Functions such as `print`, `asnumpy` and `item` all have this effect. This can be desirable but a careless use of synchronization can ruin performance.
+* MXNet의 메모리 관리에서 Python으로의 변환은 특정 변수가 준비될 때까지 백엔드를 대기시킨다는 사실에 유의하십시오. `print`, `asnumpy`, `item` 같은 함수들은 모두 이런 효과를 가집니다. 이는 바람직할 수도 있지만 동기화의 부주의한 사용은 성능을 망칠 수 있습니다.
 :end_tab:
 
 
-## Exercises
+## 연습문제
 
 :begin_tab:`mxnet`
-1. We mentioned above that using asynchronous computation can reduce the total amount of time needed to perform 10000 computations to $t_1 + 10000 t_2 + t_3$. Why do we have to assume $10000 t_2 > 9999 t_1$ here?
-1. Measure the difference between `waitall` and `wait_to_read`. Hint: perform a number of instructions and synchronize for an intermediate result.
+1. 저희는 위에서 비동기 계산을 사용하면 10000번의 계산을 수행하는 데 필요한 총 시간을 $t_1 + 10000 t_2 + t_3$으로 줄일 수 있다고 언급했습니다. 여기서 왜 $10000 t_2 > 9999 t_1$을 가정해야 합니까?
+1. `waitall`과 `wait_to_read`의 차이를 측정해 보십시오. 힌트: 여러 명령을 수행하고 중간 결과에 대해 동기화하십시오.
 :end_tab:
 
 :begin_tab:`pytorch`
-1. On the CPU, benchmark the same matrix multiplication operations in this section. Can you still observe asynchrony via the backend?
+1. CPU에서 이 절의 동일한 행렬 곱셈 연산을 벤치마크해 보십시오. 백엔드를 통한 비동기성을 여전히 관찰할 수 있습니까?
 :end_tab:
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/361)
+[토론](https://discuss.d2l.ai/t/361)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/2564)
+[토론](https://discuss.d2l.ai/t/2564)
 :end_tab:
